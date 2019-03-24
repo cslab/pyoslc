@@ -16,7 +16,7 @@ class PyOSLC:
 
         return super(PyOSLC, cls).__new__(cls)
 
-    def __init__(self, base_uri='http://example.com/'):
+    def __init__(self, base_uri='http://examples.com/'):
         super(PyOSLC, self).__init__()
         self.__base_uri = base_uri
 
@@ -56,7 +56,8 @@ class PyOSLC:
                 age = args[1]
 
                 data = function(*args)
-                result = self.graph.serialize(format='turtle')
+                print(data)
+                result = self.graph.serialize()
                 return result.decode('utf-8')
 
             return decorated

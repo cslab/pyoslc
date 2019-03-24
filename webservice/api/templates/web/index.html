@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}Python OSLC Adapter{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('oslc.catalog') }}"> Service Provider Catalog </a>
+{% endblock %}

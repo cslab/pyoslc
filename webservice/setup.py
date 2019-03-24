@@ -1,16 +1,17 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='PyOSLC',
+    name='PyOSLC-API ',
     version='1.0.0',
-    description='OSLC implementation to become a project in a OSLC adapter.',
+    description='PyOSLC REST API Example.',
     author='Koneksys LCC',
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
     install_requires=[
+        'Flask',
+        'Flas-RESTPlus',
         'RDFLib>=4.2',
-        'RDFLib-JSONLD',
-        'Flask'
+        'RDFLib-JSONLD'
     ],
 )

@@ -9,7 +9,7 @@ from rdflib.namespace import DCTERMS
 
 from pyoslc.helpers import build_uri
 
-default_uri = 'http://example.com/'
+default_uri = 'http://examples.com/'
 OSLC = Namespace("http://open-services.net/ns/core#")
 
 
