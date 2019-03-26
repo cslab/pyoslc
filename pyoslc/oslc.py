@@ -24,6 +24,18 @@ class PyOSLC:
         node = BNode()
         return node
 
+    def catalog(self, graph, resource_type=None, about=None):
+        def decorator(function):
+            def decorated(*args, **kwargs):
+                if resource_type == OSLCCore.serviceProviderCatalog:
+                    self.service_provider_catalog(graph, uri=about, title="Service Provider Catalog")
+
+                    spc = self.create_node(OSLCCore.term('serviceProviderCatalog'))
+
+            return decorated
+
+        return decorator
+
     def oslc_service(self, resource_type=None, about=None):
         def decorator(function):
             def decorated(*args, **kwargs):

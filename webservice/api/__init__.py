@@ -33,7 +33,7 @@ def create_app(config=None):
     app.add_url_rule('/', endpoint='index')
 
     from . import oslc
-    app.register_blueprint(oslc.bp, url_prefix='/api/1')
+    app.register_blueprint(oslc.bp, url_prefix='/oslc')
 
     if not app.debug and not app.testing:
         if app.config['MAIL_SERVER']:

@@ -1,16 +1,8 @@
-"""
-    Vocabulary definition for the OSLC specification.
-
-    Taken from:
-    http://docs.oasis-open.org/oslc-core/oslc-core/v3.0/csprd03/part7-core-vocabulary/oslc-core-v3.0-csprd03-part7-core-vocabulary.html#rdfvocab
-    http://docs.oasis-open.org/oslc-core/oslc-core/v3.0/csprd03/part7-core-vocabulary/oslc-core-v3.0-csprd03-part7-core-vocabulary.html#vocabulary-details
-
-"""
 from rdflib import URIRef
 from rdflib.namespace import ClosedNamespace
 
-OSLCCore = ClosedNamespace(
-    uri=URIRef("http://open-services.net/ns/core#"),
+OSLC_RM = ClosedNamespace(
+    uri=URIRef("http://open-services.net/ns/rm#"),
     terms=[
         # RDFS Classes in this namespace
         "AllowedValues", "AttachmentContainer", "AttachmentDescriptor",
