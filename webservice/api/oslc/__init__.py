@@ -16,7 +16,7 @@ api = Api(
 
 
 from webservice.api.oslc.rm import rm_ns
-# from webservice.api.oslc.cm import cm_ns
+from webservice.api.oslc.cm import cm_ns
 
 
 # api.add_namespace(rm_ns)

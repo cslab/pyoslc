@@ -1,5 +1,5 @@
 from flask import make_response, request
-from flask_restplus import Namespace, Resource
+from flask_restplus import Namespace, Resource, fields
 from rdflib import Graph, URIRef, Literal
 from rdflib.namespace import DCTERMS, RDF
 from rdflib.plugin import PluginException
@@ -64,14 +64,34 @@ class Catalog(Resource):
     def get(self):
         return make_response('{}', 200)
 
-#     def post(self):
-#         return make_response('{}', 200)
-#
-#     def put(self):
-#         return make_response('{}', 200)
-#
-#     def delete(self):
-#         return make_response('{}', 200)
+    def post(self):
+        return make_response('{}', 200)
+
+    def put(self):
+        return make_response('{}', 200)
+
+    def delete(self):
+        return make_response('{}', 200)
+
+model = api.model('Model', {
+    'title': fields.String,
+    'project': fields.String
+}) 
+
+@rm_ns.route('/requirement')
+class Requirement(Resource):
+
+    def get(self):
+
+        
+        return make_response('{}', 200) 
+
+
+    @api.marshal_with(model, envelope='resource')
+    def post(self):
+
+        return make_response('{}', 200)
 
 
 api.add_namespace(rm_ns)
+

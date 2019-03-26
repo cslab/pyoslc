@@ -35,6 +35,10 @@ def create_app(config=None):
     from . import oslc
     app.register_blueprint(oslc.bp, url_prefix='/oslc')
 
+    #  Todo register cdb standard functionalities over http endpoint
+    # from . import cdb
+    # app.register_blueprint(cdb.bp, url_prefix='/cdb')
+
     if not app.debug and not app.testing:
         if app.config['MAIL_SERVER']:
             """
