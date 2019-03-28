@@ -35,7 +35,7 @@ def create_app(config=None):
     from . import oslc
     app.register_blueprint(oslc.bp, url_prefix='/oslc')
 
-    #  Todo register cdb standard functionalities over http endpoint
+    # TODO register cdb standard functionalities over http endpoint
     # from . import cdb
     # app.register_blueprint(cdb.bp, url_prefix='/cdb')
 

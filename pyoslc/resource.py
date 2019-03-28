@@ -4,21 +4,31 @@
 """
 from collections import OrderedDict
 
-from rdflib import Namespace, Literal
+from rdflib import Literal
 from rdflib.namespace import DCTERMS
 
 from pyoslc.helpers import build_uri
+from pyoslc.vocabulary import OSLCCore
 
 default_uri = 'http://examples.com/'
-OSLC = Namespace("http://open-services.net/ns/core#")
 
 
 class ServiceFactory:
+
+    def __init__(self):
+        pass
+
     def get_service(self, map):
         raise NotImplementedError()
 
 
-class Resource:
+class Link:
+
+    def __init__(self, label=None):
+        self.__label = label if label is not None else None
+
+
+class BaseResource:
     """
     Class to define generic resources.
     """
@@ -31,6 +41,35 @@ class Resource:
         self.__about = about if about is not None else default_uri
         self.__types = types if types is not None else list()
         self.__extended_properties = properties if properties is not None else dict()
+
+
+class Resource(BaseResource):
+
+    def __init__(self, about=None, types=None, properties=None,
+                 description=None, identifier=None, short_title=None,
+                 title=None, contributor=None, creator=None, subject=None,
+                 created=None, modified=None, type=None, discussed_by=None,
+                 instance_shape=None, service_provider=None, relation=None):
+        """
+        Initialize the generic resource with the about property
+        """
+
+        BaseResource.__init__(self, about, types, properties)
+
+        self.__description = description if description is not None else ''
+        self.__identifier = identifier if identifier is not None else ''
+        self.__short_title = short_title if short_title is not None else ''
+        self.__title = title if title is not None else ''
+        self.__contributor = contributor if contributor is not None else set()
+        self.__creator = creator if creator is not None else set()
+        self.__subject = subject if subject is not None else set()
+        self.__created = created if created is not None else None
+        self.__modified = modified if modified is not None else None
+        self.__type = type if type is not None else set()
+        self.__discussed_by = discussed_by if discussed_by is not None else None
+        self.__instance_shape = instance_shape if instance_shape is not None else None
+        self.__service_provider = service_provider if service_provider is not None else None
+        self.__relation = relation if relation is not None else None
 
 
 class ServiceProviderCatalog(Resource):
@@ -73,19 +112,19 @@ class ServiceProviderCatalog(Resource):
 
         if self.__domain is not None and self.__domain.__len__() > 0:
             for domain in self.__domain:
-                self.__graph.add((self.__spc, OSLC.domain, domain))
+                self.__graph.add((self.__spc, OSLCCore.domain, domain))
 
         if self.__service_provider is not None and self.__service_provider.__len__() > 0:
             for service_provider in self.__service_provider:
-                self.__graph.add((self.__spc, OSLC.serviceProvider, service_provider))
+                self.__graph.add((self.__spc, OSLCCore.serviceProvider, service_provider))
 
         if self.__service_provider_catalog is not None and self.__service_provider_catalog.__len__() > 0:
             for service_provider_catalog in self.__service_provider_catalog:
-                self.__graph.add((self.__spc, OSLC.serviceProviderCatalog, service_provider_catalog))
+                self.__graph.add((self.__spc, OSLCCore.serviceProviderCatalog, service_provider_catalog))
 
         if self.__oauth_configuration is not None and self.__oauth_configuration.__len__() > 0:
             for oauth_configuration in self.__oauth_configuration:
-                self.__graph.add((self.__spc, OSLC.oauthConfiguration, oauth_configuration))
+                self.__graph.add((self.__spc, OSLCCore.oauthConfiguration, oauth_configuration))
 
     @property
     def title(self):
@@ -102,7 +141,7 @@ class ServiceProviderCatalog(Resource):
 
     def add_service_provider(self, service_provider):
         if isinstance(service_provider, ServiceProvider):
-            self.__graph.add((self.__spc, OSLC.serviceProvider, service_provider))
+            self.__graph.add((self.__spc, OSLCCore.serviceProvider, service_provider))
         else:
             return ValueError('The object must be a ServiceProvider')
 

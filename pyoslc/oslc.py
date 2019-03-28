@@ -1,5 +1,5 @@
 from rdflib import Graph, BNode, URIRef, Literal
-from rdflib.namespace import DCTERMS, FOAF, RDF
+from rdflib.namespace import DCTERMS, RDF
 
 from pyoslc.resource import ServiceProviderCatalog
 from pyoslc.vocabulary import OSLCCore
@@ -63,6 +63,11 @@ class PyOSLC:
                     self.graph.add((s, DCTERMS.title, Literal('Service')))
                     self.graph.add((s, DCTERMS.description, Literal('Service for creation of query.')))
 
+                    # Query capabilities
+
+                    # Creation Factory
+
+                    # Resource Shape
 
                 name = args[0]
                 age = args[1]
