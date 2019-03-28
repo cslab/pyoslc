@@ -64,19 +64,14 @@ class Requirement(Resource):
                         attr.add(v if v is not '' else 'Empty')
                     else:
                         setattr(self, attribute, v)
-                    print('{} {} {}'.format(attribute, attr, type(attr)))
                 else:
                     print('{}'.format(attribute))
-
-
 
     @staticmethod
     def get_absolute_url(identifier):
         return "/requirement/" + identifier
 
     def to_rdf(self):
-
-        print(self.__dict__.keys())
 
         ORG_URI = "http://example.org/"
 
