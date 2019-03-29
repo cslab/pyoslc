@@ -9,12 +9,13 @@ from pyoslc.vocabulary.rm import OSLC_RM
 class Requirement(Resource):
 
     specification_map = {
+        'Specification_id': {'attribute': '_Resource__identifier', 'oslc_property': 'DCTERMS.identifier'},
         'Product': {'attribute': '_Resource__short_title', 'oslc_property': 'DCTERMS.shortTitle'},
         'Project': {'attribute': '_Resource__subject', 'oslc_property': 'DCTERMS.subject'},
         'Title': {'attribute': '_Resource__title', 'oslc_property': 'DCTERMS.title'},
         'Description': {'attribute': '_Resource__description', 'oslc_property': 'DCTERMS.description'},
         'Source': {'attribute': '_Requirement__elaborated_by', 'oslc_property': 'OSLC_RM.elaboratedBy'},
-        'Author': {'attribute': '_Resource__creator', 'oslc_property': 'DCTERMS.creator'},  # 'creator',
+        'Author': {'attribute': '_Resource__creator', 'oslc_property': 'DCTERMS.creator'},
         'Category': {'attribute': '_Resource__creator', 'oslc_property': 'DCTERMS.creator'},
         'Discipline': {'attribute': '_Resource__creator', 'oslc_property': 'DCTERMS.creator'},
         'Revision': {'attribute': '_Resource__creator', 'oslc_property': 'DCTERMS.creator'},
@@ -65,7 +66,9 @@ class Requirement(Resource):
                     else:
                         setattr(self, attribute, v)
                 else:
-                    print('{}'.format(attribute))
+                    print('attribute {} is not in the instance'.format(attribute))
+            else:
+                print('attribute {} is not in the map'.format(attribute))
 
     @staticmethod
     def get_absolute_url(identifier):
@@ -80,24 +83,21 @@ class Requirement(Resource):
         graph.bind('oslc_rm', OSLC_RM)
 
         d = Describer(graph, base=ORG_URI)
-        d.about(self.get_absolute_url('1') + '#requirement')
+        d.about(self.get_absolute_url(getattr(self, '_Resource__identifier' )) + '#requirement')
         d.rdftype(OSLC_RM.Requirement)
 
         for attribute_key in self.__dict__.keys():
             item = {attribute_key: v.values() for k, v in self.specification_map.iteritems() if v['attribute'] == attribute_key}
 
             if item.values() and attribute_key in item.values()[0]:
-
                 predicate = eval(item.values()[0][1])
                 attr = getattr(self, attribute_key)
                 if isinstance(attr, set):
                     d.value(predicate, attr.pop())
                 else:
                     d.value(predicate, getattr(self, attribute_key))
-
-                print('{} {}'.format(attribute_key, predicate))
             else:
-                print('{}'.format(attribute_key))
+                print('attribute {} is not in the map'.format(attribute_key))
 
         return graph
 

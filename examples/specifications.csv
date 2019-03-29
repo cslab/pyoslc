@@ -1,2 +1,7 @@
-Product;Project;Title;Description;Source;Author;Category;Discipline;Revision;Target_Value;Degree_of_fulfillment;Status
-OSLC SDK;OSLC-Project;OSLC RM Spec;The OSLC RM Specification needs to be awesome;Ian Altman;Mario;Customer Requirement;Software Development;0;1;0;Draft
+Specification_id;Product;Project;Title;Description;Source;Author;Category;Discipline;Revision;Target_Value;Degree_of_fulfillment;Status
+X1C2V3B1;OSLC SDK 1;OSLC-Project 1;OSLC RM Spec 1;The OSLC RM Specification needs to be awesome 1;Ian Altman;Mario;Customer Requirement;Software Development;0;1;0;Draft
+X1C2V3B2;OSLC SDK 2;OSLC-Project 2;OSLC RM Spec 2;The OSLC RM Specification needs to be awesome 2;Ian Altman;Mario;Customer Requirement;Software Development;0;1;0;Draft
+X1C2V3B3;OSLC SDK 3;OSLC-Project 3;OSLC RM Spec 3;The OSLC RM Specification needs to be awesome 3;Ian Altman;Mario;Customer Requirement;Software Development;0;1;0;Draft
+X1C2V3B4;OSLC SDK 4;OSLC-Project 4;OSLC RM Spec 4;The OSLC RM Specification needs to be awesome 4;Ian Altman;Mario;Customer Requirement;Software Development;0;1;0;Draft
+X1C2V3B5;OSLC SDK 5;OSLC-Project 5;OSLC RM Spec 5;The OSLC RM Specification needs to be awesome 5;Ian Altman;Mario;Customer Requirement;Software Development;0;1;0;Draft
+

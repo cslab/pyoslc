@@ -16,54 +16,10 @@ from pyoslc.resources.requirement import Requirement as RQ
 rm_ns = Namespace(name='rm', description='Requirements Management', path='/rm')
 
 
-@rm_ns.route('/rootservices')
+@rm_ns.route('/requirement')
 @api.representation('application/rdf+xml')
 @api.representation('application/json-ld')
 @api.representation('text/turtle')
-@api.consume('application/rdf+xml')
-@api.consume('application/json-ld')
-@api.consume('text/turtle')
-class RootServices(Resource):
-
-    graph = Graph()
-    graph.bind('oslc_rm', OSLC_RM)
-
-    @rm_ns.doc(responses={200: 'The rootservices RDF response for the Requirements Management application.'})
-    def get(cls):
-        content_type = request.headers['accept']
-
-        cls.graph.bind('dcterms', DCTERMS, override=False)
-        cls.graph.bind('oslc', OSLCCore, override=False)
-        cls.graph.bind('oslc_rm', OSLC_RM, override=False)
-
-        spc = URIRef("http://examples.org/oslc/catalog")
-        cls.graph.add((spc, RDF.type, OSLCCore.ServiceProviderCatalog))
-        cls.graph.add((spc, DCTERMS.title, Literal("Service Provider Catalog")))
-        cls.graph.add((spc, DCTERMS.description, Literal("This is the master catalog")))
-
-        sp = URIRef("http://examples.org/oslc/catalog/serviceProvider")
-        cls.graph.add((sp, RDF.type, OSLCCore.ServiceProvider))
-        cls.graph.add((sp, DCTERMS.title, Literal("Service Provider for RDF Store")))
-        cls.graph.add((sp, DCTERMS.description, Literal("Service Provider for managint RDF Store")))
-        cls.graph.add((sp, OSLCCore.details, sp))
-
-        try:
-            if content_type == 'application/json-ld':
-                content_type = 'json-ld'
-
-            data = cls.graph.serialize(format=content_type)
-
-        except PluginException as e:
-            return 'Content-Type Incompatible', 500
-
-        response = make_response(data.decode('utf-8'), 200)
-        response.headers['Content-Type'] = content_type
-        response.headers['Oslc-Core-Version'] = "2.0"
-
-        return response
-
-
-@rm_ns.route('/requirement')
 class Requirement(Resource):
 
     def get(self):
@@ -74,22 +30,23 @@ class Requirement(Resource):
 
         try:
             content_type = request.headers['accept']
-            if content_type == 'application/json-ld':
+            if content_type in ('application/json-ld', 'application/json'):
                 content_type = 'json-ld'
 
-            path = os.path.join(current_app.instance_path, 'medias/') + 'custom_file_name.csv'
+            # Loading information from the specification.csv file
+            # located on the examples folder of the pyoslc project.
+
+            path = os.path.join(os.path.abspath(''), 'examples', 'specifications.csv')
 
             with open(path, 'rb') as f:
                 reader = csv.DictReader(f, delimiter=';')
 
-                requirements = []
-                for row in reader:
-                    requirements.append(row)
+                graph = Graph()
 
+                for row in reader:
                     rq = RQ()
                     rq.update(row)
-
-                    graph = rq.to_rdf()
+                    graph += rq.to_rdf()
 
             data = graph.serialize(format=content_type)
 
@@ -99,8 +56,11 @@ class Requirement(Resource):
 
             return response
 
+        except PluginException as pe:
+            current_app.logger.info(pe.message)
+            return 'Content-Type {} Incompatible'.format(content_type), 500
         except Exception as e:
-            print e.message
+            current_app.logger.info(e.message)
             abort(404)
 
     @api.expect(specification)
