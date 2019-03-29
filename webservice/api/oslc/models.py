@@ -35,6 +35,7 @@ requirement = api.inherit('Requirement', base_requirement, {
 })
 
 specification = api.model('Specification', {
+    'specification_id': fields.String,
     'product': fields.String,
     'project': fields.String,
     'title': fields.String,

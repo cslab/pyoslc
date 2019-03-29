@@ -4,6 +4,7 @@ from rdflib.namespace import DCTERMS
 
 from pyoslc.resource import Resource
 from pyoslc.vocabulary.rm import OSLC_RM
+from webservice.api.oslc.models import specification
 
 
 class Requirement(Resource):
@@ -16,12 +17,12 @@ class Requirement(Resource):
         'Description': {'attribute': '_Resource__description', 'oslc_property': 'DCTERMS.description'},
         'Source': {'attribute': '_Requirement__elaborated_by', 'oslc_property': 'OSLC_RM.elaboratedBy'},
         'Author': {'attribute': '_Resource__creator', 'oslc_property': 'DCTERMS.creator'},
-        'Category': {'attribute': '_Resource__creator', 'oslc_property': 'DCTERMS.creator'},
-        'Discipline': {'attribute': '_Resource__creator', 'oslc_property': 'DCTERMS.creator'},
-        'Revision': {'attribute': '_Resource__creator', 'oslc_property': 'DCTERMS.creator'},
-        'Target_Value': {'attribute': '_Resource__creator', 'oslc_property': 'DCTERMS.creator'},
-        'Degree_of_fulfillment': {'attribute': '_Resource__creator', 'oslc_property': 'DCTERMS.creator'},
-        'Status': {'attribute': '_Resource__creator', 'oslc_property': 'DCTERMS.creator'}
+        'Category': {'attribute': '_Requirement__constrained_by', 'oslc_property': 'OSLC_RM.constrainedBy'},
+        'Discipline': {'attribute': '_Requirement__satisfied_by', 'oslc_property': 'OSLC_RM.satisfiedBy'},
+        'Revision': {'attribute': '_Requirement__tracked_by', 'oslc_property': 'OSLC_RM.trackedBy'},
+        'Target_Value': {'attribute': '_Requirement__validated_by', 'oslc_property': 'OSLC_RM.validatedBy'},
+        'Degree_of_fulfillment': {'attribute': '_Requirement__affected_by', 'oslc_property': 'OSLC_RM.affectedBy'},
+        'Status': {'attribute': '_Requirement__decomposed_by', 'oslc_property': 'OSLC_RM.decomposedBy'}
     }
 
     def __init__(self, about=None, types=None, properties=None,
@@ -65,10 +66,6 @@ class Requirement(Resource):
                         attr.add(v if v is not '' else 'Empty')
                     else:
                         setattr(self, attribute, v)
-                else:
-                    print('attribute {} is not in the instance'.format(attribute))
-            else:
-                print('attribute {} is not in the map'.format(attribute))
 
     @staticmethod
     def get_absolute_url(identifier):
@@ -83,7 +80,7 @@ class Requirement(Resource):
         graph.bind('oslc_rm', OSLC_RM)
 
         d = Describer(graph, base=ORG_URI)
-        d.about(self.get_absolute_url(getattr(self, '_Resource__identifier' )) + '#requirement')
+        d.about(self.get_absolute_url(getattr(self, '_Resource__identifier')))
         d.rdftype(OSLC_RM.Requirement)
 
         for attribute_key in self.__dict__.keys():
@@ -98,6 +95,38 @@ class Requirement(Resource):
                     d.value(predicate, getattr(self, attribute_key))
             else:
                 print('attribute {} is not in the map'.format(attribute_key))
-
         return graph
 
+    def from_json(self, data):
+        for key in data.iterkeys():
+            item = {key: v.values() for k, v in self.specification_map.iteritems() if k.lower() == key}
+            # print('{}'.format(item))
+
+            if item:
+                attribute_name = item[key][0]
+                if hasattr(self, attribute_name):
+                    attribute_value = getattr(self, attribute_name)
+                    # print('{} {} {} : {}'.format(key, data[key], attribute_name, attribute_value))
+                    if isinstance(attribute_value, set):
+                        attribute_value.clear()
+                        attribute_value.add(data[key])
+                    else:
+                        setattr(self, attribute_name, data[key])
+                    # print('{} {} {} : {}'.format(key, data[key], attribute_name, attribute_value))
+
+    def to_mapped_object(self):
+        specification = dict()
+
+        for key in self.specification_map:
+            # print('{}'.format(key))
+
+            attribute_name = self.specification_map[key]['attribute']
+            if hasattr(self, attribute_name):
+                attribute_value = getattr(self, attribute_name)
+                if attribute_value:
+                    if isinstance(attribute_value, set):
+                        specification[key] = attribute_value.pop()
+                    else:
+                        specification[key] = attribute_value
+
+        return specification
