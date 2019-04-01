@@ -4,7 +4,6 @@ from rdflib.namespace import DCTERMS
 
 from pyoslc.resource import Resource
 from pyoslc.vocabulary.rm import OSLC_RM
-from webservice.api.oslc.models import specification
 
 
 class Requirement(Resource):
@@ -99,8 +98,8 @@ class Requirement(Resource):
 
     def from_json(self, data):
         for key in data.iterkeys():
-            item = {key: v.values() for k, v in self.specification_map.iteritems() if k.lower() == key}
-            # print('{}'.format(item))
+            item = {key: v.values() for k, v in self.specification_map.iteritems() if k.lower() == key.lower()}
+            # print('{} {}'.format(key, item))
 
             if item:
                 attribute_name = item[key][0]

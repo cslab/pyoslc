@@ -1,5 +1,7 @@
 import csv
 import os
+import shutil
+from tempfile import NamedTemporaryFile
 
 from flask import make_response, request, current_app
 from flask_restplus import Namespace, Resource, abort
@@ -7,8 +9,9 @@ from rdflib import Graph
 from rdflib.plugin import PluginException
 
 from webservice.api.oslc import api, parsers
-from webservice.api.oslc.models import requirement, specification
+from webservice.api.oslc.models import specification
 from pyoslc.resources.requirement import Requirement as RQ
+from webservice.api.oslc.parsers import specification_parser
 
 rm_ns = Namespace(name='rm', description='Requirements Management', path='/rm')
 
@@ -69,6 +72,7 @@ class RequirementList(Resource):
                 'message': 'Content-Type Incompatible: {}'.format(pe.message)
             }
             return response_object, 400
+
         except Exception as e:
             response_object = {
                 'status': 'fail',
@@ -106,7 +110,7 @@ class RequirementList(Resource):
         ```
         """
 
-        data = request.json
+        data = specification_parser.parse_args()
         rq = RQ()
         rq.from_json(data)
         data = rq.to_mapped_object()
@@ -119,24 +123,16 @@ class RequirementList(Resource):
                 field_names = reader.fieldnames
 
             with open(path, 'a') as f:
-                # reader = csv.DictReader(f, delimiter=';')
-                print(data.keys())
                 writer = csv.DictWriter(f, fieldnames=field_names, delimiter=';')
                 writer.writerow(data)
-
+        else:
+            response_object = {
+                'status': 'fail',
+                'message': 'Not Found'
+            }
+            return response_object, 400
 
         return make_response('{}', 201)
-
-    @staticmethod
-    def get_map(field_names):
-
-        data = dict()
-
-        for field in field_names:
-            print(field)
-            print(dict)
-
-        return data
 
 
 @rm_ns.route('/requirement/<string:id>')
@@ -191,12 +187,78 @@ class RequirementItem(Resource):
                 'message': 'Content-Type Incompatible: {}'.format(pe.message)
             }
             return response_object, 400
+
         except Exception as e:
             response_object = {
                 'status': 'fail',
                 'message': 'An exception has ocurred: {}'.format(e.message)
             }
             return response_object, 500
+
+    @rm_ns.expect(specification)
+    def put(self, id):
+        """
+        Update the status or information about a Requirement.
+        For using this method to update the information for the Requirement
+        it will require the ID of the Specification and the new data.
+
+        :param id: The specification ID
+        :return:
+        """
+
+        data = specification_parser.parse_args()
+
+        if data:
+            path = os.path.join(os.path.abspath(''), 'examples', 'specifications.csv')
+
+            tempfile = NamedTemporaryFile(mode='w', delete=False)
+
+            with open(path, 'rb') as f:
+                reader = csv.DictReader(f, delimiter=';')
+                field_names = reader.fieldnames
+
+            with open(path, 'r') as csvfile, tempfile:
+                reader = csv.DictReader(csvfile, fieldnames=field_names, delimiter=';')
+                writer = csv.DictWriter(tempfile, fieldnames=field_names, delimiter=';')
+                for row in reader:
+                    if row['Specification_id'] == str(id):
+                        print('updating row', row['Specification_id'])
+                        rq = RQ()
+                        rq.from_json(data)
+                        row = rq.to_mapped_object()
+                        row['Specification_id'] = id
+                    writer.writerow(row)
+
+            shutil.move(tempfile.name, path)
+
+        return make_response('{}', 200)
+
+    def delete(self, id):
+        """
+        Deleting a Requirement
+        This method will remove a requirement from the store
+        """
+
+        if id:
+            path = os.path.join(os.path.abspath(''), 'examples', 'specifications.csv')
+
+            tempfile = NamedTemporaryFile(mode='w', delete=False)
+
+            with open(path, 'rb') as f:
+                reader = csv.DictReader(f, delimiter=';')
+                field_names = reader.fieldnames
+
+            with open(path, 'r') as csvfile, tempfile:
+                reader = csv.DictReader(csvfile, fieldnames=field_names, delimiter=';')
+                writer = csv.DictWriter(tempfile, fieldnames=field_names, delimiter=';')
+                for row in reader:
+                    if row['Specification_id'] != str(id):
+                        writer.writerow(row)
+
+            shutil.move(tempfile.name, path)
+            return make_response('{}', 200)
+        else:
+            return make_response('{Id is required}', 400)
 
 
 @rm_ns.route('/collection')
