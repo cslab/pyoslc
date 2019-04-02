@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block button_home %}
+  <a class="btn btn-primary btn-lg" href="{{ url_for('index') }}" role="button">Home</a>
+{% endblock %}
+
+{% block header %}
+  <h1>{% block title %}Listing the Requirements.{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+
+    <ul style="list-style: none">
+        {% for r in requirements %}
+        <li>
+            <a href="{{ r }}">{{ r }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+
+{% endblock %}
+

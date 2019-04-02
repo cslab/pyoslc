@@ -3,11 +3,12 @@ import os
 import shutil
 from tempfile import NamedTemporaryFile
 
-from flask import make_response, request, current_app
+from flask import make_response, request, current_app, render_template
 from flask_restplus import Namespace, Resource, abort
-from rdflib import Graph
+from rdflib import Graph, RDF
 from rdflib.plugin import PluginException
 
+from pyoslc.vocabulary.rm import OSLC_RM
 from webservice.api.oslc import api, parsers
 from webservice.api.oslc.models import specification
 from pyoslc.resources.requirement import Requirement as RQ
@@ -53,16 +54,27 @@ class RequirementList(Resource):
                 for row in reader:
                     rq = RQ()               # instantiating the Requirement object
                     rq.update(row)          # Parsing the specification to requirement
-                    graph += rq.to_rdf()    # Accumulating the triples on the graph
+                    graph += rq.to_rdf(request.base_url)    # Accumulating the triples on the graph
 
-            # Serializing (converting) each triples of the graph
-            # on the selected type for the response
-            data = graph.serialize(format=content_type)
+            if 'text/html' in content_type:
+                # Validating whether the request comes from
+                # a web browser or a human readeble client
+                # if so, then return the list to the template
+                requirements = list()
+                for r in graph.subjects(RDF.type, OSLC_RM.Requirement):
+                    requirements.append(r)
 
-            # Sending the response to the client
-            response = make_response(data.decode('utf-8'), 200)
-            response.headers['Content-Type'] = content_type
-            response.headers['Oslc-Core-Version'] = "2.0"
+                response = make_response(render_template('web/requirement_list.html',
+                                                         requirements=requirements), 200)
+            else:
+                # Serializing (converting) each triples of the graph
+                # on the selected type for the response
+                data = graph.serialize(format=content_type)
+
+                # Sending the response to the client
+                response = make_response(data.decode('utf-8'), 200)
+                response.headers['Content-Type'] = content_type
+                response.headers['Oslc-Core-Version'] = "2.0"
 
             return response
 
@@ -110,7 +122,12 @@ class RequirementList(Resource):
         ```
         """
 
-        data = specification_parser.parse_args()
+        content_type = request.headers['content-type']
+        if content_type != 'application/rdf+xml':
+            data = specification_parser.parse_args()
+        else:
+            print('transform from rdf')
+
         rq = RQ()
         rq.from_json(data)
         data = rq.to_mapped_object()
@@ -168,16 +185,29 @@ class RequirementItem(Resource):
                     if row['Specification_id'] == id:
                         rq = RQ()               # instantiating the Requirement object
                         rq.update(row)          # Parsing the specification to requirement
-                        graph += rq.to_rdf()    # Accumulating the triples on the graph
+                        graph += rq.to_rdf(request.referrer)    # Accumulating the triples on the graph
 
-            # Serializing (converting) each triples of the graph
-            # on the selected type for the response
-            data = graph.serialize(format=content_type)
+            if 'text/html' in content_type:
+                # Validating whether the request comes from
+                # a web browser or a human readeble client
+                # if so, then return the list to the template
+                # statements = dict()
+                # subject = graph.subjects(RDF.type, OSLC_RM.Requirement)
+                # for r in graph.predicate_objects(subject=subject.next()):
+                #     print(r.n3())
+                #     statements[r[0]] = r[1]
 
-            # Sending the response to the client
-            response = make_response(data.decode('utf-8'), 200)
-            response.headers['Content-Type'] = content_type
-            response.headers['Oslc-Core-Version'] = "2.0"
+                response = make_response(render_template('web/requirement.html', id=id,
+                                                         statements=graph), 200)
+            else:
+                # Serializing (converting) each triples of the graph
+                # on the selected type for the response
+                data = graph.serialize(format=content_type)
+
+                # Sending the response to the client
+                response = make_response(data.decode('utf-8'), 200)
+                response.headers['Content-Type'] = content_type
+                response.headers['Oslc-Core-Version'] = "2.0"
 
             return response
 

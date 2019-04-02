@@ -67,19 +67,19 @@ class Requirement(Resource):
                         setattr(self, attribute, v)
 
     @staticmethod
-    def get_absolute_url(identifier):
-        return "/requirement/" + identifier
+    def get_absolute_url(base_url, identifier):
+        return base_url + "/" + identifier
 
-    def to_rdf(self):
+    def to_rdf(self, base_url):
 
-        ORG_URI = "http://example.org/"
+        # ORG_URI = "http://example.org/"
 
         graph = Graph()
         graph.bind('dcterms', DCTERMS)
         graph.bind('oslc_rm', OSLC_RM)
 
-        d = Describer(graph, base=ORG_URI)
-        d.about(self.get_absolute_url(getattr(self, '_Resource__identifier')))
+        d = Describer(graph, base=base_url)
+        d.about(self.get_absolute_url(base_url, getattr(self, '_Resource__identifier')))
         d.rdftype(OSLC_RM.Requirement)
 
         for attribute_key in self.__dict__.keys():
@@ -92,8 +92,8 @@ class Requirement(Resource):
                     d.value(predicate, attr.pop())
                 else:
                     d.value(predicate, getattr(self, attribute_key))
-            else:
-                print('attribute {} is not in the map'.format(attribute_key))
+            # else:
+            #     print('attribute {} is not in the map'.format(attribute_key))
         return graph
 
     def from_json(self, data):

@@ -9,4 +9,4 @@ def test_config():
 
 def test_index(client):
     response = client.get('/')
-    assert b'Python OSLC Adapter' in response.data
+    assert b'An OSLC adapter implemented on Python.' in response.data

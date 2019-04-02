@@ -1,12 +1,12 @@
 
 
-def test_catalog(client, oslc):
+def test_requirement(client, oslc):
     # Testing Web
     headers = {
         'Content-Type': 'application/json-ld',
         'Accept': 'application/json-ld'
     }
-    assert client.get('api/1/catalog', headers=headers).status_code == 200
+    assert client.get('oslc/rm/requirement', headers=headers).status_code == 200
 
     response = client.get('/')
     assert b"PyOSLC" in response.data

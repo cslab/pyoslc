@@ -28,7 +28,7 @@ class OSLCActions:
     def __init__(self, client):
         self._client = client
 
-    def catalog(self):
+    def list(self):
         headers = {
             'Content-Type': 'application/json-ld',
             'Accept': 'application/json-ld'
