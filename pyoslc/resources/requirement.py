@@ -72,14 +72,15 @@ class Requirement(Resource):
 
     def to_rdf(self, base_url):
 
-        # ORG_URI = "http://example.org/"
-
         graph = Graph()
         graph.bind('dcterms', DCTERMS)
         graph.bind('oslc_rm', OSLC_RM)
 
         d = Describer(graph, base=base_url)
-        d.about(self.get_absolute_url(base_url, getattr(self, '_Resource__identifier')))
+        if getattr(self, '_Resource__identifier') not in base_url.split('/'):
+            base_url = self.get_absolute_url(base_url, getattr(self, '_Resource__identifier'))
+
+        d.about(base_url)
         d.rdftype(OSLC_RM.Requirement)
 
         for attribute_key in self.__dict__.keys():

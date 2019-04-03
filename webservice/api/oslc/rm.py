@@ -126,7 +126,7 @@ class RequirementList(Resource):
         if content_type != 'application/rdf+xml':
             data = specification_parser.parse_args()
         else:
-            print('transform from rdf')
+            print('TODO - transform from rdf')
 
         rq = RQ()
         rq.from_json(data)
@@ -135,13 +135,33 @@ class RequirementList(Resource):
         if data:
             path = os.path.join(os.path.abspath(''), 'examples', 'specifications.csv')
 
+            tempfile = NamedTemporaryFile(mode='w', delete=False)
+
             with open(path, 'rb') as f:
                 reader = csv.DictReader(f, delimiter=';')
                 field_names = reader.fieldnames
 
-            with open(path, 'a') as f:
-                writer = csv.DictWriter(f, fieldnames=field_names, delimiter=';')
-                writer.writerow(data)
+            with open(path, 'r') as csvfile, tempfile:
+                reader = csv.DictReader(csvfile, fieldnames=field_names, delimiter=';')
+                writer = csv.DictWriter(tempfile, fieldnames=field_names, delimiter=';')
+                exist = False
+                for row in reader:
+                    if row['Specification_id'] == data['Specification_id']:
+                        exist = True
+                    writer.writerow(row)
+
+                if not exist:
+                    writer.writerow(data)
+
+            shutil.move(tempfile.name, path)
+
+            if exist:
+                response_object = {
+                    'status': 'fail',
+                    'message': 'Not Modified'
+                }
+                return response_object, 304
+
         else:
             response_object = {
                 'status': 'fail',
@@ -154,13 +174,18 @@ class RequirementList(Resource):
 
 @rm_ns.route('/requirement/<string:id>')
 class RequirementItem(Resource):
+    """
+    Class for implementing the methods to manage
+    the specification/requirement items, for retrieving,
+    updating or deleting items specified by the parameter
+    """
 
     def get(self, id):
         """
         Retrieve a specific requirement using an ID value
 
-        :param id:
-        :return:
+        Use this method to get the information which describes
+        the requirement/specification
         """
 
         try:
@@ -185,20 +210,12 @@ class RequirementItem(Resource):
                     if row['Specification_id'] == id:
                         rq = RQ()               # instantiating the Requirement object
                         rq.update(row)          # Parsing the specification to requirement
-                        graph += rq.to_rdf(request.referrer)    # Accumulating the triples on the graph
+                        graph += rq.to_rdf(request.base_url)    # Accumulating the triples on the graph
 
             if 'text/html' in content_type:
-                # Validating whether the request comes from
-                # a web browser or a human readeble client
-                # if so, then return the list to the template
-                # statements = dict()
-                # subject = graph.subjects(RDF.type, OSLC_RM.Requirement)
-                # for r in graph.predicate_objects(subject=subject.next()):
-                #     print(r.n3())
-                #     statements[r[0]] = r[1]
-
-                response = make_response(render_template('web/requirement.html', id=id,
-                                                         statements=graph), 200)
+                # Passing the graph as a parameter to the template
+                # for going through the data and showing the information
+                response = make_response(render_template('web/requirement.html', id=id, statements=graph), 200)
             else:
                 # Serializing (converting) each triples of the graph
                 # on the selected type for the response
@@ -231,9 +248,6 @@ class RequirementItem(Resource):
         Update the status or information about a Requirement.
         For using this method to update the information for the Requirement
         it will require the ID of the Specification and the new data.
-
-        :param id: The specification ID
-        :return:
         """
 
         data = specification_parser.parse_args()
@@ -293,14 +307,16 @@ class RequirementItem(Resource):
 
 @rm_ns.route('/collection')
 class Upload(Resource):
+    """
+    Class for implementing the method for uploading
+    data to the store
+    """
 
     @api.expect(parsers.csv_file_upload)
     def post(self):
         """
-        Load a set of specification
-
-        :param id:
-        :return:
+        Load a set of specification from a CSV file
+        Use this method for uploading a collection of specifications
         """
         args = parsers.csv_file_upload.parse_args()
         if args['csv_file'].mimetype in ('application/xls', 'text/csv'):
@@ -311,10 +327,8 @@ class Upload(Resource):
             args['csv_file'].save(csv_file)
 
             # TODO take each line of CSV to process for RDF format
-
-
         else:
-            abort(404)
+            return make_response('{Bad request}', 404)
 
         return {'status': 'Done'}
 

@@ -24,18 +24,44 @@ def runner(app):
 
 
 class OSLCActions:
+    """
+    Action class for implementing the request of the list of requirements
+    and the request for a specific requirement item
+    """
 
     def __init__(self, client):
         self._client = client
 
     def list(self):
+        """
+        Method for listing the requirements/specifications
+        taken from the synthetic data
+        """
+
         headers = {
             'Content-Type': 'application/json-ld',
             'Accept': 'application/json-ld'
         }
 
         return self._client.get(
-            'api/1/catalog',
+            'oslc/rm/requirement',
+            headers=headers
+        )
+
+    def item(self, requirement_id):
+        """
+        Method for retrieving the information
+        for a specific requirement/specification
+        based on the id sent as parameter
+        """
+
+        headers = {
+            'Content-Type': 'application/json-ld',
+            'Accept': 'application/json-ld'
+        }
+
+        return self._client.get(
+            'oslc/rm/requirement/' + requirement_id,
             headers=headers
         )
 
