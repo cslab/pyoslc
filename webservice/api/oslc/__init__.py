@@ -39,5 +39,6 @@ def handle_root_exception(error):
     return {'message': 'What you want'}, 400
 
 
+from webservice.api.oslc.adapter import adapter_ns
 from webservice.api.oslc.rm import rm_ns
 # from webservice.api.oslc.cm import cm_ns

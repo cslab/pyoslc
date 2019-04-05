@@ -3,34 +3,34 @@ import os
 import shutil
 from tempfile import NamedTemporaryFile
 
-from flask import make_response, request, current_app, render_template
-from flask_restplus import Namespace, Resource, abort
+from flask import make_response, request, render_template, current_app
+from flask_restplus import Resource
 from rdflib import Graph, RDF
 from rdflib.plugin import PluginException
 
+from pyoslc.resources.requirement import Requirement
 from pyoslc.vocabulary.rm import OSLC_RM
-from webservice.api.oslc import api, parsers
-from webservice.api.oslc.models import specification
-from pyoslc.resources.requirement import Requirement as RQ
-from webservice.api.oslc.parsers import specification_parser
-
-rm_ns = Namespace(name='rm', description='Requirements Management', path='/rm')
+from webservice.api.oslc import api
+from webservice.api.oslc.rm import parsers
+from webservice.api.oslc.rm.models import specification
+from webservice.api.oslc.rm.parsers import specification_parser
 
 
-@rm_ns.route('/requirement')
 @api.representation('application/rdf+xml')
 @api.representation('application/json-ld')
 @api.representation('text/turtle')
 class RequirementList(Resource):
+    """
+    Class for implementing the methods to manage
+    the specification/requirement items, for retrieving,
+    the list of items or inserting an item.
+    """
 
-    @rm_ns.response(200, 'The RDF formatted response of the requirements, taken from the specification')
+    @api.response(200, 'The RDF formatted response of the requirements, taken from the specification')
     def get(self):
         """
         Returns the list of Requirements converted from the Specification
-
         Listing the Specification statements on the RDF format using the RM domain
-
-        :return: A RDF formatted of the Requirements.
         """
 
         try:
@@ -52,9 +52,9 @@ class RequirementList(Resource):
             with open(path, 'rb') as f:
                 reader = csv.DictReader(f, delimiter=';')
                 for row in reader:
-                    rq = RQ()               # instantiating the Requirement object
-                    rq.update(row)          # Parsing the specification to requirement
-                    graph += rq.to_rdf(request.base_url)    # Accumulating the triples on the graph
+                    req = Requirement()               # instantiating the Requirement object
+                    req.update(row)          # Parsing the specification to requirement
+                    graph += req.to_rdf(request.base_url)    # Accumulating the triples on the graph
 
             if 'text/html' in content_type:
                 # Validating whether the request comes from
@@ -92,8 +92,8 @@ class RequirementList(Resource):
             }
             return response_object, 500
 
-    @rm_ns.expect(specification)
-    @rm_ns.response(201, 'Specification successfully created.')
+    @api.expect(specification)
+    @api.response(201, 'Specification successfully created.')
     def post(self):
         """
         Insert a Specification to the store converted also in a Requirement
@@ -121,16 +121,15 @@ class RequirementList(Resource):
         }
         ```
         """
-
         content_type = request.headers['content-type']
         if content_type != 'application/rdf+xml':
             data = specification_parser.parse_args()
         else:
             print('TODO - transform from rdf')
 
-        rq = RQ()
-        rq.from_json(data)
-        data = rq.to_mapped_object()
+        req = Requirement()
+        req.from_json(data)
+        data = req.to_mapped_object()
 
         if data:
             path = os.path.join(os.path.abspath(''), 'examples', 'specifications.csv')
@@ -172,7 +171,6 @@ class RequirementList(Resource):
         return make_response('{}', 201)
 
 
-@rm_ns.route('/requirement/<string:id>')
 class RequirementItem(Resource):
     """
     Class for implementing the methods to manage
@@ -208,7 +206,7 @@ class RequirementItem(Resource):
                 reader = csv.DictReader(f, delimiter=';')
                 for row in reader:
                     if row['Specification_id'] == id:
-                        rq = RQ()               # instantiating the Requirement object
+                        rq = Requirement()               # instantiating the Requirement object
                         rq.update(row)          # Parsing the specification to requirement
                         graph += rq.to_rdf(request.base_url)    # Accumulating the triples on the graph
 
@@ -242,14 +240,13 @@ class RequirementItem(Resource):
             }
             return response_object, 500
 
-    @rm_ns.expect(specification)
-    def put(self, id):
+    @api.expect(specification)
+    def put(self):
         """
         Update the status or information about a Requirement.
         For using this method to update the information for the Requirement
         it will require the ID of the Specification and the new data.
         """
-
         data = specification_parser.parse_args()
 
         if data:
@@ -277,12 +274,11 @@ class RequirementItem(Resource):
 
         return make_response('{}', 200)
 
-    def delete(self, id):
+    def delete(self):
         """
         Deleting a Requirement
         This method will remove a requirement from the store
         """
-
         if id:
             path = os.path.join(os.path.abspath(''), 'examples', 'specifications.csv')
 
@@ -305,8 +301,7 @@ class RequirementItem(Resource):
             return make_response('{Id is required}', 400)
 
 
-@rm_ns.route('/collection')
-class Upload(Resource):
+class UploadCollection(Resource):
     """
     Class for implementing the method for uploading
     data to the store
@@ -330,8 +325,4 @@ class Upload(Resource):
         else:
             return make_response('{Bad request}', 404)
 
-        return {'status': 'Done'}
-
-
-api.add_namespace(rm_ns)
-
+        return make_response('{\'status\': \'Done\'}', 200)
