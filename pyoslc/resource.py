@@ -91,7 +91,7 @@ class ServiceProviderCatalog(Resource):
         self.__graph = graph
         self.__title = title
         self.__description = description
-        self.__publiser = publisher
+        self.__publisher = publisher
         self.__domain = domain if domain is not None else OrderedDict()
         self.__service_provider = service_provider if service_provider is not None else list()
         self.__service_provider_catalog = service_provider_catalog if service_provider_catalog is not None else OrderedDict()
@@ -106,8 +106,8 @@ class ServiceProviderCatalog(Resource):
         if self.__description is not None:
             self.__graph.add((self.__spc, DCTERMS.description, Literal(self.__description)))
 
-        if self.__publiser is not None:
-            for publisher in self.__publiser:
+        if self.__publisher is not None:
+            for publisher in self.__publisher:
                 self.__graph.add((self.__spc, DCTERMS.publisher, publisher))
 
         if self.__domain is not None and self.__domain.__len__() > 0:
