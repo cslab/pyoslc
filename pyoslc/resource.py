@@ -367,8 +367,8 @@ class ServiceProviderCatalog(Resource):
         if self.__description is not None:
             self.__graph.add((self.__spc, DCTERMS.description, Literal(self.__description)))
 
-        if self.__publiser is not None:
-            for publisher in self.__publiser:
+        if self.__publisher is not None:
+            for publisher in self.__publisher:
                 self.__graph.add((self.__spc, DCTERMS.publisher, publisher))
 
         if self.__domain is not None and self.__domain.__len__() > 0:
@@ -387,7 +387,7 @@ class ServiceProviderCatalog(Resource):
             for oauth_configuration in self.__oauth_configuration:
                 self.__graph.add((self.__spc, OSLCCore.oauthConfiguration, oauth_configuration))
 
-    def to_rdf(self, format='application/rdf+xml'):
+    def to_rdf(self, resource=None, format='application/rdf+xml'):
 
         if not self.about:
             raise Exception("The title is missing")
@@ -421,6 +421,16 @@ class ServiceProviderCatalog(Resource):
                 self.graph.add((sp, DCTERMS.title, Literal(item.title)))
                 self.graph.add((sp, DCTERMS.description, Literal(item.description)))
 
+                for s in item.service:
+                    s = URIRef(s.about)
+                    self.graph.add((sp, OSLCCore.Service, s))
+                    self.graph.add((sp, RDF.type, URIRef(OSLCCore.service)))
+                    self.graph.add((s, DCTERMS.title, Literal(item.title)))
+                    self.graph.add((s, DCTERMS.description, Literal(item.description)))
+
+                    # add creation factory
+                    # add query capabilities
+
         if self.service_provider_catalog:
             for item in self.service_provider_catalog:
                 self.graph.add((root, OSLCCore.serviceProviderCatalog, URIRef(item.about)))
@@ -453,21 +463,41 @@ class ServiceProvider(Resource):
         self.__created = date.today()
         self.__identifier = identifier if identifier is not None else None
 
+    @property
+    def service(self):
+        return self.__service
+
+    @service.setter
+    def service(self, service):
+        self.__service = service
+
+    def add_service(self, service):
+        self.__service.append(service)
+
 
 class Service(Resource):
 
-    def __init__(self, uri_domain, creation_factory, query_capability, selection_dialog, creation_dialog, usage):
+    def __init__(self, about, types=None, properties=None,
+                 description=None, identifier=None, short_title=None,
+                 title=None, contributor=None, creator=None, subject=None, created=None, modified=None, type=None,
+                 discussed_by=None, instance_shape=None, service_provider=None, relation=None,
+                 uri_domain=None, creation_factory=None, query_capability=None,
+                 selection_dialog=None, creation_dialog=None, usage=None):
         """
         Initialize Service
         """
 
-        Resource.__init__(self)
-        self.uri_domain = uri_domain
-        self.creation_factory = creation_factory if creation_factory is not None else list()
-        self.query_capability = query_capability if query_capability is not None else list()
-        self.selection_dialog = selection_dialog if selection_dialog is not None else list()
-        self.creation_dialog = creation_dialog if creation_dialog is not None else list()
-        self.usage = usage if usage is not None else list()
+        Resource.__init__(self, about=about, types=types, properties=properties, description=description,
+                          identifier=identifier, short_title=short_title, title=title, contributor=contributor,
+                          creator=creator, subject=subject, created=created, modified=modified, type=type,
+                          discussed_by=discussed_by, instance_shape=instance_shape, service_provider=service_provider,
+                          relation=relation)
+        self.__uri_domain = uri_domain if creation_factory is not None else None
+        self.__creation_factory = creation_factory if creation_factory is not None else list()
+        self.__query_capability = query_capability if query_capability is not None else list()
+        self.__selection_dialog = selection_dialog if selection_dialog is not None else list()
+        self.__creation_dialog = creation_dialog if creation_dialog is not None else list()
+        self.__usage = usage if usage is not None else list()
 
 
 # class OAuthConfiguration(Resource):

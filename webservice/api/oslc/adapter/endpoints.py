@@ -2,9 +2,9 @@ from collections import OrderedDict
 
 from flask import make_response, request
 from flask_restplus import Resource
-from rdflib import URIRef
+from rdflib import Graph
 
-from pyoslc.resource import ServiceProviderCatalog, Publisher, ServiceProvider
+from pyoslc.resource import ServiceProviderCatalog, Publisher, ServiceProvider, Service
 
 
 class Catalog(Resource):
@@ -13,6 +13,7 @@ class Catalog(Resource):
         super(Catalog, self).__init__(*args, **kwargs)
         self.base_url = request.base_url
         self.spc = ServiceProviderCatalog(self.base_url + "catalog")
+        self.__graph = Graph()
 
     def get(self):
         is_human_client = request.headers['accept'].__contains__('*/*')
@@ -30,13 +31,22 @@ class Catalog(Resource):
 
         self.spc.domain = domains
 
-        spc_ref_1 = ServiceProviderCatalog(self.base_url + "1")
-        spc_ref_2 = ServiceProviderCatalog(self.base_url + "2")
+        spc_ref_1 = ServiceProviderCatalog(self.base_url + "catalog/1")
+        spc_ref_2 = ServiceProviderCatalog(self.base_url + "catalog/2")
 
         self.spc.add_service_provider_catalog(spc_ref_1)
         self.spc.add_service_provider_catalog(spc_ref_2)
 
-        sp = ServiceProvider(self.base_url + "provider")
+        sp = ServiceProvider(self.base_url + "service/provider/1")
+        sp.title = 'Service Provider'
+        sp.description = 'Service Provider Description for the example'
+
+        s = Service(self.base_url + "service/1")
+        s.title = 'Service 1'
+        s.description = 'Description service 1'
+
+        sp.add_service(s)
+
         self.spc.add_service_provider(sp)
 
         data = self.spc.to_rdf()
@@ -47,3 +57,9 @@ class Catalog(Resource):
         response.headers['Oslc-Core-Version'] = "2.0"
 
         return response
+
+
+class CreationFactory(Resource):
+
+    def post(self):
+        pass
