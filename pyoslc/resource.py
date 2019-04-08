@@ -387,7 +387,7 @@ class ServiceProviderCatalog(Resource):
             for oauth_configuration in self.__oauth_configuration:
                 self.__graph.add((self.__spc, OSLCCore.oauthConfiguration, oauth_configuration))
 
-    def to_rdf(self, resource=None, format='application/rdf+xml'):
+    def to_rdf(self, format='application/rdf+xml'):
 
         if not self.about:
             raise Exception("The title is missing")
