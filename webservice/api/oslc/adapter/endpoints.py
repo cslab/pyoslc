@@ -1,59 +1,75 @@
-from collections import OrderedDict
-
-from flask import make_response, request
+from flask import make_response
 from flask_restplus import Resource
 from rdflib import Graph
 
-from pyoslc.resource import ServiceProviderCatalog, Publisher, ServiceProvider, Service
+from webservice.api.oslc.adapter.definitions import service_provider_catalog, service_provider, service, \
+    query_capability, creation_factory
 
 
-class Catalog(Resource):
-
-    def __init__(self, *args, **kwargs):
-        super(Catalog, self).__init__(*args, **kwargs)
-        self.base_url = request.base_url
-        self.spc = ServiceProviderCatalog(self.base_url + "catalog")
-        self.__graph = Graph()
+class ServiceProviderCatalog(Resource):
 
     def get(self):
-        is_human_client = request.headers['accept'].__contains__('*/*')
 
-        self.spc.title = "This the service provider title"
-        self.spc.description = "This is the description for the service provider"
+        content_type = 'text/turtle'
+        graph = Graph()
 
-        publisher = Publisher(self.base_url + "publisher")
-        self.spc.publisher = publisher
-
-        domains = OrderedDict()
-        domains.update({'jazz': 'http://jazz.net/xmlns/prod/jazz/process/1.0/'})
-        domains.update({'iot': 'http://jazz.net/ns/iot#'})
-        domains.update({'bmx': 'http://jazz.net/ns/bmx#'})
-
-        self.spc.domain = domains
-
-        spc_ref_1 = ServiceProviderCatalog(self.base_url + "catalog/1")
-        spc_ref_2 = ServiceProviderCatalog(self.base_url + "catalog/2")
-
-        self.spc.add_service_provider_catalog(spc_ref_1)
-        self.spc.add_service_provider_catalog(spc_ref_2)
-
-        sp = ServiceProvider(self.base_url + "service/provider/1")
-        sp.title = 'Service Provider'
-        sp.description = 'Service Provider Description for the example'
-
-        s = Service(self.base_url + "service/1")
-        s.title = 'Service 1'
-        s.description = 'Description service 1'
-
-        sp.add_service(s)
-
-        self.spc.add_service_provider(sp)
-
-        data = self.spc.to_rdf()
+        service_provider_catalog.to_rdf(graph)
+        data = graph.serialize(format=content_type)
 
         # Sending the response to the client
         response = make_response(data.decode('utf-8'), 200)
-        response.headers['Content-Type'] = 'application/rdf+xml'
+        response.headers['Content-Type'] = content_type
+        response.headers['Oslc-Core-Version'] = "2.0"
+
+        return response
+
+
+class ServiceProvider(Resource):
+
+    def get(self, service_provider_id):
+        content_type = 'text/turtle'
+        graph = Graph()
+
+        service_provider.to_rdf(graph)
+        data = graph.serialize(format=content_type)
+
+        # Sending the response to the client
+        response = make_response(data.decode('utf-8'), 200)
+        response.headers['Content-Type'] = content_type
+        response.headers['Oslc-Core-Version'] = "2.0"
+
+        return response
+
+
+class Service(Resource):
+
+    def get(self, service_id):
+        content_type = 'text/turtle'
+        graph = Graph()
+
+        service.to_rdf(graph)
+        data = graph.serialize(format=content_type)
+
+        # Sending the response to the client
+        response = make_response(data.decode('utf-8'), 200)
+        response.headers['Content-Type'] = content_type
+        response.headers['Oslc-Core-Version'] = "2.0"
+
+        return response
+
+
+class QueryCapability(Resource):
+
+    def get(self, query_capability_id):
+        content_type = 'text/turtle'
+        graph = Graph()
+
+        query_capability.to_rdf(graph)
+        data = graph.serialize(format=content_type)
+
+        # Sending the response to the client
+        response = make_response(data.decode('utf-8'), 200)
+        response.headers['Content-Type'] = content_type
         response.headers['Oslc-Core-Version'] = "2.0"
 
         return response
@@ -61,5 +77,19 @@ class Catalog(Resource):
 
 class CreationFactory(Resource):
 
+    def get(self, creation_factory_id):
+        content_type = 'text/turtle'
+        graph = Graph()
+
+        creation_factory.to_rdf(graph)
+        data = graph.serialize(format=content_type)
+
+        # Sending the response to the client
+        response = make_response(data.decode('utf-8'), 200)
+        response.headers['Content-Type'] = content_type
+        response.headers['Oslc-Core-Version'] = "2.0"
+
+        return response
+
     def post(self):
-        pass
+        return make_response('{}', 200)
