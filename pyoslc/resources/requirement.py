@@ -2,11 +2,11 @@ from rdflib import Graph
 from rdflib.extras.describer import Describer
 from rdflib.namespace import DCTERMS
 
-from pyoslc.resource import Resource
+from pyoslc.resource import Resource_
 from pyoslc.vocabulary.rm import OSLC_RM
 
 
-class Requirement(Resource):
+class Requirement(Resource_):
 
     specification_map = {
         'Specification_id': {'attribute': '_Resource__identifier', 'oslc_property': 'DCTERMS.identifier'},
@@ -34,11 +34,11 @@ class Requirement(Resource):
                  satisfied_by=None, satisfies=None, decomposed_by=None, decomposes=None,
                  constrained_by=None, constrains=None):
 
-        Resource.__init__(self, about, types, properties,
-                          description, identifier, short_title,
-                          title, contributor, creator, subject,
-                          created, modified, type, discussed_by,
-                          instance_shape, service_provider, relation)
+        Resource_.__init__(self, about=about, types=types, properties=properties, description=description,
+                          identifier=identifier, short_title=short_title, title=title, contributor=contributor,
+                          creator=creator, subject=subject, created=created, modified=modified, type=type,
+                          discussed_by=discussed_by, instance_shape=instance_shape, service_provider=service_provider,
+                          relation=relation)
 
         self.__elaborated_by = elaborated_by if elaborated_by is not None else set()
         self.__elaborates = elaborates if elaborates is not None else set()

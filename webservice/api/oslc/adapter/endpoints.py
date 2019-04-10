@@ -1,17 +1,23 @@
-from flask import make_response
+from flask import make_response, request
 from flask_restplus import Resource
 from rdflib import Graph
+from rdflib.namespace import DCTERMS
 
-from webservice.api.oslc.adapter.definitions import service_provider_catalog, service_provider, service, \
-    query_capability, creation_factory
+from pyoslc.vocabulary import OSLCCore
+from webservice.api.oslc.adapter.definitions import service_provider_catalog, publisher
+from webservice.api.oslc.adapter.definitions import service_provider, service
+from webservice.api.oslc.adapter.definitions import query_capability, creation_factory
 
 
 class ServiceProviderCatalog(Resource):
 
     def get(self):
+        is_human_client = request.headers['accept'].__contains__('*/*')
 
         content_type = 'text/turtle'
         graph = Graph()
+        graph.bind('oslc', OSLCCore, override=False)
+        graph.bind('dcterms', DCTERMS, override=False)
 
         service_provider_catalog.to_rdf(graph)
         data = graph.serialize(format=content_type)
@@ -64,6 +70,10 @@ class QueryCapability(Resource):
         content_type = 'text/turtle'
         graph = Graph()
 
+        # method to retrieve information from the requirement csv file
+        # then convert this requirement to and RDF format
+        # then convert the rdf-req to a response
+
         query_capability.to_rdf(graph)
         data = graph.serialize(format=content_type)
 
@@ -93,3 +103,20 @@ class CreationFactory(Resource):
 
     def post(self):
         return make_response('{}', 200)
+
+
+class Publisher(Resource):
+
+    def get(self):
+        content_type = 'text/turtle'
+        graph = Graph()
+
+        publisher.to_rdf(graph)
+        data = graph.serialize(format=content_type)
+
+        # Sending the response to the client
+        response = make_response(data.decode('utf-8'), 200)
+        response.headers['Content-Type'] = content_type
+        response.headers['Oslc-Core-Version'] = "2.0"
+
+        return response

@@ -52,7 +52,7 @@ class RequirementList(Resource):
             with open(path, 'rb') as f:
                 reader = csv.DictReader(f, delimiter=';')
                 for row in reader:
-                    req = Requirement()               # instantiating the Requirement object
+                    req = Requirement('http://localhost:500/oslc/rm/requirement')               # instantiating the Requirement object
                     req.update(row)          # Parsing the specification to requirement
                     graph += req.to_rdf(request.base_url)    # Accumulating the triples on the graph
 

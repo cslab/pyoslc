@@ -249,25 +249,25 @@ class Resource_(BaseResource):
 class Publisher(BaseResource):
 
     def __init__(self, about, types=None, properties=None,
-                 uri_icon=None, identifier=None, label=None, title=None):
+                 icon=None, identifier=None, label=None, title=None):
         """
         Resource for publisher
         """
 
         BaseResource.__init__(self, about=about, types=types, properties=properties)
 
-        self.__uri_icon = uri_icon
-        self.__identifier = identifier
-        self.__label = label
-        self.__title = title
+        self.__icon = icon if icon is not None else None
+        self.__identifier = identifier if identifier is not None else None
+        self.__label = label if label is not None else None
+        self.__title = title if title is not None else None
 
     @property
-    def uri_icon(self):
-        return self.__uri_icon
+    def icon(self):
+        return self.__icon
 
-    @uri_icon.setter
-    def uri_icon(self, uri_icon):
-        self.__uri_icon = uri_icon
+    @icon.setter
+    def icon(self, icon):
+        self.__icon = icon
 
     @property
     def identifier(self):
@@ -295,6 +295,27 @@ class Publisher(BaseResource):
             self.__title = title
         else:
             raise ValueError('The title must be an instance of str')
+
+    def to_rdf(self, graph):
+        if not self.about:
+            raise Exception("The title is missing")
+
+        p = Resource(graph, URIRef(self.about))
+        p.add(RDF.type, URIRef(DCTERMS.publisher))
+
+        if self.title:
+            p.add(DCTERMS.title, Literal(self.title))
+
+        if self.label:
+            p.add(OSLCCore.label, Literal(self.label))
+
+        if self.identifier:
+            p.add(DCTERMS.identifier, URIRef(self.identifier))
+
+        if self.icon:
+            p.add(OSLCCore.icon, URIRef(self.icon))
+
+        return p
 
 
 class ServiceProviderCatalog(Resource_):
@@ -366,36 +387,15 @@ class ServiceProviderCatalog(Resource_):
     def add_service_provider_catalog(self, service_provider_catalog):
         self.__service_provider_catalog.add(service_provider_catalog)
 
-    def initialize_graph(self):
-        if self.__title is not None:
-            self.__graph.add((self.__spc, DCTERMS.title, Literal(self.__title)))
+    @property
+    def oauth_configuration(self):
+        return self.__oauth_configuration
 
-        if self.__description is not None:
-            self.__graph.add((self.__spc, DCTERMS.description, Literal(self.__description)))
-
-        if self.__publisher is not None:
-            for publisher in self.__publisher:
-                self.__graph.add((self.__spc, DCTERMS.publisher, publisher))
-
-        if self.__domain is not None and self.__domain.__len__() > 0:
-            for domain in self.__domain:
-                self.__graph.add((self.__spc, OSLCCore.domain, domain))
-
-        if self.__service_provider is not None and self.__service_provider.__len__() > 0:
-            for service_provider in self.__service_provider:
-                self.__graph.add((self.__spc, OSLCCore.serviceProvider, service_provider))
-
-        if self.__service_provider_catalog is not None and self.__service_provider_catalog.__len__() > 0:
-            for service_provider_catalog in self.__service_provider_catalog:
-                self.__graph.add((self.__spc, OSLCCore.serviceProviderCatalog, service_provider_catalog))
-
-        if self.__oauth_configuration is not None and self.__oauth_configuration.__len__() > 0:
-            for oauth_configuration in self.__oauth_configuration:
-                self.__graph.add((self.__spc, OSLCCore.oauthConfiguration, oauth_configuration))
+    @oauth_configuration.setter
+    def oauth_configuration(self, oauth_configuration):
+        self.__oauth_configuration = oauth_configuration
 
     def to_rdf(self, graph):
-        print('spc------')
-
         if not self.about:
             raise Exception("The title is missing")
 
@@ -420,9 +420,17 @@ class ServiceProviderCatalog(Resource_):
                 r = sp.to_rdf(graph)
                 spc.add(OSLCCore.Service, r.identifier)
 
-        # if self.service_provider_catalog:
-        #     for item in self.service_provider_catalog:
-        #         spc.add(OSLCCore.serviceProviderCatalog, URIRef(item.about))
+                for cv in r[OSLCCore.Service]:
+                    for d in cv[OSLCCore.domain]:
+                        self.add_domain(d)
+                        spc.add(OSLCCore.domain, d.identifier)
+
+        if self.service_provider_catalog:
+            for item in self.service_provider_catalog:
+                spc.add(OSLCCore.serviceProviderCatalog, URIRef(item.about))
+
+        if self.oauth_configuration:
+            spc.add(OSLCCore.oauthConfiguration, URIRef(self.oauth_configuration.about))
 
         return spc
 
@@ -447,7 +455,7 @@ class ServiceProvider(Resource_):
         self.__service = service if service is not None else list()
         self.__details = details if details is not None else OrderedDict()
         self.__prefix_definition = prefix_definition if prefix_definition is not None else list()
-        self.__oauth_configuration = oauth_configuration
+        self.__oauth_configuration = oauth_configuration if oauth_configuration is not None else None
 
         self.__created = date.today()
         self.__identifier = identifier if identifier is not None else None
@@ -471,8 +479,23 @@ class ServiceProvider(Resource_):
     def add_service(self, service):
         self.__service.append(service)
 
+    @property
+    def details(self):
+        return self.__details
+
+    @details.setter
+    def details(self, details):
+        self.__details = details
+
+    @property
+    def oauth_configuration(self):
+        return self.__oauth_configuration
+
+    @oauth_configuration.setter
+    def oauth_configuration(self, oauth_configuration):
+        self.__oauth_configuration = oauth_configuration
+
     def to_rdf(self, graph):
-        print('sp------')
         if not self.about:
             raise Exception("The title is missing")
 
@@ -486,12 +509,18 @@ class ServiceProvider(Resource_):
             sp.add(DCTERMS.description, Literal(self.description))
 
         if self.publisher:
-            sp.add(DCTERMS.publisher, URIRef(self.publisher))
+            sp.add(DCTERMS.publisher, URIRef(self.publisher.about))
 
         if self.service:
             for s in self.service:
                 r = s.to_rdf(graph)
                 sp.add(OSLCCore.Service, r.identifier)
+
+        if self.details:
+            sp.add(OSLCCore.details, URIRef(self.details))
+
+        if self.oauth_configuration:
+            sp.add(OSLCCore.oauthConfiguration, URIRef(self.oauth_configuration.about))
 
         return sp
 
@@ -550,7 +579,6 @@ class Service(Resource_):
         self.__query_capability.append(query_capability)
 
     def to_rdf(self, graph):
-        print('s------')
         if not self.about:
             raise Exception("The title is missing")
 
@@ -643,7 +671,6 @@ class QueryCapability(Resource_):
         self.__usage.update(usage)
 
     def to_rdf(self, graph):
-        print('qc------')
         if not self.about:
             raise Exception("The title is missing")
 
@@ -689,7 +716,7 @@ class CreationFactory(Resource_):
                           identifier=identifier, short_title=short_title, title=title, contributor=contributor,
                           creator=creator, subject=subject, created=created, modified=modified, type=type,
                           discussed_by=discussed_by, instance_shape=instance_shape, service_provider=service_provider,
-                          relation=relation,)
+                          relation=relation)
 
         self.__label = label if label is not None else None
         self.__creation = creation if creation is not None else None
@@ -748,7 +775,6 @@ class CreationFactory(Resource_):
         self.__usage.update(usage)
 
     def to_rdf(self, graph):
-        print('cf------')
         if not self.about:
             raise Exception("The title is missing")
 
@@ -779,16 +805,65 @@ class CreationFactory(Resource_):
         return cf
 
 
-# class OAuthConfiguration(Resource):
-#
-#     def __init__(self, autorization_uri, oaut_access_token_uri, oaut_request_token_uri):
-#         """
-#         private URI authorizationURI;
-#         private URI oauthAccessTokenURI;
-#         private URI oauthRequestTokenURI;
-#         """
-#         super(OAuthConfiguration, self).__init__()
-#         self.autorization_uri = autorization_uri
-#         self.oaut_access_token_uri = oaut_access_token_uri
-#         self.oaut_request_token_uri = oaut_request_token_uri
-#
+class OAuthConfiguration(Resource_):
+
+    def __init__(self, about, types=None, properties=None, description=None, identifier=None, short_title=None,
+                 title=None, contributor=None, creator=None, subject=None, created=None, modified=None, type=None,
+                 discussed_by=None, instance_shape=None, service_provider=None, relation=None,
+                 authorization_uri=None, oauth_access_token_uri=None, oauth_request_token_uri=None):
+        """
+        private URI authorizationURI;
+        private URI oauthAccessTokenURI;
+        private URI oauthRequestTokenURI;
+        """
+
+        Resource_.__init__(self, about=about, types=types, properties=properties, description=description,
+                          identifier=identifier, short_title=short_title, title=title, contributor=contributor,
+                          creator=creator, subject=subject, created=created, modified=modified, type=type,
+                          discussed_by=discussed_by, instance_shape=instance_shape, service_provider=service_provider,
+                          relation=relation)
+        self.__authorization_uri = authorization_uri if authorization_uri is not None else None
+        self.__oauth_access_token_uri = oauth_access_token_uri if oauth_access_token_uri is not None else None
+        self.__oauth_request_token_uri = oauth_request_token_uri if oauth_access_token_uri is not None else None
+
+    @property
+    def authorization_uri(self):
+        return self.__authorization_uri
+
+    @authorization_uri.setter
+    def authorization_uri(self, authorization_uri):
+        self.__authorization_uri = authorization_uri
+
+    @property
+    def oauth_access_token_uri(self):
+        return self.__oauth_access_token_uri
+
+    @oauth_access_token_uri.setter
+    def oauth_access_token_uri(self, oauth_access_token_uri):
+        self.__oauth_access_token_uri = oauth_access_token_uri
+
+    @property
+    def oauth_request_token_uri(self):
+        return self.__oauth_request_token_uri
+
+    @oauth_request_token_uri.setter
+    def oauth_request_token_uri(self, oauth_request_token_uri):
+        self.__oauth_request_token_uri = oauth_request_token_uri
+
+    def to_rdf(self, graph):
+        if not self.about:
+            raise Exception("The title is missing")
+
+        oac = Resource(graph, URIRef(self.about))
+        oac.add(RDF.type, URIRef(OSLCCore.oauthConfiguration))
+
+        if self.authorization_uri:
+            oac.add(OSLCCore.authorizationURI, URIRef(self.authorization_uri))
+
+        if self.oauth_access_token_uri:
+            oac.add(OSLCCore.oauthAccessTokenURI, URIRef(self.oauth_access_token_uri))
+
+        if self.oauth_request_token_uri:
+            oac.add(OSLCCore.oauthRequestTokenURI, URIRef(self.oauth_request_token_uri))
+
+        return oac
