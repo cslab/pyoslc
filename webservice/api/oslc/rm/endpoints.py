@@ -52,7 +52,7 @@ class RequirementList(Resource):
             with open(path, 'rb') as f:
                 reader = csv.DictReader(f, delimiter=';')
                 for row in reader:
-                    req = Requirement('http://localhost:500/oslc/rm/requirement')               # instantiating the Requirement object
+                    req = Requirement()               # instantiating the Requirement object
                     req.update(row)          # Parsing the specification to requirement
                     graph += req.to_rdf(request.base_url)    # Accumulating the triples on the graph
 
@@ -241,7 +241,7 @@ class RequirementItem(Resource):
             return response_object, 500
 
     @api.expect(specification)
-    def put(self):
+    def put(self, id):
         """
         Update the status or information about a Requirement.
         For using this method to update the information for the Requirement
@@ -258,47 +258,56 @@ class RequirementItem(Resource):
                 reader = csv.DictReader(f, delimiter=';')
                 field_names = reader.fieldnames
 
+            modified = False
             with open(path, 'r') as csvfile, tempfile:
                 reader = csv.DictReader(csvfile, fieldnames=field_names, delimiter=';')
                 writer = csv.DictWriter(tempfile, fieldnames=field_names, delimiter=';')
                 for row in reader:
                     if row['Specification_id'] == str(id):
-                        print('updating row', row['Specification_id'])
-                        rq = RQ()
+                        rq = Requirement()
                         rq.from_json(data)
                         row = rq.to_mapped_object()
                         row['Specification_id'] = id
+                        modified = True
                     writer.writerow(row)
 
             shutil.move(tempfile.name, path)
 
+            if not modified:
+                return make_response('{Not Modified}', 304)
+
         return make_response('{}', 200)
 
-    def delete(self):
+    def delete(self, id):
         """
         Deleting a Requirement
         This method will remove a requirement from the store
         """
-        if id:
-            path = os.path.join(os.path.abspath(''), 'examples', 'specifications.csv')
 
-            tempfile = NamedTemporaryFile(mode='w', delete=False)
+        path = os.path.join(os.path.abspath(''), 'examples', 'specifications.csv')
 
-            with open(path, 'rb') as f:
-                reader = csv.DictReader(f, delimiter=';')
-                field_names = reader.fieldnames
+        tempfile = NamedTemporaryFile(mode='w', delete=False)
 
-            with open(path, 'r') as csvfile, tempfile:
-                reader = csv.DictReader(csvfile, fieldnames=field_names, delimiter=';')
-                writer = csv.DictWriter(tempfile, fieldnames=field_names, delimiter=';')
-                for row in reader:
-                    if row['Specification_id'] != str(id):
-                        writer.writerow(row)
+        with open(path, 'rb') as f:
+            reader = csv.DictReader(f, delimiter=';')
+            field_names = reader.fieldnames
 
-            shutil.move(tempfile.name, path)
-            return make_response('{}', 200)
-        else:
-            return make_response('{Id is required}', 400)
+        modified = False
+        with open(path, 'r') as csvfile, tempfile:
+            reader = csv.DictReader(csvfile, fieldnames=field_names, delimiter=';')
+            writer = csv.DictWriter(tempfile, fieldnames=field_names, delimiter=';')
+            for row in reader:
+                if row['Specification_id'] != str(id):
+                    writer.writerow(row)
+                else:
+                    modified = True
+
+        shutil.move(tempfile.name, path)
+
+        if not modified:
+            return make_response('{Not Modified}', 304)
+
+        return make_response('{}', 200)
 
 
 class UploadCollection(Resource):

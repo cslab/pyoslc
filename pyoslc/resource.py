@@ -5,7 +5,7 @@
 from collections import OrderedDict
 from datetime import date
 
-from rdflib import Literal, Graph, URIRef
+from rdflib import Literal, Graph, URIRef, BNode
 from rdflib.namespace import DCTERMS, RDF, XSD
 from rdflib.resource import Resource
 
@@ -400,13 +400,13 @@ class ServiceProviderCatalog(Resource_):
             raise Exception("The title is missing")
 
         spc = Resource(graph, URIRef(self.about))
-        spc.add(RDF.type, URIRef(OSLCCore.serviceProviderCatalog))
+        spc.add(RDF.type, URIRef(OSLCCore.ServiceProviderCatalog))
 
         if self.title:
-            spc.add(DCTERMS.title, Literal(self.title))
+            spc.add(DCTERMS.title, Literal(self.title, datatype=XSD.Literal))
 
         if self.description:
-            spc.add(DCTERMS.description, Literal(self.description))
+            spc.add(DCTERMS.description, Literal(self.description, datatype=XSD.Literal))
 
         if self.publisher:
             spc.add(DCTERMS.publisher, URIRef(self.publisher.about))
@@ -418,9 +418,9 @@ class ServiceProviderCatalog(Resource_):
         if self.service_provider:
             for sp in self.service_provider:
                 r = sp.to_rdf(graph)
-                spc.add(OSLCCore.Service, r.identifier)
+                spc.add(OSLCCore.serviceProvider, r.identifier)
 
-                for cv in r[OSLCCore.Service]:
+                for cv in r[OSLCCore.service]:
                     for d in cv[OSLCCore.domain]:
                         self.add_domain(d)
                         spc.add(OSLCCore.domain, d.identifier)
@@ -447,10 +447,10 @@ class ServiceProvider(Resource_):
         """
 
         Resource_.__init__(self, about=about, types=types, properties=properties, description=description,
-                          identifier=identifier, short_title=short_title, title=title, contributor=contributor,
-                          creator=creator, subject=subject, created=created, modified=modified, type=type,
-                          discussed_by=discussed_by, instance_shape=instance_shape, service_provider=service_provider,
-                          relation=relation)
+                           identifier=identifier, short_title=short_title, title=title, contributor=contributor,
+                           creator=creator, subject=subject, created=created, modified=modified, type=type,
+                           discussed_by=discussed_by, instance_shape=instance_shape, service_provider=service_provider,
+                           relation=relation)
         self.__publisher = publisher
         self.__service = service if service is not None else list()
         self.__details = details if details is not None else OrderedDict()
@@ -499,14 +499,17 @@ class ServiceProvider(Resource_):
         if not self.about:
             raise Exception("The title is missing")
 
-        sp = Resource(graph, URIRef(self.about))
-        sp.add(RDF.type, URIRef(OSLCCore.serviceProvider))
+        sp = Resource(graph, URIRef(self.about + '/{}'.format(self.identifier) if self.identifier else ''))
+        sp.add(RDF.type, URIRef(OSLCCore.ServiceProvider))
+
+        if self.identifier:
+            sp.add(DCTERMS.identifier, Literal(self.identifier))
 
         if self.title:
-            sp.add(DCTERMS.title, Literal(self.title))
+            sp.add(DCTERMS.title, Literal(self.title, datatype=XSD.Literal))
 
         if self.description:
-            sp.add(DCTERMS.description, Literal(self.description))
+            sp.add(DCTERMS.description, Literal(self.description, datatype=XSD.Literal))
 
         if self.publisher:
             sp.add(DCTERMS.publisher, URIRef(self.publisher.about))
@@ -514,10 +517,10 @@ class ServiceProvider(Resource_):
         if self.service:
             for s in self.service:
                 r = s.to_rdf(graph)
-                sp.add(OSLCCore.Service, r.identifier)
+                sp.add(OSLCCore.service, r.identifier)
 
         if self.details:
-            sp.add(OSLCCore.details, URIRef(self.details))
+            sp.add(OSLCCore.details, URIRef(self.details + '/{}'.format(self.identifier) if self.identifier else ''))
 
         if self.oauth_configuration:
             sp.add(OSLCCore.oauthConfiguration, URIRef(self.oauth_configuration.about))
@@ -582,21 +585,22 @@ class Service(Resource_):
         if not self.about:
             raise Exception("The title is missing")
 
-        s = Resource(graph, URIRef(self.about))
-        s.add(RDF.type, URIRef(OSLCCore.service))
+        s = Resource(graph, BNode())
+        # s = Resource(graph, URIRef(self.about))
+        s.add(RDF.type, URIRef(OSLCCore.Service))
 
         if self.domain:
             s.add(OSLCCore.domain, URIRef(self.domain))
 
-        if self.creation_factory:
-            for cf in self.creation_factory:
-                r = cf.to_rdf(graph)
-                s.add(OSLCCore.CreationFactory, r.identifier)
+        # if self.creation_factory:
+        #     for cf in self.creation_factory:
+        #         r = cf.to_rdf(graph)
+        #         s.add(OSLCCore.creationFactory, r.identifier)
 
         if self.query_capability:
             for qc in self.query_capability:
                 r = qc.to_rdf(graph)
-                s.add(OSLCCore.QueryCapability, r.identifier)
+                s.add(OSLCCore.queryCapability, r.identifier)
 
         return s
 
@@ -674,8 +678,9 @@ class QueryCapability(Resource_):
         if not self.about:
             raise Exception("The title is missing")
 
-        qc = Resource(graph, URIRef(self.about))
-        qc.add(RDF.type, URIRef(OSLCCore.queryCapability))
+        qc = Resource(graph, BNode())
+        # qc = Resource(graph, URIRef(self.about))
+        qc.add(RDF.type, URIRef(OSLCCore.QueryCapability))
 
         if self.title:
             qc.add(DCTERMS.title, Literal(self.title))
@@ -778,8 +783,9 @@ class CreationFactory(Resource_):
         if not self.about:
             raise Exception("The title is missing")
 
-        cf = Resource(graph, URIRef(self.about))
-        cf.add(RDF.type, URIRef(OSLCCore.creationFactory))
+        cf = Resource(graph, BNode())
+        # cf = Resource(graph, URIRef(self.about))
+        cf.add(RDF.type, URIRef(OSLCCore.CreationFactory))
 
         if self.title:
             cf.add(DCTERMS.title, Literal(self.title))

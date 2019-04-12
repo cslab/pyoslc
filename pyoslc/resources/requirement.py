@@ -9,13 +9,13 @@ from pyoslc.vocabulary.rm import OSLC_RM
 class Requirement(Resource_):
 
     specification_map = {
-        'Specification_id': {'attribute': '_Resource__identifier', 'oslc_property': 'DCTERMS.identifier'},
-        'Product': {'attribute': '_Resource__short_title', 'oslc_property': 'DCTERMS.shortTitle'},
-        'Project': {'attribute': '_Resource__subject', 'oslc_property': 'DCTERMS.subject'},
-        'Title': {'attribute': '_Resource__title', 'oslc_property': 'DCTERMS.title'},
-        'Description': {'attribute': '_Resource__description', 'oslc_property': 'DCTERMS.description'},
+        'Specification_id': {'attribute': '_Resource___identifier', 'oslc_property': 'DCTERMS.identifier'},
+        'Product': {'attribute': '_Resource___short_title', 'oslc_property': 'DCTERMS.shortTitle'},
+        'Project': {'attribute': '_Resource___subject', 'oslc_property': 'DCTERMS.subject'},
+        'Title': {'attribute': '_Resource___title', 'oslc_property': 'DCTERMS.title'},
+        'Description': {'attribute': '_Resource___description', 'oslc_property': 'DCTERMS.description'},
         'Source': {'attribute': '_Requirement__elaborated_by', 'oslc_property': 'OSLC_RM.elaboratedBy'},
-        'Author': {'attribute': '_Resource__creator', 'oslc_property': 'DCTERMS.creator'},
+        'Author': {'attribute': '_Resource___creator', 'oslc_property': 'DCTERMS.creator'},
         'Category': {'attribute': '_Requirement__constrained_by', 'oslc_property': 'OSLC_RM.constrainedBy'},
         'Discipline': {'attribute': '_Requirement__satisfied_by', 'oslc_property': 'OSLC_RM.satisfiedBy'},
         'Revision': {'attribute': '_Requirement__tracked_by', 'oslc_property': 'OSLC_RM.trackedBy'},
@@ -35,10 +35,10 @@ class Requirement(Resource_):
                  constrained_by=None, constrains=None):
 
         Resource_.__init__(self, about=about, types=types, properties=properties, description=description,
-                          identifier=identifier, short_title=short_title, title=title, contributor=contributor,
-                          creator=creator, subject=subject, created=created, modified=modified, type=type,
-                          discussed_by=discussed_by, instance_shape=instance_shape, service_provider=service_provider,
-                          relation=relation)
+                           identifier=identifier, short_title=short_title, title=title, contributor=contributor,
+                           creator=creator, subject=subject, created=created, modified=modified, type=type,
+                           discussed_by=discussed_by, instance_shape=instance_shape, service_provider=service_provider,
+                           relation=relation)
 
         self.__elaborated_by = elaborated_by if elaborated_by is not None else set()
         self.__elaborates = elaborates if elaborates is not None else set()
@@ -77,8 +77,8 @@ class Requirement(Resource_):
         graph.bind('oslc_rm', OSLC_RM)
 
         d = Describer(graph, base=base_url)
-        if getattr(self, '_Resource__identifier') not in base_url.split('/'):
-            base_url = self.get_absolute_url(base_url, getattr(self, '_Resource__identifier'))
+        if getattr(self, '_Resource___identifier') not in base_url.split('/'):
+            base_url = self.get_absolute_url(base_url, getattr(self, '_Resource___identifier'))
 
         d.about(base_url)
         d.rdftype(OSLC_RM.Requirement)
