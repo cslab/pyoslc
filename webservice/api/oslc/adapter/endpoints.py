@@ -7,7 +7,6 @@ from pyoslc.vocabulary import OSLCCore
 from webservice.api.oslc.adapter.definitions import service_provider_catalog, publisher
 from webservice.api.oslc.adapter.definitions import service_provider, service
 from webservice.api.oslc.adapter.definitions import query_capability, creation_factory
-from webservice.api.oslc.rm.business import get_requirement_list
 
 
 class ServiceProviderCatalog(Resource):
@@ -80,9 +79,12 @@ class QueryCapability(Resource):
     def get(self, query_capability_id):
 
         post_parser = reqparse.RequestParser()
-        post_parser.add_argument('oslc.where', dest='where', location='form', required=False, help='where clause for the query')
-        post_parser.add_argument('page', location='form', required=False, help='page of the list')
-        post_parser.add_argument('limit', location='form', required=False, help='number of elements')
+        post_parser.add_argument('oslc.where', dest='where', location='form',
+                                 required=False, help='where clause for the query')
+        post_parser.add_argument(
+            'page', location='form', required=False, help='page of the list')
+        post_parser.add_argument(
+            'limit', location='form', required=False, help='number of elements')
 
         content_type = 'text/turtle'
         # graph = Graph()
