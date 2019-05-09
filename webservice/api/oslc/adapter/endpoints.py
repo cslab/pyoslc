@@ -1,141 +1,181 @@
-from flask import make_response, request
-from flask_restplus import Resource, reqparse
+from urlparse import urlparse
+
+from flask import make_response, request, url_for
+from flask_restplus import Resource, Namespace
 from rdflib import Graph
-from rdflib.namespace import DCTERMS
 
-from pyoslc.vocabulary import OSLCCore
-from webservice.api.oslc.adapter.definitions import service_provider_catalog, publisher
-from webservice.api.oslc.adapter.definitions import service_provider, service
-from webservice.api.oslc.adapter.definitions import query_capability, creation_factory
-from webservice.api.oslc.rm.business import get_requirement_list
+# from webservice.api.oslc.adapter.definitions import service_provider_catalog, publisher
+# from webservice.api.oslc.adapter.definitions import service_provider, service
+# from webservice.api.oslc.adapter.definitions import query_capability, creation_factory
+from webservice.api.oslc.adapter.services import ServiceProviderCatalogSingleton
+
+adapter_ns = Namespace(name='adapter', description='Python OSLC Adapter', path='/services', )
 
 
-class ServiceProviderCatalog(Resource):
+class OslcResource(Resource):
+
+    def __init__(self, *args, **kwargs):
+        super(OslcResource, self).__init__(*args, **kwargs)
+        self.graph = kwargs.get('graph', Graph())
+
+    def create_response(self, graph):
+
+        # Getting the content-type for checking the
+        # response we will use to serialize the RDF response.
+        content_type = request.headers['accept']
+        if content_type in ('application/json-ld', 'application/json', '*/*'):
+            # If the content-type is any kind of json,
+            # we will use the json-ld format for the response.
+            content_type = 'json-ld'
+
+        data = graph.serialize(format=content_type)
+
+        # Sending the response to the client
+        response = make_response(data.decode('utf-8'), 200)
+        response.headers['Content-Type'] = content_type
+        response.headers['Oslc-Core-Version'] = "2.0"
+
+        return response
+
+
+@adapter_ns.route('/catalog')
+class ServiceProviderCatalog(OslcResource):
 
     def __init__(self, *args, **kwargs):
         super(ServiceProviderCatalog, self).__init__(*args, **kwargs)
-        self.graph = kwargs['graph']
 
     def get(self):
-        is_human_client = request.headers['accept'].__contains__('*/*')
+        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint))
+        base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
 
-        content_type = 'text/turtle'
-        graph = Graph()
-        graph.bind('oslc', OSLCCore, override=False)
-        graph.bind('dcterms', DCTERMS, override=False)
+        catalog_url = urlparse(base_url).geturl()
 
-        service_provider_catalog.to_rdf(graph)
-        data = graph.serialize(format=content_type)
+        print(request)
 
-        # Sending the response to the client
-        response = make_response(data.decode('utf-8'), 200)
-        response.headers['Content-Type'] = content_type
-        response.headers['Oslc-Core-Version'] = "2.0"
-
-        return response
+        catalog = ServiceProviderCatalogSingleton.get_catalog(catalog_url)
+        catalog.to_rdf(self.graph)
+        return self.create_response(graph=self.graph)
 
 
-class ServiceProvider(Resource):
+@adapter_ns.route('/<string:service_provider_id>')
+class ServiceProvider(OslcResource):
 
     def __init__(self, *args, **kwargs):
         super(ServiceProvider, self).__init__(*args, **kwargs)
-        self.graph = kwargs['graph']
 
     def get(self, service_provider_id):
-        content_type = 'text/turtle'
-        graph = Graph()
-        graph.bind('oslc', OSLCCore, override=False)
-        graph.bind('dcterms', DCTERMS, override=False)
+        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint), service_provider_id=service_provider_id)
+        base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
 
-        service_provider.to_rdf(graph)
-        data = graph.serialize(format=content_type)
+        url = urlparse(base_url)
+        print(url.geturl())
 
-        # Sending the response to the client
-        response = make_response(data.decode('utf-8'), 200)
-        response.headers['Content-Type'] = content_type
-        response.headers['Oslc-Core-Version'] = "2.0"
+        print(base_url)
 
-        return response
+        provider = ServiceProviderCatalogSingleton.get_provider(request, service_provider_id)
+        provider.to_rdf(self.graph)
+        return self.create_response(graph=self.graph)
 
 
-class Service(Resource):
-
-    def get(self, service_id):
-        content_type = 'text/turtle'
-        graph = Graph()
-
-        service.to_rdf(graph)
-        data = graph.serialize(format=content_type)
-
-        # Sending the response to the client
-        response = make_response(data.decode('utf-8'), 200)
-        response.headers['Content-Type'] = content_type
-        response.headers['Oslc-Core-Version'] = "2.0"
-
-        return response
-
-
-class QueryCapability(Resource):
-
-    def get(self, query_capability_id):
-
-        post_parser = reqparse.RequestParser()
-        post_parser.add_argument('oslc.where', dest='where', location='form', required=False, help='where clause for the query')
-        post_parser.add_argument('page', location='form', required=False, help='page of the list')
-        post_parser.add_argument('limit', location='form', required=False, help='number of elements')
-
-        content_type = 'text/turtle'
-        # graph = Graph()
-
-        # method to retrieve information from the requirement csv file
-        # then convert this requirement to and RDF format
-        # then convert the rdf-req to a response
-
-        graph = get_requirement_list(request.base_url)
-
-        # query_capability.to_rdf(graph)
-        data = graph.serialize(format=content_type)
-
-        # Sending the response to the client
-        response = make_response(data.decode('utf-8'), 200)
-        response.headers['Content-Type'] = content_type
-        response.headers['Oslc-Core-Version'] = "2.0"
-
-        return response
-
-
-class CreationFactory(Resource):
-
-    def get(self, creation_factory_id):
-        content_type = 'text/turtle'
-        graph = Graph()
-
-        creation_factory.to_rdf(graph)
-        data = graph.serialize(format=content_type)
-
-        # Sending the response to the client
-        response = make_response(data.decode('utf-8'), 200)
-        response.headers['Content-Type'] = content_type
-        response.headers['Oslc-Core-Version'] = "2.0"
-
-        return response
-
-    def post(self):
-        return make_response('{}', 200)
-
-
-class Publisher(Resource):
+@adapter_ns.route('/<string:service_provider_id>/resources')
+class IoTPlatformService(OslcResource):
 
     def get(self):
-        content_type = 'text/turtle'
-        graph = Graph()
+        return self.create_response(graph=self.graph)
 
-        publisher.to_rdf(graph)
-        data = graph.serialize(format=content_type)
+    pass
 
-        # Sending the response to the client
-        response = make_response(data.decode('utf-8'), 200)
-        response.headers['Content-Type'] = content_type
-        response.headers['Oslc-Core-Version'] = "2.0"
 
-        return response
+@adapter_ns.route('/catalog/id/<string:service_provider_id>')
+class SP(OslcResource):
+
+    def get(self):
+        # Here we will retrieve information using the Repository pattern
+
+        pass
+
+
+# class Service(Resource):
+#
+#     def get(self, service_id):
+#         content_type = 'text/turtle'
+#         graph = Graph()
+#
+#         service.to_rdf(graph)
+#         data = graph.serialize(format=content_type)
+#
+#         # Sending the response to the client
+#         response = make_response(data.decode('utf-8'), 200)
+#         response.headers['Content-Type'] = content_type
+#         response.headers['Oslc-Core-Version'] = "2.0"
+#
+#         return response
+#
+#
+# class QueryCapability(Resource):
+#
+#     def get(self, query_capability_id):
+#
+#         post_parser = reqparse.RequestParser()
+#         post_parser.add_argument('oslc.where', dest='where', location='form',
+#                                  required=False, help='where clause for the query')
+#         post_parser.add_argument(
+#             'page', location='form', required=False, help='page of the list')
+#         post_parser.add_argument(
+#             'limit', location='form', required=False, help='number of elements')
+#
+#         content_type = 'text/turtle'
+#         # graph = Graph()
+#
+#         # method to retrieve information from the requirement csv file
+#         # then convert this requirement to and RDF format
+#         # then convert the rdf-req to a response
+#
+#         graph = get_requirement_list(request.base_url)
+#
+#         # query_capability.to_rdf(graph)
+#         data = graph.serialize(format=content_type)
+#
+#         # Sending the response to the client
+#         response = make_response(data.decode('utf-8'), 200)
+#         response.headers['Content-Type'] = content_type
+#         response.headers['Oslc-Core-Version'] = "2.0"
+#
+#         return response
+#
+#
+# class CreationFactory(Resource):
+#
+#     def get(self, creation_factory_id):
+#         content_type = 'text/turtle'
+#         graph = Graph()
+#
+#         creation_factory.to_rdf(graph)
+#         data = graph.serialize(format=content_type)
+#
+#         # Sending the response to the client
+#         response = make_response(data.decode('utf-8'), 200)
+#         response.headers['Content-Type'] = content_type
+#         response.headers['Oslc-Core-Version'] = "2.0"
+#
+#         return response
+#
+#     def post(self):
+#         return make_response('{}', 200)
+#
+#
+# class Publisher(Resource):
+#
+#     def get(self):
+#         content_type = 'text/turtle'
+#         graph = Graph()
+#
+#         publisher.to_rdf(graph)
+#         data = graph.serialize(format=content_type)
+#
+#         # Sending the response to the client
+#         response = make_response(data.decode('utf-8'), 200)
+#         response.headers['Content-Type'] = content_type
+#         response.headers['Oslc-Core-Version'] = "2.0"
+#
+#         return response

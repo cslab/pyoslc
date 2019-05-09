@@ -5,7 +5,7 @@
 from collections import OrderedDict
 from datetime import date
 
-from rdflib import Literal, Graph, URIRef, BNode
+from rdflib import Literal, URIRef, BNode
 from rdflib.namespace import DCTERMS, RDF, XSD
 from rdflib.resource import Resource
 
@@ -232,10 +232,6 @@ class Resource_(BaseResource):
 
     def add_service_provider(self, service_provider):
         self.__service_provider.append(service_provider)
-        # if isinstance(service_provider, ServiceProvider):
-        #     self.__graph.add((self.__spc, OSLCCore.serviceProvider, service_provider))
-        # else:
-        #     return ValueError('The object must be a ServiceProvider')
 
     @property
     def relation(self):
@@ -320,14 +316,11 @@ class Publisher(BaseResource):
 
 class ServiceProviderCatalog(Resource_):
 
-    def __init__(self, about, types=None, properties=None, description=None, identifier=None, short_title=None,
+    def __init__(self, about=None, types=None, properties=None, description=None, identifier=None, short_title=None,
                  title=None, contributor=None, creator=None, subject=None, created=None, modified=None, type=None,
                  discussed_by=None, instance_shape=None, service_provider=None, relation=None,
                  uri=None, publisher=None, domain=None,
-                 service_provider_catalog=None, oauth_configuration=None, graph=None,):
-
-        if not about:
-            raise Exception('No base_url')
+                 service_provider_catalog=None, oauth_configuration=None):
 
         Resource_.__init__(self, about=about, types=types, properties=properties, description=description,
                           identifier=identifier, short_title=short_title, title=title, contributor=contributor,
@@ -336,26 +329,10 @@ class ServiceProviderCatalog(Resource_):
                           relation=relation)
 
         self.__uri = uri if uri is not None else build_uri(default_uri, 'serviceProviderCatalog')
-
-        if not graph:
-            self.__graph = Graph()
-            self.__graph.bind('oslc', OSLCCore, override=False)
-            self.__graph.bind('dcterms', DCTERMS, override=False)
-
         self.__publisher = publisher
-        self.__domain = domain if domain is not None else OrderedDict()
+        self.__domain = domain if domain is not None else set()
         self.__service_provider_catalog = service_provider_catalog if service_provider_catalog is not None else set()
         self.__oauth_configuration = oauth_configuration
-
-        # self.initialize_graph()
-
-    @property
-    def graph(self):
-        return self.__graph
-
-    @graph.setter
-    def graph(self, graph):
-        self.__graph = graph
 
     @property
     def publisher(self):
@@ -374,7 +351,7 @@ class ServiceProviderCatalog(Resource_):
         self.__domain = domain
 
     def add_domain(self, domain):
-        self.__domain.update(domain)
+        self.__domain.add(domain)
 
     @property
     def service_provider_catalog(self):
@@ -412,7 +389,7 @@ class ServiceProviderCatalog(Resource_):
             spc.add(DCTERMS.publisher, URIRef(self.publisher.about))
 
         if self.domain:
-            for item in self.domain.items():
+            for item in self.domain:
                 spc.add(OSLCCore.domain, URIRef(item[1]))
 
         if self.service_provider:
@@ -420,10 +397,10 @@ class ServiceProviderCatalog(Resource_):
                 r = sp.to_rdf(graph)
                 spc.add(OSLCCore.serviceProvider, r.identifier)
 
-                for cv in r[OSLCCore.service]:
-                    for d in cv[OSLCCore.domain]:
-                        self.add_domain(d)
-                        spc.add(OSLCCore.domain, d.identifier)
+                # for cv in r[OSLCCore.service]:
+                #     for d in cv[OSLCCore.domain]:
+                #         self.add_domain(d)
+                #         spc.add(OSLCCore.domain, d.identifier)
 
         if self.service_provider_catalog:
             for item in self.service_provider_catalog:
@@ -437,7 +414,7 @@ class ServiceProviderCatalog(Resource_):
 
 class ServiceProvider(Resource_):
 
-    def __init__(self, about, types=None, properties=None,
+    def __init__(self, about=None, types=None, properties=None,
                  description=None, identifier=None, short_title=None,
                  title=None, contributor=None, creator=None, subject=None, created=None, modified=None, type=None,
                  discussed_by=None, instance_shape=None, service_provider=None, relation=None,
@@ -499,7 +476,9 @@ class ServiceProvider(Resource_):
         if not self.about:
             raise Exception("The title is missing")
 
-        sp = Resource(graph, URIRef(self.about + '/{}'.format(self.identifier) if self.identifier else ''))
+        uri = self.about if self.about.__contains__(self.identifier) else self.about + '/{}'.format(self.identifier) if self.identifier else ''
+
+        sp = Resource(graph, URIRef(uri))
         sp.add(RDF.type, URIRef(OSLCCore.ServiceProvider))
 
         if self.identifier:
@@ -530,7 +509,7 @@ class ServiceProvider(Resource_):
 
 class Service(Resource_):
 
-    def __init__(self, about, types=None, properties=None, description=None, identifier=None, short_title=None,
+    def __init__(self, about=None, types=None, properties=None, description=None, identifier=None, short_title=None,
                  title=None, contributor=None, creator=None, subject=None, created=None, modified=None, type=None,
                  discussed_by=None, instance_shape=None, service_provider=None, relation=None,
                  domain=None, creation_factory=None, query_capability=None,
@@ -581,6 +560,17 @@ class Service(Resource_):
     def add_query_capability(self, query_capability):
         self.__query_capability.append(query_capability)
 
+    @property
+    def selection_dialog(self):
+        return self.__selection_dialog
+
+    @selection_dialog.setter
+    def selection_dialog(self, selection_dialog):
+        self.__selection_dialog = selection_dialog
+
+    def add_selection_dialog(self, selection_dialog):
+        self.__selection_dialog.append(selection_dialog)
+
     def to_rdf(self, graph):
         if not self.about:
             raise Exception("The title is missing")
@@ -592,22 +582,27 @@ class Service(Resource_):
         if self.domain:
             s.add(OSLCCore.domain, URIRef(self.domain))
 
-        # if self.creation_factory:
-        #     for cf in self.creation_factory:
-        #         r = cf.to_rdf(graph)
-        #         s.add(OSLCCore.creationFactory, r.identifier)
+        if self.creation_factory:
+            for cf in self.creation_factory:
+                r = cf.to_rdf(graph)
+                s.add(OSLCCore.creationFactory, r.identifier)
 
         if self.query_capability:
             for qc in self.query_capability:
                 r = qc.to_rdf(graph)
                 s.add(OSLCCore.queryCapability, r.identifier)
 
+        if self.selection_dialog:
+            for sd in self.selection_dialog:
+                r = sd.to_rdf(graph)
+                s.add(OSLCCore.selectionDialog, r.identifier)
+
         return s
 
 
 class QueryCapability(Resource_):
 
-    def __init__(self, about, types=None, properties=None, description=None, identifier=None, short_title=None,
+    def __init__(self, about=None, types=None, properties=None, description=None, identifier=None, short_title=None,
                  title=None, contributor=None, creator=None, subject=None, created=None, modified=None, type=None,
                  discussed_by=None, instance_shape=None, service_provider=None, relation=None,
                  label=None, query_base=None, usage=None, resource_type=None, resource_shape=None):
@@ -621,8 +616,8 @@ class QueryCapability(Resource_):
         self.__label = label if label is not None else None
         self.__query_base = query_base if query_base is not None else None
         self.__resource_shape = resource_shape if resource_shape is not None else None
-        self.__resource_type = resource_type if resource_type is not None else OrderedDict()
-        self.__usage = usage if usage is not None else OrderedDict()
+        self.__resource_type = resource_type if resource_type is not None else list()
+        self.__usage = usage if usage is not None else list()
 
 
     @property
@@ -661,7 +656,7 @@ class QueryCapability(Resource_):
         self.__resource_type = resource_type
 
     def add_resource_type(self, resource_type):
-        self.__resource_type.update(resource_type)
+        self.__resource_type.append(resource_type)
 
     @property
     def usage(self):
@@ -692,11 +687,10 @@ class QueryCapability(Resource_):
             qc.add(OSLCCore.queryBase, URIRef(self.query_base))
 
         if self.resource_shape:
-            for item in self.resource_shape.items():
-                qc.add(OSLCCore.resourceShape, URIRef(item[1]))
+            qc.add(OSLCCore.resourceShape, URIRef(self.resource_shape))
 
         if self.resource_type:
-            for item in self.resource_shape.items():
+            for item in self.resource_type:
                 qc.add(OSLCCore.resourceType, URIRef(item[1]))
 
         if self.usage:
@@ -708,7 +702,7 @@ class QueryCapability(Resource_):
 
 class CreationFactory(Resource_):
 
-    def __init__(self, about, types=None, properties=None, description=None, identifier=None, short_title=None,
+    def __init__(self, about=None, types=None, properties=None, description=None, identifier=None, short_title=None,
                  title=None, contributor=None, creator=None, subject=None, created=None, modified=None, type=None,
                  discussed_by=None, instance_shape=None, service_provider=None, relation=None,
                  label=None, creation=None, usage=None, resource_type=None, resource_shape=None):
@@ -725,9 +719,9 @@ class CreationFactory(Resource_):
 
         self.__label = label if label is not None else None
         self.__creation = creation if creation is not None else None
-        self.__resource_shape = resource_shape if resource_shape is not None else OrderedDict()
-        self.__resource_type = resource_type if resource_type is not None else OrderedDict()
-        self.__usage = usage if usage is not None else OrderedDict()
+        self.__resource_shape = resource_shape if resource_shape is not None else list()
+        self.__resource_type = resource_type if resource_type is not None else list()
+        self.__usage = usage if usage is not None else list()
 
 
     @property
@@ -873,3 +867,182 @@ class OAuthConfiguration(Resource_):
             oac.add(OSLCCore.oauthRequestTokenURI, URIRef(self.oauth_request_token_uri))
 
         return oac
+
+
+class Dialog(Resource_):
+
+    def __init__(self, about=None, types=None, properties=None, description=None, identifier=None, short_title=None,
+                 title=None, contributor=None, creator=None, subject=None, created=None, modified=None, type=None,
+                 discussed_by=None, instance_shape=None, service_provider=None, relation=None,
+                 dialog=None, hint_height=None, hint_width=None, label=None, usage=None, resource_type=None):
+
+        Resource_.__init__(self, about=about, types=types, properties=properties, description=description,
+                          identifier=identifier, short_title=short_title, title=title, contributor=contributor,
+                          creator=creator, subject=subject, created=created, modified=modified, type=type,
+                          discussed_by=discussed_by, instance_shape=instance_shape, service_provider=service_provider,
+                          relation=relation)
+
+        self.__dialog = dialog if dialog is not None else None
+        self.__hint_height = hint_height if hint_height is not None else None
+        self.__hint_width = hint_width if hint_width is not None else None
+        self.__label = label if label is not None else None
+        self.__resource_type = resource_type if resource_type is not None else list()
+        self.__usage = usage if usage is not None else list()
+
+    @property
+    def label(self):
+        return self.__label
+
+    @label.setter
+    def label(self, label):
+        self.__label = label
+
+    @property
+    def dialog(self):
+        return self.__dialog
+
+    @dialog.setter
+    def dialog(self, dialog):
+        self.__dialog = dialog
+
+    @property
+    def hint_height(self):
+        return self.__hint_height
+
+    @hint_height.setter
+    def hint_height(self, hint_height):
+        self.__hint_height = hint_height
+
+    @property
+    def hint_width(self):
+        return self.__hint_width
+
+    @hint_width.setter
+    def hint_width(self, hint_width):
+        self.__hint_width = hint_width
+
+    @property
+    def resource_type(self):
+        return self.__resource_type
+
+    @resource_type.setter
+    def resource_type(self, resource_type):
+        self.__resource_type = resource_type
+
+    def add_resource_type(self, resource_type):
+        self.__resource_type.append(resource_type)
+
+    @property
+    def usage(self):
+        return self.__usage
+
+    @usage.setter
+    def usage(self, usage):
+        self.__usage = usage
+
+    def add_usage(self, usage):
+        self.__usage.update(usage)
+
+    def to_rdf(self, graph):
+        if not self.about:
+            raise Exception("The title is missing")
+
+        qc = Resource(graph, BNode())
+        # qc = Resource(graph, URIRef(self.about))
+        qc.add(RDF.type, URIRef(OSLCCore.Dialog))
+
+        if self.label:
+            qc.add(OSLCCore.label, Literal(self.label, datatype=XSD.string))
+
+        if self.title:
+            qc.add(DCTERMS.title, Literal(self.title))
+
+        if self.hint_width:
+            qc.add(DCTERMS.hintWidth, Literal(self.hint_width, datatype=XSD.integer))
+
+        if self.hint_height:
+            qc.add(DCTERMS.hintHeight, Literal(self.hint_height, datatype=XSD.integer))
+
+        if self.dialog:
+            qc.add(OSLCCore.queryBase, URIRef(self.dialog))
+
+        if self.resource_type:
+            for item in self.resource_type:
+                qc.add(OSLCCore.resourceType, URIRef(item[1]))
+
+        if self.usage:
+            for item in self.usage.items():
+                qc.add(OSLCCore.usage, URIRef(item[1]))
+
+        return qc
+
+
+
+
+
+
+
+
+"""
+
+class ResourceShape(BaseResource):
+    def __init__(self, about, types, properties,
+                 describes, title):
+        BaseResource.__init__(self, about, types, properties)
+
+        self.__describes = describes if describes is not None else OrderedDict()
+        self.__properties = properties if properties is not None else OrderedDict()
+        self.__title = title if title is not None else None
+
+    @property
+    def describes(self):
+        return self.__describes
+
+    @describes.setter
+    def describes(self, describes):
+        self.__describes = describes
+
+    def add_describe(self, describe):
+        if describe:
+            self.__describes.append(describe)
+
+    @property
+    def properties(self):
+        return self.__properties
+
+    @properties.setter
+    def properties(self, properties):
+        self.__properties = properties
+
+    def add_propertie(self, propertie):
+        if propertie:
+            self.__properties.append(propertie)
+
+    @property
+    def title(self):
+        return self.__title
+
+    @title.setter
+    def title(self, title):
+        self.__title = title
+
+
+class FilteredResource(BaseResource):
+
+    def __init__(self, about, types, properties, resource):
+        BaseResource.__init__(self, about, types, properties)
+        self.__resource = resource if resource is not None else None
+
+
+class ResponseInfo(FilteredResource):
+
+    def __init__(self, about, types, properties, resource, total_count, next_page, container):
+        FilteredResource.__init__(self, about, types, properties, resource)
+
+        self.__total_count = total_count if total_count is not None else 0
+        self.__next_page = next_page if next_page is not None else None
+        self.__container = container if container is not None else None
+
+
+
+"""

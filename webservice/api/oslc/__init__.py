@@ -4,9 +4,11 @@ from flask import Blueprint
 from flask_restplus import Api
 from werkzeug.exceptions import BadRequest
 
+from webservice.api.oslc.adapter.endpoints import adapter_ns
+
 log = logging.getLogger(__name__)
 
-bp = Blueprint('oslc', __name__, '/oslc')
+bp = Blueprint('oslc', __name__, static_folder='/oslc', url_prefix='services')
 
 api = Api(
     app=bp,
@@ -39,6 +41,8 @@ def handle_root_exception(error):
     return {'message': 'What you want'}, 400
 
 
-from webservice.api.oslc.adapter import adapter_ns
+api.add_namespace(adapter_ns)
+
+# from webservice.api.oslc.adapter import adapter_ns
 from webservice.api.oslc.rm import rm_ns
 # from webservice.api.oslc.cm import cm_ns
