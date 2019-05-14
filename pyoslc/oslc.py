@@ -73,7 +73,6 @@ class PyOSLC:
                 age = args[1]
 
                 data = function(*args)
-                print(data)
                 result = self.graph.serialize()
                 return result.decode('utf-8')
 

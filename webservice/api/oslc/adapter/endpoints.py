@@ -50,8 +50,6 @@ class ServiceProviderCatalog(OslcResource):
 
         catalog_url = urlparse(base_url).geturl()
 
-        print(request)
-
         catalog = ServiceProviderCatalogSingleton.get_catalog(catalog_url)
         catalog.to_rdf(self.graph)
         return self.create_response(graph=self.graph)
@@ -68,9 +66,6 @@ class ServiceProvider(OslcResource):
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
 
         url = urlparse(base_url)
-        print(url.geturl())
-
-        print(base_url)
 
         provider = ServiceProviderCatalogSingleton.get_provider(request, service_provider_id)
         provider.to_rdf(self.graph)

@@ -330,7 +330,7 @@ class ServiceProviderCatalog(Resource_):
 
         self.__uri = uri if uri is not None else build_uri(default_uri, 'serviceProviderCatalog')
         self.__publisher = publisher
-        self.__domain = domain if domain is not None else set()
+        self.__domain = domain if domain is not None else list()
         self.__service_provider_catalog = service_provider_catalog if service_provider_catalog is not None else set()
         self.__oauth_configuration = oauth_configuration
 
@@ -351,7 +351,7 @@ class ServiceProviderCatalog(Resource_):
         self.__domain = domain
 
     def add_domain(self, domain):
-        self.__domain.add(domain)
+        self.__domain.append(domain)
 
     @property
     def service_provider_catalog(self):
@@ -390,17 +390,12 @@ class ServiceProviderCatalog(Resource_):
 
         if self.domain:
             for item in self.domain:
-                spc.add(OSLCCore.domain, URIRef(item[1]))
+                spc.add(OSLCCore.domain, URIRef(item))
 
         if self.service_provider:
             for sp in self.service_provider:
                 r = sp.to_rdf(graph)
                 spc.add(OSLCCore.serviceProvider, r.identifier)
-
-                # for cv in r[OSLCCore.service]:
-                #     for d in cv[OSLCCore.domain]:
-                #         self.add_domain(d)
-                #         spc.add(OSLCCore.domain, d.identifier)
 
         if self.service_provider_catalog:
             for item in self.service_provider_catalog:
@@ -430,7 +425,7 @@ class ServiceProvider(Resource_):
                            relation=relation)
         self.__publisher = publisher
         self.__service = service if service is not None else list()
-        self.__details = details if details is not None else OrderedDict()
+        self.__details = details if details is not None else list()
         self.__prefix_definition = prefix_definition if prefix_definition is not None else list()
         self.__oauth_configuration = oauth_configuration if oauth_configuration is not None else None
 
@@ -463,6 +458,20 @@ class ServiceProvider(Resource_):
     @details.setter
     def details(self, details):
         self.__details = details
+
+    def add_detail(self, detail):
+        self.__details.append(detail)
+
+    @property
+    def prefix_definition(self):
+        return self.__prefix_definition
+
+    @prefix_definition.setter
+    def prefix_definition(self, prefix_definition):
+        self.__prefix_definition = prefix_definition
+
+    def add_prefix_definition(self, prefix_definition):
+        self.__prefix_definition.append(prefix_definition)
 
     @property
     def oauth_configuration(self):
@@ -503,6 +512,11 @@ class ServiceProvider(Resource_):
 
         if self.oauth_configuration:
             sp.add(OSLCCore.oauthConfiguration, URIRef(self.oauth_configuration.about))
+
+        if self.prefix_definition:
+            for pd in self.prefix_definition:
+                r = pd.to_rdf(graph)
+                sp.add(OSLCCore.prefixDefinition, r.identifier)
 
         return sp
 
@@ -571,12 +585,22 @@ class Service(Resource_):
     def add_selection_dialog(self, selection_dialog):
         self.__selection_dialog.append(selection_dialog)
 
+    @property
+    def creation_dialog(self):
+        return self.__creation_dialog
+
+    @creation_dialog.setter
+    def creation_dialog(self, creation_dialog):
+        self.__creation_dialog = creation_dialog
+
+    def add_creation_dialog(self, creation_dialog):
+        self.__creation_dialog.append(creation_dialog)
+
     def to_rdf(self, graph):
         if not self.about:
             raise Exception("The title is missing")
 
         s = Resource(graph, BNode())
-        # s = Resource(graph, URIRef(self.about))
         s.add(RDF.type, URIRef(OSLCCore.Service))
 
         if self.domain:
@@ -596,6 +620,11 @@ class Service(Resource_):
             for sd in self.selection_dialog:
                 r = sd.to_rdf(graph)
                 s.add(OSLCCore.selectionDialog, r.identifier)
+
+        if self.creation_dialog:
+            for cd in self.creation_dialog:
+                r = cd.to_rdf(graph)
+                s.add(OSLCCore.creationDialog, r.identifier)
 
         return s
 
@@ -674,7 +703,6 @@ class QueryCapability(Resource_):
             raise Exception("The title is missing")
 
         qc = Resource(graph, BNode())
-        # qc = Resource(graph, URIRef(self.about))
         qc.add(RDF.type, URIRef(OSLCCore.QueryCapability))
 
         if self.title:
@@ -691,7 +719,7 @@ class QueryCapability(Resource_):
 
         if self.resource_type:
             for item in self.resource_type:
-                qc.add(OSLCCore.resourceType, URIRef(item[1]))
+                qc.add(OSLCCore.resourceType, URIRef(item))
 
         if self.usage:
             for item in self.usage.items():
@@ -712,17 +740,16 @@ class CreationFactory(Resource_):
         """
 
         Resource_.__init__(self, about=about, types=types, properties=properties, description=description,
-                          identifier=identifier, short_title=short_title, title=title, contributor=contributor,
-                          creator=creator, subject=subject, created=created, modified=modified, type=type,
-                          discussed_by=discussed_by, instance_shape=instance_shape, service_provider=service_provider,
-                          relation=relation)
+                           identifier=identifier, short_title=short_title, title=title, contributor=contributor,
+                           creator=creator, subject=subject, created=created, modified=modified, type=type,
+                           discussed_by=discussed_by, instance_shape=instance_shape, service_provider=service_provider,
+                           relation=relation)
 
         self.__label = label if label is not None else None
         self.__creation = creation if creation is not None else None
         self.__resource_shape = resource_shape if resource_shape is not None else list()
         self.__resource_type = resource_type if resource_type is not None else list()
         self.__usage = usage if usage is not None else list()
-
 
     @property
     def label(self):
@@ -749,7 +776,7 @@ class CreationFactory(Resource_):
         self.__resource_shape = resource_shape
 
     def add_resource_shape(self, resource_shape):
-        self.__resource_shape.update(resource_shape)
+        self.__resource_shape.append(resource_shape)
 
     @property
     def resource_type(self):
@@ -760,7 +787,7 @@ class CreationFactory(Resource_):
         self.__resource_type = resource_type
 
     def add_resource_type(self, resource_type):
-        self.__resource_type.update(resource_type)
+        self.__resource_type.append(resource_type)
 
     @property
     def usage(self):
@@ -778,7 +805,6 @@ class CreationFactory(Resource_):
             raise Exception("The title is missing")
 
         cf = Resource(graph, BNode())
-        # cf = Resource(graph, URIRef(self.about))
         cf.add(RDF.type, URIRef(OSLCCore.CreationFactory))
 
         if self.title:
@@ -791,16 +817,16 @@ class CreationFactory(Resource_):
             cf.add(OSLCCore.creation, URIRef(self.creation))
 
         if self.resource_shape:
-            for item in self.resource_shape.items():
-                cf.add(OSLCCore.resourceShape, URIRef(item[1]))
+            for item in self.resource_shape:
+                cf.add(OSLCCore.resourceShape, URIRef(item))
 
         if self.resource_type:
-            for item in self.resource_shape.items():
-                cf.add(OSLCCore.resourceType, URIRef(item[1]))
+            for item in self.resource_type:
+                cf.add(OSLCCore.resourceType, URIRef(item))
 
         if self.usage:
-            for item in self.usage.items():
-                cf.add(OSLCCore.usage, URIRef(item[1]))
+            for item in self.usage:
+                cf.add(OSLCCore.usage, URIRef(item))
 
         return cf
 
@@ -941,46 +967,87 @@ class Dialog(Resource_):
         self.__usage = usage
 
     def add_usage(self, usage):
-        self.__usage.update(usage)
+        self.__usage.append(usage)
 
     def to_rdf(self, graph):
         if not self.about:
             raise Exception("The title is missing")
 
-        qc = Resource(graph, BNode())
-        # qc = Resource(graph, URIRef(self.about))
-        qc.add(RDF.type, URIRef(OSLCCore.Dialog))
+        d = Resource(graph, BNode())
+        d.add(RDF.type, URIRef(OSLCCore.Dialog))
 
         if self.label:
-            qc.add(OSLCCore.label, Literal(self.label, datatype=XSD.string))
+            d.add(OSLCCore.label, Literal(self.label, datatype=XSD.string))
 
         if self.title:
-            qc.add(DCTERMS.title, Literal(self.title))
+            d.add(DCTERMS.title, Literal(self.title))
 
         if self.hint_width:
-            qc.add(DCTERMS.hintWidth, Literal(self.hint_width, datatype=XSD.integer))
+            d.add(DCTERMS.hintWidth, Literal(self.hint_width, datatype=XSD.integer))
 
         if self.hint_height:
-            qc.add(DCTERMS.hintHeight, Literal(self.hint_height, datatype=XSD.integer))
+            d.add(DCTERMS.hintHeight, Literal(self.hint_height, datatype=XSD.integer))
 
         if self.dialog:
-            qc.add(OSLCCore.queryBase, URIRef(self.dialog))
+            d.add(OSLCCore.dialog, URIRef(self.dialog))
 
         if self.resource_type:
             for item in self.resource_type:
-                qc.add(OSLCCore.resourceType, URIRef(item[1]))
+                d.add(OSLCCore.resourceType, URIRef(item))
 
         if self.usage:
-            for item in self.usage.items():
-                qc.add(OSLCCore.usage, URIRef(item[1]))
+            for item in self.usage:
+                d.add(OSLCCore.usage, URIRef(item))
 
-        return qc
-
-
+        return d
 
 
+class PrefixDefinition(Resource_):
 
+    def __init__(self, about=None, types=None, properties=None, description=None, identifier=None, short_title=None,
+                 title=None, contributor=None, creator=None, subject=None, created=None, modified=None, type=None,
+                 discussed_by=None, instance_shape=None, service_provider=None, relation=None,
+                 prefix=None, prefix_base=None):
 
+        Resource_.__init__(self, about=about, types=types, properties=properties, description=description,
+                           identifier=identifier, short_title=short_title, title=title, contributor=contributor,
+                           creator=creator, subject=subject, created=created, modified=modified, type=type,
+                           discussed_by=discussed_by, instance_shape=instance_shape, service_provider=service_provider,
+                           relation=relation)
+
+        self.__prefix = prefix if prefix is not None else None
+        self.__prefix_base = prefix_base if prefix_base is not None else None
+
+    @property
+    def prefix(self):
+        return self.__prefix
+
+    @prefix.setter
+    def prefix(self, prefix):
+        self.__prefix = prefix
+
+    @property
+    def prefix_base(self):
+        return self.__prefix_base
+
+    @prefix_base.setter
+    def prefix_base(self, prefix_base):
+        self.__prefix_base = prefix_base
+
+    def to_rdf(self, graph):
+        if not self.about:
+            raise Exception("The title is missing")
+
+        pd = Resource(graph, BNode())
+        pd.add(RDF.type, URIRef(OSLCCore.PrefixDefinition))
+
+        if self.prefix:
+            pd.add(OSLCCore.prefix, Literal(self.prefix))
+
+        if self.prefix_base:
+            pd.add(OSLCCore.prefixBase, URIRef(self.prefix_base.uri))
+
+        return pd
 
 
 """

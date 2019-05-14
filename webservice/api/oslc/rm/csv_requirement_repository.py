@@ -75,8 +75,6 @@ class CsvRequirementRepository(Repository):
         specification = dict()
 
         for key in CsvRequirementRepository.specification_map:
-            # print('{}'.format(key))
-
             attribute_name = CsvRequirementRepository.specification_map[key]['attribute']
             if hasattr(requirement, attribute_name):
                 attribute_value = getattr(requirement, attribute_name)

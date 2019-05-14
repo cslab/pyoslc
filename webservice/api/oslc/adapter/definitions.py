@@ -66,4 +66,3 @@ service_provider_catalog.add_service_provider(service_provider)
 service_provider_catalog.oauth_configuration = oauth_configuration
 
 # spc = ServiceProviderCatalogSingleton()
-# print(spc)

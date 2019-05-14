@@ -38,3 +38,35 @@ OSLCCore = ClosedNamespace(
         "valueShape", "valueType"
     ]
 )
+
+OSLCData = ClosedNamespace(
+    uri=URIRef("http://open-services.net/ns/servicemanagement/1.0/"),
+    terms=[
+        # RDFS Classes in this namespace
+        # RDF Properties in this namespace
+    ]
+)
+
+OSLC_AM = ClosedNamespace(
+    uri=URIRef("http://open-services.net/ns/am#"),
+    terms=[
+        # RDFS Classes in this namespace
+        # RDF Properties in this namespace
+    ]
+)
+
+OSLC_CM = ClosedNamespace(
+    uri=URIRef("http://open-services.net/ns/cm#"),
+    terms=[
+        # RDFS Classes in this namespace
+        # RDF Properties in this namespace
+    ]
+)
+
+OSLC_RM = ClosedNamespace(
+    uri=URIRef("http://open-services.net/ns/rm#"),
+    terms=[
+        # RDFS Classes in this namespace
+        # RDF Properties in this namespace
+    ]
+)

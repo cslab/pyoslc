@@ -93,32 +93,27 @@ class Requirement(Resource_):
                     d.value(predicate, attr.pop())
                 else:
                     d.value(predicate, getattr(self, attribute_key))
-            # else:
-            #     print('attribute {} is not in the map'.format(attribute_key))
+
         return graph
 
     def from_json(self, data):
         for key in data.iterkeys():
             item = {key: v.values() for k, v in self.specification_map.iteritems() if k.lower() == key.lower()}
-            # print('{} {}'.format(key, item))
 
             if item:
                 attribute_name = item[key][0]
                 if hasattr(self, attribute_name):
                     attribute_value = getattr(self, attribute_name)
-                    # print('{} {} {} : {}'.format(key, data[key], attribute_name, attribute_value))
                     if isinstance(attribute_value, set):
                         attribute_value.clear()
                         attribute_value.add(data[key])
                     else:
                         setattr(self, attribute_name, data[key])
-                    # print('{} {} {} : {}'.format(key, data[key], attribute_name, attribute_value))
 
     def to_mapped_object(self):
         specification = dict()
 
         for key in self.specification_map:
-            # print('{}'.format(key))
 
             attribute_name = self.specification_map[key]['attribute']
             if hasattr(self, attribute_name):
