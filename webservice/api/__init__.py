@@ -2,6 +2,7 @@ import logging
 import os
 from logging.handlers import RotatingFileHandler
 
+from authlib.flask.client import OAuth
 from flask import Flask
 
 
@@ -27,6 +28,8 @@ def create_app(config=None):
         os.makedirs(app.instance_path)
     except OSError:
         pass
+
+    oauth = OAuth(app)
 
     from . import web
     app.register_blueprint(web.bp)

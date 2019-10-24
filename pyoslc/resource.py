@@ -2,7 +2,6 @@
     This module will create all the elements for the
     services in the oslc adapter.
 """
-from collections import OrderedDict
 from datetime import date
 
 from rdflib import Literal, URIRef, BNode

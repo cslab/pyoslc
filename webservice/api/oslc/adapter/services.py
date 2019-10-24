@@ -3,7 +3,8 @@ from datetime import datetime
 from rdflib.namespace import DCTERMS, RDF, RDFS
 
 from pyoslc.model.factory import ServiceProviderFactory
-from pyoslc.resource import (ServiceProviderCatalog, PrefixDefinition)
+from pyoslc.jazz import RootService, Friend
+from pyoslc.resource import (ServiceProviderCatalog, PrefixDefinition, Resource_)
 from pyoslc.vocabulary import OSLCCore, OSLCData, OSLC_AM, OSLC_CM, OSLC_RM
 from webservice.api.oslc.adapter.specs import DataSpecsProjectA
 
@@ -53,6 +54,9 @@ class ServiceProviderCatalogSingleton(object):
     def initialize_providers(cls, catalog_url):
         service_providers = []  # Get information from the external container
         # GET Request for those applications
+
+
+        service_providers = client.get("htpp://server:port/endpoint", username="", password="")
 
         service_providers = [{'id': 'PA', 'name': 'Project A'}]
 
@@ -125,3 +129,33 @@ class ContactServiceProviderFactory(object):
         sp.prefix_definition = prefix_definitions
 
         return sp
+
+
+class RootServiceSingleton(object):
+    instance = None
+    root_service = None
+    providers = dict()
+
+    def __new__(cls, *args, **kwargs):
+        if not cls.instance:
+            cls.instance = super(RootServiceSingleton, cls).__new__(cls, *args, **kwargs)
+
+            cls.root_service = RootService()
+            cls.root_service.title = 'Root services for connecting with Jazz'
+            cls.root_service.description = 'List of services available on the PyOSLC to connect with Jazz applications.'
+
+        return cls.instance
+
+    @classmethod
+    def get_root_service(cls):
+        if not cls.instance:
+            cls()
+
+        # f = Friend(about="http://localhost:5000/oslc/services")
+        # f.title = "First friend"
+        # f.description = "Description of friend"
+        # f.root_service = "http://rrc1.example.com/jazz/rootservices"
+
+        # cls.root_service.add_friend(f)
+
+        return cls.root_service

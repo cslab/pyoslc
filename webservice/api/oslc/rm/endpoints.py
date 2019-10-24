@@ -168,7 +168,7 @@ class RequirementList(Resource):
             }
             return response_object, 400
 
-        return make_response('{}', 201)
+        return make_response(req.about, 201)
 
 
 class RequirementItem(Resource):

@@ -4,10 +4,7 @@ from flask import make_response, request, url_for
 from flask_restplus import Resource, Namespace
 from rdflib import Graph
 
-# from webservice.api.oslc.adapter.definitions import service_provider_catalog, publisher
-# from webservice.api.oslc.adapter.definitions import service_provider, service
-# from webservice.api.oslc.adapter.definitions import query_capability, creation_factory
-from webservice.api.oslc.adapter.services import ServiceProviderCatalogSingleton
+from webservice.api.oslc.adapter.services import ServiceProviderCatalogSingleton, RootServiceSingleton
 
 adapter_ns = Namespace(name='adapter', description='Python OSLC Adapter', path='/services', )
 
@@ -29,6 +26,8 @@ class OslcResource(Resource):
             content_type = 'json-ld'
 
         data = graph.serialize(format=content_type)
+
+        print(data)
 
         # Sending the response to the client
         response = make_response(data.decode('utf-8'), 200)
@@ -81,13 +80,33 @@ class IoTPlatformService(OslcResource):
     pass
 
 
-@adapter_ns.route('/catalog/id/<string:service_provider_id>')
+# @adapter_ns.route('/catalog/id/<string:service_provider_id>')
 class SP(OslcResource):
 
     def get(self):
         # Here we will retrieve information using the Repository pattern
 
         pass
+
+
+@adapter_ns.route('/rootservices')
+class RootServices(OslcResource):
+    def get(self):
+
+        """
+        g = Graph()
+        data = g.serialize(format='application/rdf+xml')
+
+        return make_response(data.decode('utf-8'), 200)
+        :return:
+        """
+
+        root_services = RootServiceSingleton.get_root_service()
+        root_services.to_rdf(self.graph)
+
+        return self.create_response(graph=self.graph)
+
+
 
 
 # class Service(Resource):
