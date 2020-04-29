@@ -55,8 +55,7 @@ class ServiceProviderCatalogSingleton(object):
         service_providers = []  # Get information from the external container
         # GET Request for those applications
 
-
-        service_providers = client.get("htpp://server:port/endpoint", username="", password="")
+        # service_providers = client.get("htpp://server:port/endpoint", username="", password="")
 
         service_providers = [{'id': 'PA', 'name': 'Project A'}]
 

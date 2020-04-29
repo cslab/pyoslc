@@ -4,3 +4,7 @@ pytest
 python-dotenv==0.10.1
 rdflib==4.2.2
 rdflib-jsonld==0.4.0
+
+Authlib
+requests
+Werkzeug==0.16.1

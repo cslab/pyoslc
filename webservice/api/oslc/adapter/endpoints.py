@@ -27,7 +27,7 @@ class OslcResource(Resource):
 
         data = graph.serialize(format=content_type)
 
-        print(data)
+        # print(data)
 
         # Sending the response to the client
         response = make_response(data.decode('utf-8'), 200)
@@ -71,13 +71,11 @@ class ServiceProvider(OslcResource):
         return self.create_response(graph=self.graph)
 
 
-@adapter_ns.route('/<string:service_provider_id>/resources')
+@adapter_ns.route('/<string:service_provider_id>/requirement')
 class IoTPlatformService(OslcResource):
 
     def get(self):
         return self.create_response(graph=self.graph)
-
-    pass
 
 
 # @adapter_ns.route('/catalog/id/<string:service_provider_id>')
