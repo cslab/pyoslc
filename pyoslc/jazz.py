@@ -1,8 +1,14 @@
+from flask import url_for
 from rdflib import URIRef, RDF, Literal, BNode
 from rdflib.namespace import DCTERMS, XSD
 from rdflib.resource import Resource
 
+from pyoslc.vocabulary.am import OSLC_AM
+from pyoslc.vocabulary.cm import OSLC_CM
+from pyoslc.vocabulary.config import OSLC_CONFIG
 from pyoslc.vocabulary.jazz import JAZZ_DISCOVERY
+from pyoslc.vocabulary.jfs import JFS
+from pyoslc.vocabulary.rm import OSLC_RM
 from resource import Resource_
 
 
@@ -48,6 +54,33 @@ class RootService(Resource_):
 
         if self.description:
             rs.add(DCTERMS.description, Literal(self.description, datatype=XSD.Literal))
+
+        graph.bind('oslc_am', OSLC_AM)
+        graph.bind('oslc_rm', OSLC_RM)
+        graph.bind('oslc_cm', OSLC_CM)
+        graph.bind('jfs', JFS)
+        graph.bind('oslc_config', OSLC_CONFIG)
+
+        rs.add(OSLC_AM.amServiceProviders, URIRef(url_for('oslc.adapter_service_provider_catalog')))
+        rs.add(OSLC_RM.rmServiceProviders, URIRef(url_for('oslc.adapter_service_provider_catalog')))
+        rs.add(OSLC_CM.cmServiceProviders, URIRef(url_for('oslc.adapter_service_provider_catalog')))
+        rs.add(OSLC_CONFIG.cmServiceProviders, URIRef(url_for('oslc.adapter_service_provider_catalog')))
+
+        rs.add(JFS.oauthRealmName, Literal("PyOSLC"))
+        rs.add(JFS.oauthDomain, URIRef(url_for('oslc.adapter_service_provider_catalog')))
+        rs.add(JFS.oauthRequestConsumerKeyUrl, URIRef(url_for('oauth.initiate_temporary_credential', _external=True)))
+        rs.add(JFS.oauthApprovalModuleUrl, URIRef(url_for('oauth.approve_key', _external=True)))
+        # rs.add(JFS.oauthRequestTokenUrl, URIRef(url_for('oauth.initiate_temporary_credential', _external=True)))
+        # rs.add(JFS.oauthUserAuthorizationUrl, URIRef(url_for('oslc.adapter_service_provider_catalog')))
+        # rs.add(JFS.oauthAccessTokenUrl, URIRef(url_for('oslc.adapter_service_provider_catalog')))
+
+        # <!-- OAuth URLs for establishing server-to-server connections -->
+        # 	<jfs: rdf:resource="http://192.168.1.66:8080/iotp/services/oauth/requestKey" />
+        # 	<jfs: rdf:resource="http://192.168.1.66:8080/iotp/services/oauth/approveKey" />
+        # 	<jfs: rdf:resource="http://192.168.1.66:8080/iotp/services/oauth/requestToken"/>
+        # 	<jfs: rdf:resource="http://192.168.1.66:8080/iotp/services/oauth/authorize" />
+        # 	<jfs: rdf:resource="http://192.168.1.66:8080/iotp/services/oauth/accessToken"/>fs
+        #
 
         if self.friends:
             for f in self.friends:

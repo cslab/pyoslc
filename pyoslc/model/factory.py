@@ -15,8 +15,8 @@ class ServiceProviderFactory(object):
     def initialize(cls, service_provider, base_uri, generic_base_uri, title, description, publisher, resouce_classes,
                    parameters):
 
-        service_provider.title = title
-        service_provider.description = description
+        # service_provider.title = title
+        # service_provider.description = description
         service_provider.publisher = publisher
 
         services = dict()
@@ -24,7 +24,7 @@ class ServiceProviderFactory(object):
         for class_ in resouce_classes:
             service = services.get(class_.domain)
             if not service:
-                service = Service(domain=class_.domain)
+                service = Service(about='http://baseurl/oslc/services/Project-1/service', domain=class_.domain)
                 services[class_.domain] = service
 
             cls.handle_resource_class(base_uri, generic_base_uri, class_, service, parameters)
@@ -71,18 +71,25 @@ class ServiceProviderFactory(object):
         attributes = method.__func__()
 
         title = attributes.get('title', 'OSLC Query Capability')
-        label = attributes.get('label', 'Query Capability Service')
+        # label = attributes.get('label', 'Query Capability Service')
+        label = None
         resource_shape = attributes.get('resource_shape', '')
         resource_type = attributes.get('resource_type', list())
         usages = attributes.get('usages', list())
 
+        base_uri = base_uri.replace('localhost:5000', 'baseurl')
+        base_uri = base_uri.replace('127.0.0.1:5000', 'baseurl')
+        base_uri = base_uri.replace('0.0.0.0:5000', 'baseurl')
+
         base_path = base_uri + '/'
         class_path = 'project/{id}/resources'
-        method_path = 'deviceType'
+        method_path = 'requirement'
+
+        base_path = base_path.replace('/catalog', '')
 
         query = cls.resolve_path_parameter(base_path, class_path, method_path, parameters)
 
-        query_capability = QueryCapability(title=title, query_base=query)
+        query_capability = QueryCapability(about=query, title=title, query_base=query)
         if label:
             query_capability.label = label
 
@@ -100,7 +107,12 @@ class ServiceProviderFactory(object):
 
     @classmethod
     def create_creation_factory(cls, base_uri, method, parameters):
-        class_path = 'proyect/{id}/resources'
+
+        base_uri = base_uri.replace('localhost:5000', 'baseurl')
+        base_uri = base_uri.replace('127.0.0.1:5000', 'baseurl')
+        base_uri = base_uri.replace('0.0.0.0:5000', 'baseurl')
+
+        class_path = 'project/{id}/resources'
         method_path = 'logic/rule'
         creation_factory = cls.creation_factory(base_uri, method, parameters, class_path, method_path)
         return creation_factory
@@ -118,11 +130,12 @@ class ServiceProviderFactory(object):
 
         base_path = base_uri + '/'
         class_path = 'project/{id}/resources'
-        method_path = 'deviceType'
+        method_path = 'requirement'
 
         creation = cls.resolve_path_parameter(base_path, class_path, method_path, parameters)
+        creation = creation.replace('/catalog', '')
 
-        creation_factory = CreationFactory(title=title, creation=creation)
+        creation_factory = CreationFactory(about=creation, title=title, creation=creation)
 
         if label:
             creation_factory.label = label

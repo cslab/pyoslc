@@ -1,11 +1,8 @@
 from datetime import datetime
 
-from rdflib.namespace import DCTERMS, RDF, RDFS
-
 from pyoslc.model.factory import ServiceProviderFactory
 from pyoslc.jazz import RootService, Friend
 from pyoslc.resource import (ServiceProviderCatalog, PrefixDefinition, Resource_)
-from pyoslc.vocabulary import OSLCCore, OSLCData, OSLC_AM, OSLC_CM, OSLC_RM
 from webservice.api.oslc.adapter.specs import DataSpecsProjectA
 
 
@@ -21,7 +18,7 @@ class ServiceProviderCatalogSingleton(object):
 
             cls.catalog = ServiceProviderCatalog()
             cls.catalog.title = 'Contact Software Platform Service Provider Catalog'
-            cls.catalog.description = 'A Service Provider Catalog describing the service providers for the Contact Software Platform.'
+            # cls.catalog.description = 'A Service Provider Catalog describing the service providers for the Contact Software Platform.'
 
         return cls.instance
 
@@ -57,7 +54,7 @@ class ServiceProviderCatalogSingleton(object):
 
         # service_providers = client.get("htpp://server:port/endpoint", username="", password="")
 
-        service_providers = [{'id': 'PA', 'name': 'Project A'}]
+        service_providers = [{'id': 'Project-1', 'name': 'Service Provider for Project 1'}]
 
         for sp in service_providers:
             identifier = sp.get('id')
@@ -85,7 +82,7 @@ class ServiceProviderCatalogSingleton(object):
         provider.about = sp_uri
         provider.identifier = identifier
         provider.created = datetime.now()
-        provider.details = sp_uri
+        # provider.details = sp_uri
 
         cls.catalog.add_service_provider(provider)
 
@@ -113,17 +110,17 @@ class ContactServiceProviderFactory(object):
         classes = [DataSpecsProjectA]
         sp = ServiceProviderFactory.create(base_uri, 'project', title, description, publisher, classes, parameters)
 
-        sp.add_detail(base_uri)
+        # sp.add_detail(base_uri)
 
         prefix_definitions = list()
-        prefix_definitions.append(PrefixDefinition(prefix='dcterms', prefix_base=DCTERMS))
-        prefix_definitions.append(PrefixDefinition(prefix='oslc', prefix_base=OSLCCore))
-        prefix_definitions.append(PrefixDefinition(prefix='oslc_data', prefix_base=OSLCData))
-        prefix_definitions.append(PrefixDefinition(prefix='rdf', prefix_base=RDF))
-        prefix_definitions.append(PrefixDefinition(prefix='rdfs', prefix_base=RDFS))
-        prefix_definitions.append(PrefixDefinition(prefix='oslc_am', prefix_base=OSLC_AM))
-        prefix_definitions.append(PrefixDefinition(prefix='oslc_cm', prefix_base=OSLC_CM))
-        prefix_definitions.append(PrefixDefinition(prefix='oslc_rm', prefix_base=OSLC_RM))
+        # prefix_definitions.append(PrefixDefinition(prefix='dcterms', prefix_base=DCTERMS))
+        # prefix_definitions.append(PrefixDefinition(prefix='oslc', prefix_base=OSLCCore))
+        # prefix_definitions.append(PrefixDefinition(prefix='oslc_data', prefix_base=OSLCData))
+        # prefix_definitions.append(PrefixDefinition(prefix='rdf', prefix_base=RDF))
+        # prefix_definitions.append(PrefixDefinition(prefix='rdfs', prefix_base=RDFS))
+        # prefix_definitions.append(PrefixDefinition(prefix='oslc_am', prefix_base=OSLC_AM))
+        # prefix_definitions.append(PrefixDefinition(prefix='oslc_cm', prefix_base=OSLC_CM))
+        # prefix_definitions.append(PrefixDefinition(prefix='oslc_rm', prefix_base=OSLC_RM))
 
         sp.prefix_definition = prefix_definitions
 

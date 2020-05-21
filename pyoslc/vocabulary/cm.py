@@ -17,6 +17,7 @@ OSLC_CM = ClosedNamespace(
         "priority", "relatedChangeRequest", "relatedTestCase",
         "relatedTestExecutionRecord", "relatedTestPlan",
         "relatedTestScript", "severity", "state", "status",
-        "testedByTestCase", "tracksChangeSet", "tracksRequirement"
+        "testedByTestCase", "tracksChangeSet", "tracksRequirement",
+        "cmServiceProviders",
     ]
 )

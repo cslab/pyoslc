@@ -373,7 +373,7 @@ class ServiceProviderCatalog(Resource_):
 
     def to_rdf(self, graph):
         if not self.about:
-            raise Exception("The title is missing")
+            raise Exception("The about property is missing")
 
         spc = Resource(graph, URIRef(self.about))
         spc.add(RDF.type, URIRef(OSLCCore.ServiceProviderCatalog))
@@ -597,10 +597,16 @@ class Service(Resource_):
 
     def to_rdf(self, graph):
         if not self.about:
-            raise Exception("The title is missing")
+            raise Exception("The about property is missing")
 
         s = Resource(graph, BNode())
         s.add(RDF.type, URIRef(OSLCCore.Service))
+
+        if self.title:
+            s.add(DCTERMS.title, Literal(self.title, datatype=XSD.Literal))
+
+        if self.description:
+            s.add(DCTERMS.description, Literal(self.description, datatype=XSD.Literal))
 
         if self.domain:
             s.add(OSLCCore.domain, URIRef(self.domain))
@@ -646,7 +652,6 @@ class QueryCapability(Resource_):
         self.__resource_shape = resource_shape if resource_shape is not None else None
         self.__resource_type = resource_type if resource_type is not None else list()
         self.__usage = usage if usage is not None else list()
-
 
     @property
     def label(self):
@@ -699,7 +704,7 @@ class QueryCapability(Resource_):
 
     def to_rdf(self, graph):
         if not self.about:
-            raise Exception("The title is missing")
+            raise Exception("The about property is missing")
 
         qc = Resource(graph, BNode())
         qc.add(RDF.type, URIRef(OSLCCore.QueryCapability))

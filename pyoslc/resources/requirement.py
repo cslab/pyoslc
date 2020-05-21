@@ -9,19 +9,26 @@ from pyoslc.vocabulary.rm import OSLC_RM
 class Requirement(Resource_):
 
     specification_map = {
+        # RDF and OSLC attributes
         'Specification_id': {'attribute': '_Resource___identifier', 'oslc_property': 'DCTERMS.identifier'},
-        'Product': {'attribute': '_Resource___short_title', 'oslc_property': 'DCTERMS.shortTitle'},
-        'Project': {'attribute': '_Resource___subject', 'oslc_property': 'DCTERMS.subject'},
         'Title': {'attribute': '_Resource___title', 'oslc_property': 'DCTERMS.title'},
         'Description': {'attribute': '_Resource___description', 'oslc_property': 'DCTERMS.description'},
-        'Source': {'attribute': '_Requirement__elaborated_by', 'oslc_property': 'OSLC_RM.elaboratedBy'},
         'Author': {'attribute': '_Resource___creator', 'oslc_property': 'DCTERMS.creator'},
+
+        # RM and Custom attributes
+        'Product': {'attribute': '_Resource___short_title', 'oslc_property': 'DCTERMS.shortTitle'},
+        'Subject': {'attribute': '_Resource___subject', 'oslc_property': 'DCTERMS.subject'},
+        'Source': {'attribute': '_Requirement__elaborated_by', 'oslc_property': 'OSLC_RM.elaboratedBy'},
         'Category': {'attribute': '_Requirement__constrained_by', 'oslc_property': 'OSLC_RM.constrainedBy'},
         'Discipline': {'attribute': '_Requirement__satisfied_by', 'oslc_property': 'OSLC_RM.satisfiedBy'},
         'Revision': {'attribute': '_Requirement__tracked_by', 'oslc_property': 'OSLC_RM.trackedBy'},
         'Target_Value': {'attribute': '_Requirement__validated_by', 'oslc_property': 'OSLC_RM.validatedBy'},
         'Degree_of_fulfillment': {'attribute': '_Requirement__affected_by', 'oslc_property': 'OSLC_RM.affectedBy'},
-        'Status': {'attribute': '_Requirement__decomposed_by', 'oslc_property': 'OSLC_RM.decomposedBy'}
+        'Status': {'attribute': '_Requirement__decomposed_by', 'oslc_property': 'OSLC_RM.decomposedBy'},
+
+        # CUSTOM attributes
+        'PUID': {'attribute': '_Requirement__puid', 'oslc_property': 'OSLC_RM.puid'},
+        'Project': {'attribute': '_Requirement__project', 'oslc_property': 'OSLC_RM.project'},
     }
 
     def __init__(self, about=None, types=None, properties=None,

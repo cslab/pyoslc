@@ -8,3 +8,5 @@ rdflib-jsonld==0.4.0
 Authlib
 requests
 Werkzeug==0.16.1
+
+Flask-SQLAlchemy==2.4.1

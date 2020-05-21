@@ -3,24 +3,26 @@ import os
 from logging.handlers import RotatingFileHandler
 
 from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+
+from webservice.config import Config
+
+db = SQLAlchemy()
 
 
-def create_app(config=None):
+def create_app(config=Config):
     app = Flask(__name__, instance_relative_config=False)
 
-    app.config.from_mapping(
-        MAIL_SERVER=None,
-        LOG_TO_STDOUT=None,
-        SECRET_KEY='d3v3L0p',
-        BASE_URI='http://examples.org/'
-    )
+    app.config.from_object(config)
+
+    db.init_app(app)
 
     if config is None:
         # load the instance config, if it exists, when not testing
         app.config.from_pyfile('config.py', silent=True)
     else:
         # load the test config if passed in
-        app.config.from_mapping(config)
+        app.config.from_object(config)
 
     # ensure the instance folder exists
     try:
@@ -38,6 +40,12 @@ def create_app(config=None):
     # TODO register cdb standard functionalities over http endpoint
     # from . import cdb
     # app.register_blueprint(cdb.bp, url_prefix='/cdb')
+
+    from oauth import server
+    server.init_app(app)
+
+    from oauth.routes import oauth_bp
+    app.register_blueprint(oauth_bp)
 
     if not app.debug and not app.testing:
         if app.config['MAIL_SERVER']:

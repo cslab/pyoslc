@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ app_name }}</title>
+</head>
+<body>
+
+<form action="">
+    <div>You must log in as an OAuth administrator to continue.</div>
+
+			<div id="error" class="error" style="display: hidden;"></div>
+			<input type="hidden" id="callback" value="<c:out value="${callback}"/>">
+
+			<div>
+				<label for="id">Username:</label>
+			</div>
+			<div>
+			 	<input id="id" name="id" type="text" class="textField" required autofocus></input>
+				<script type="text/javascript">
+					// If no native HTML5 autofocus support, focus the ID field using JavaScript.
+		    		if (!("autofocus" in document.createElement("input"))) {
+		      			document.getElementById("id").focus();
+		    		}
+		  		</script>
+			</div>
+
+			<div>
+				<label for="password">Password:</label>
+			</div>
+				<input id="password" name="password" type="password" class="textField"></input>
+			<div>
+			</div>
+			<div>
+				<input type="submit" value="Continue">
+			</div>
+</form>
+
+</body>
+</html>
