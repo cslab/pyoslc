@@ -1,5 +1,10 @@
+from base64 import b64encode
 from authlib.integrations.flask_client import OAuth
 from enum import Enum
+from rdflib import Graph, RDF, URIRef, BNode, Literal, XSD
+from rdflib.resource import Resource
+
+from oauth.vocabulary import OAUTH
 
 
 class OAuthVersion(Enum):
@@ -45,8 +50,8 @@ class OAuthConsumer(OAuth):
     def __init__(self, callback_url=None, consumer_key=None, consumer_secret=None, service_provider=None):
         super(OAuthConsumer, self).__init__()
         self.__callback_url = callback_url if callback_url is not None else None
-        self.__consumer_key = consumer_key if consumer_key is not None else None
-        self.__consumer_secret = consumer_secret if consumer_secret is not None else None
+        self.__key = consumer_key if consumer_key is not None else None
+        self.__secret = consumer_secret if consumer_secret is not None else None
         self.__service_provider = service_provider if service_provider is not None else None
         self.__properties = dict()
 
@@ -59,20 +64,20 @@ class OAuthConsumer(OAuth):
         self.__callback_url = callback_url
 
     @property
-    def consumer_key(self):
-        return self.__consumer_key
+    def key(self):
+        return self.__key
 
-    @consumer_key.setter
-    def consumer_key(self, consumer_key):
-        self.__consumer_key = consumer_key
+    @key.setter
+    def key(self, key):
+        self.__key = key
 
     @property
-    def consumer_secret(self):
-        return self.__consumer_secret
+    def secret(self):
+        return self.__secret
 
-    @consumer_secret.setter
-    def consumer_secret(self, consumer_secret):
-        self.__consumer_secret = consumer_secret
+    @secret.setter
+    def secret(self, secret):
+        self.__secret = secret
 
     @property
     def service_provider(self):
@@ -136,34 +141,33 @@ class OSLCOAuthConsumer(OAuthConsumer):
     def oauth_version(self):
         return self.__oauth_version
 
-
-class ConsumerStore:
-
-    def __init__(self):
-        pass
-
-    def get_consumer(self, consumer_key=None):
-        pass
+    def __repr__(self):
+        return '<OSLCOAuthConsumer {}>'.format(self.name)
 
 
 class OAuthConfiguration(object):
 
-    __instance = None
+    _instance = None
 
     def __new__(cls, *args, **kwargs):
-        if not cls.instance:
-            cls.__instance = super(OAuthConfiguration, cls).__new__(cls, *args, **kwargs)
+        if not cls._instance:
+            cls._instance = super(OAuthConfiguration, cls).__new__(cls, *args, **kwargs)
 
-        return cls.instance
+        return cls._instance
 
     def __init__(self):
+        if not self._instance:
+            self._instance = super(OAuthConfiguration, self).__init__()
+
         self.__consumer_store = None
+        self.__application = None
 
     @classmethod
-    def instance(cls, *args, **kwargs):
-        if not cls.__instance:
-            cls.__instance = super(OAuthConfiguration, cls).__new__(cls, *args, **kwargs)
-        return cls.__instance
+    def get_instance(cls):
+        if not cls._instance:
+            cls()
+
+        return cls._instance
 
     @property
     def consumer_store(self):
@@ -173,8 +177,118 @@ class OAuthConfiguration(object):
     def consumer_store(self, consumer_store):
         self.__consumer_store = consumer_store
 
-    @classmethod
-    def add_consumer(cls, consumer):
-        print(consumer)
-        return True
+    @property
+    def application(self):
+        return self.__application
 
+    @application.setter
+    def application(self, application):
+        self.__application = application
+
+
+class FileSystemConsumerStore(object):
+
+    _graph = None
+    _consumers = dict()
+
+    def __init__(self, oauth_store_path):
+        self.__oauth_store_path = oauth_store_path
+        self.__create_graph()
+        self.__load_consumers()
+
+    def __create_graph(self):
+        try:
+            self._graph = Graph().parse(self.__oauth_store_path, format="turtle")
+        except IOError as e:
+            self._graph = Graph()
+            self._graph.bind('oslc_oauth', OAUTH)
+
+    def __load_consumers(self):
+        subjects = self._graph.subjects(RDF.type, URIRef(OAUTH.Consumer))
+        for s in subjects:
+            r = self.__from_resource(s)
+            self._consumers[str(r.key)] = r
+
+    def __remove_consumer(self, key):
+        if (None, OAUTH.consumerKey, Literal(key)) in self._graph:
+            consumer = self._graph.subjects(OAUTH.consumerKey, Literal(key))
+            for s in consumer:
+                self._graph.remove((s, None, None))
+
+    def add_consumer(self, consumer):
+        if self._graph is None:
+            raise Exception('Consumer store not initialized')
+
+        self.__remove_consumer(consumer.key)
+        resource = self.__to_resource(consumer)
+        self._consumers[consumer.key] = consumer
+        self.__save_graph()
+
+        return consumer
+
+    def update_consumer(self, consumer):
+        return self.add_consumer(consumer)
+
+    @property
+    def consumers(self):
+        return self._consumers
+
+    @property
+    def consumer_values(self):
+        return self._consumers.values()
+
+    def __from_resource(self, resource):
+        oslc_auth_consumer = OSLCOAuthConsumer()
+
+        name = self._graph.value(resource, OAUTH.consumerName) or None
+        key = self._graph.value(resource, OAUTH.consumerKey) or None
+        secret = self._graph.value(resource, OAUTH.consumerSecret) or None
+        provisional = bool(self._graph.value(resource, OAUTH.provisional))
+        trusted = bool(self._graph.value(resource, OAUTH.trusted))
+
+        oslc_auth_consumer.name = name
+        oslc_auth_consumer.key = key
+        oslc_auth_consumer.secret = secret
+        oslc_auth_consumer.provisional = provisional
+        oslc_auth_consumer.trusted = trusted
+
+        return oslc_auth_consumer
+
+    def __to_resource(self, consumer):
+
+        consumer.secret = b64encode(consumer.secret.encode("utf-8"))
+
+        resource = Resource(self._graph, BNode())
+        resource.add(RDF.type, OAUTH.Consumer)
+        resource.add(OAUTH.consumerName, Literal(consumer.name))
+        resource.add(OAUTH.consumerKey, Literal(consumer.key))
+        resource.add(OAUTH.consumerSecret, Literal(consumer.secret))
+        resource.add(OAUTH.provisional, Literal(consumer.provisional, datatype=XSD.boolean))
+        resource.add(OAUTH.trusted, Literal(consumer.trusted, datatype=XSD.boolean))
+
+        return resource
+
+    def __save_graph(self):
+        self._graph.serialize(destination=self.__oauth_store_path, format='turtle')
+
+
+class OAuthApplication(object):
+
+    def __init__(self, name):
+        self.__name = name or None
+
+    @property
+    def name(self):
+        return self.__name
+
+    def login(self, username, password):
+        raise NotImplementedError()
+
+    def is_authenticated(self):
+        raise NotImplementedError()
+
+    def is_admin_session(self):
+        raise NotImplementedError()
+
+    def get_realm(self):
+        raise NotImplementedError()

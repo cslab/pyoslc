@@ -1,97 +1,70 @@
 from authlib.oauth1.rfc5849.errors import OAuth1Error
-from flask import Blueprint, request, render_template, g, session, jsonify
-from werkzeug.local import LocalProxy
-from werkzeug.security import gen_salt
+from flask import Blueprint, request, render_template, jsonify, current_app
+from flask_login import current_user
 
-from oauth.models import User
-from oauth.resources import OSLCOAuthConsumer, OAuthConfiguration
-from oauth.server import server
+from oauth.models import Client, User
+from oauth.server import auth_server
+from oauth.forms import LoginConfirmForm, ConfirmForm
+from webservice.api import login
 
 oauth_bp = Blueprint('oauth', __name__, template_folder='templates')
 
 
-def logout():
-    if 'sid' in session:
-        del session['sid']
+@login.user_loader
+def load_user(id):
+    return User.query.get(int(id))
 
 
-def get_current_user():
-    user = getattr(g, 'current_user', None)
-    if user:
-        return user
-    sid = session.get('sid')
-    if not sid:
-        return None
-    user = User.query.get(sid)
-    if not user:
-        logout()
-        return None
-    g.current_user = user
-    return user
-
-
-current_user = LocalProxy(get_current_user)
+@oauth_bp.route('/', methods=['GET'])
+def index():
+    return "Hello"
 
 
 @oauth_bp.route('/initiate', methods=['POST'])
 def initiate_temporary_credential():
-    data = request.get_json(force=True)
-
-    consumer_key = gen_salt(32)
-    consumer_secret = data['secret'].encode('utf-8')
-    consumer_name = data['name'].encode('utf-8')
-    consumer_trusted = data['trusted']
-
-    consumer = OSLCOAuthConsumer(consumer_key=consumer_key, consumer_secret=consumer_secret)
-    consumer.name = consumer_name
-    consumer.provisional = True
-    consumer.trusted = consumer_trusted
-
-    oauth_config = OAuthConfiguration.instance()
-    oauth_config.add_consumer(consumer)
-
-    # service = oauth_client.create_client('own')
-    # callback_uri = url_for('.authorized', name=name, _external=True)
-    # binded = service.authorize_redirect(callback_uri)
-    # tempo = server.create_temporary_credentials_response()
-
-    rsp = {'key': consumer_key}
-
-    return jsonify(rsp)
-
-
-@oauth_bp.route('/approveKey', methods=['GET', 'POST'])
-def approve_key():
-    if not request.args.has_key('key'):
-        print('show admin')
-
-    # request.headers.add('applicationName', 'PyOSLC')
-
-    return render_template('oauth/admin_login.html', app_name='PyOSLC')
+    current_app.logger.debug('Creating temporary credentials for the consumer')
+    return auth_server.create_temporary_credentials_response()
 
 
 @oauth_bp.route('/authorize', methods=['GET', 'POST'])
 def authorize():
-    # make sure that user is logged in for yourself
-    if request.method == 'GET':
-        try:
-            req = server.check_authorization_request()
-            return render_template('authorize.html', req=req)
-        except OAuth1Error as error:
-            return render_template('error.html', error=error)
-
-    granted = request.form.get('granted')
-    if granted:
-        grant_user = current_user
+    if current_user.is_authenticated:
+        form = ConfirmForm()
     else:
-        grant_user = None
+        form = LoginConfirmForm()
+
+    if form.validate_on_submit():
+        if form.confirm.data:
+            grant_user = current_user
+        else:
+            # username = form.username.data.lower()
+            # user = User.query.filter_by(username=username).first()
+            # login_user(user)
+            # grant_user = user
+            # g.current_user = user
+
+            grant_user = current_user
+        return auth_server.create_authorization_response(request, grant_user)
 
     try:
-        return server.create_authorization_response(grant_user=grant_user)
+        grant = auth_server.check_authorization_request()
     except OAuth1Error as error:
-        return render_template('error.html', error=error)
+        # TODO: add an error page
+        payload = dict(error.get_body())
+        # return render_template('error.html', error=error)
+        return jsonify(payload), error.status_code
+
+    credential = grant.credential
+    client_id = credential.get_client_id()
+    client = Client.query.filter_by(client_id=client_id).first()
+    return render_template(
+        'oauth/authorize.html',
+        grant=grant,
+        client=client,
+        form=form,
+    )
 
 
 @oauth_bp.route('/token', methods=['POST'])
 def issue_token():
-    return server.create_token_response()
+    return auth_server.create_token_response()

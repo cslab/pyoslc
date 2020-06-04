@@ -17,3 +17,7 @@ build/
 
 logs/
 webservice/logs/
+
+_cache
+webservice/oauth.sqlite
+oauth/OAuthStore.rdf
