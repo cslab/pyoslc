@@ -2,6 +2,7 @@ from authlib.oauth1.rfc5849.errors import OAuth1Error
 from flask import Blueprint, request, render_template, jsonify, current_app
 from flask_login import current_user
 
+from oauth import OAuthConfiguration
 from oauth.models import Client, User
 from oauth.server import auth_server
 from oauth.forms import LoginConfirmForm, ConfirmForm
@@ -37,13 +38,15 @@ def authorize():
         if form.confirm.data:
             grant_user = current_user
         else:
-            # username = form.username.data.lower()
-            # user = User.query.filter_by(username=username).first()
-            # login_user(user)
-            # grant_user = user
-            # g.current_user = user
+            username = form.username.data.lower()
+            password = form.password.data
+
+            auth_conf = OAuthConfiguration.get_instance()
+            auth_app = auth_conf.application
+            auth_app.login(username=username, password=password)
 
             grant_user = current_user
+
         return auth_server.create_authorization_response(request, grant_user)
 
     try:

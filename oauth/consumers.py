@@ -1,4 +1,4 @@
-from flask import Blueprint, request, url_for, current_app, abort, render_template
+from flask import Blueprint, request, url_for, current_app, abort, render_template, redirect
 from flask.json import jsonify
 from flask_login import login_required
 from werkzeug.security import gen_salt
@@ -76,7 +76,11 @@ def approve():
     consumer_key = request.args.get('key') or request.json['key']
 
     oauth_config = OAuthConfiguration.get_instance()
-    oauth_app = oauth_config.application
+    # oauth_app = oauth_config.application
+
+    # if not oauth_app.is_admin_session():
+    #     return redirect(url_for('oauth.authorize'))
+    #     # return show_admin_login(oauth_app)
 
     consumer_store = oauth_config.consumer_store
     consumers = consumer_store.consumers
@@ -103,7 +107,6 @@ def approve():
 
 
 @consumer_bp.route('/approve/<key>', methods=['GET', 'POST'])
-# @require_login
 @login_required
 def authorized(key):
     current_app.logger.debug('Authorizing the consumer')

@@ -106,8 +106,10 @@ class OAuthConsumer(OAuth):
 
 class OSLCOAuthConsumer(OAuthConsumer):
 
-    def __init__(self, name=None, provisional=True, trusted=None, consumer_key=None, consumer_secret=None):
-        super(OSLCOAuthConsumer, self).__init__(consumer_key=consumer_key, consumer_secret=consumer_secret)
+    def __init__(self, name=None, provisional=True, trusted=None,
+                 consumer_key=None, consumer_secret=None):
+        super(OSLCOAuthConsumer, self).__init__(consumer_key=consumer_key,
+                                                consumer_secret=consumer_secret)
         self.__name = name if name is not None else None
         self.__provisional = provisional
         self.__trusted = trusted if trusted is not None else False
@@ -292,3 +294,15 @@ class OAuthApplication(object):
 
     def get_realm(self):
         raise NotImplementedError()
+
+
+class OAuthException(Exception):
+    """
+    Causes the validation chain to stop.
+
+    If StopValidation is raised, no more validators in the validation chain are
+    called. If raised with a message, the message will be added to the errors
+    list.
+    """
+    def __init__(self, message='', *args, **kwargs):
+        Exception.__init__(self, message, *args, **kwargs)

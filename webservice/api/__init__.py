@@ -3,19 +3,19 @@ import os
 from logging.handlers import RotatingFileHandler
 
 from flask import Flask
+from flask_cors import CORS
+from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 
 from webservice.config import Config
 
 db = SQLAlchemy()
+login = LoginManager()
+cors = CORS()
 
 
 def create_app(config=Config):
     app = Flask(__name__, instance_relative_config=False)
-
-    app.config.from_object(config)
-
-    db.init_app(app)
 
     if config is None:
         # load the instance config, if it exists, when not testing
@@ -23,6 +23,10 @@ def create_app(config=Config):
     else:
         # load the test config if passed in
         app.config.from_object(config)
+
+    db.init_app(app)
+    login.init_app(app)
+    cors.init_app(app)
 
     # ensure the instance folder exists
     try:
@@ -41,11 +45,11 @@ def create_app(config=Config):
     # from . import cdb
     # app.register_blueprint(cdb.bp, url_prefix='/cdb')
 
-    from oauth import server
-    server.init_app(app)
+    from webservice.api.oauth_app import PyOSLCApplication
+    pyoslc_app = PyOSLCApplication('PyOSLC Contact Software')
 
-    from oauth.routes import oauth_bp
-    app.register_blueprint(oauth_bp)
+    import oauth as py_oauth
+    py_oauth.init_app(app, pyoslc_app)
 
     if not app.debug and not app.testing:
         if app.config['MAIL_SERVER']:
@@ -54,7 +58,7 @@ def create_app(config=Config):
             """
             pass
 
-    if app.config['LOG_TO_STDOUT']:
+    if app.debug and app.config['LOG_TO_STDOUT']:
         stream_handler = logging.StreamHandler()
         stream_handler.setLevel(logging.INFO)
         app.logger.addHandler(stream_handler)

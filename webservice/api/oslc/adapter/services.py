@@ -1,8 +1,8 @@
 from datetime import datetime
 
 from pyoslc.model.factory import ServiceProviderFactory
-from pyoslc.jazz import RootService, Friend
-from pyoslc.resource import (ServiceProviderCatalog, PrefixDefinition, Resource_)
+from pyoslc.jazz import RootService
+from pyoslc.resource import ServiceProviderCatalog
 from webservice.api.oslc.adapter.specs import DataSpecsProjectA
 
 
@@ -18,7 +18,7 @@ class ServiceProviderCatalogSingleton(object):
 
             cls.catalog = ServiceProviderCatalog()
             cls.catalog.title = 'Contact Software Platform Service Provider Catalog'
-            # cls.catalog.description = 'A Service Provider Catalog describing the service providers for the Contact Software Platform.'
+            cls.catalog.description = 'A Service Provider for the Contact Software Platform.'
 
         return cls.instance
 
@@ -138,7 +138,7 @@ class RootServiceSingleton(object):
 
             cls.root_service = RootService()
             cls.root_service.title = 'Root services for connecting with Jazz'
-            cls.root_service.description = 'List of services available on the PyOSLC to connect with Jazz applications.'
+            cls.root_service.description = 'Services available on the PyOSLC.'
 
         return cls.instance
 
@@ -146,12 +146,5 @@ class RootServiceSingleton(object):
     def get_root_service(cls):
         if not cls.instance:
             cls()
-
-        # f = Friend(about="http://localhost:5000/oslc/services")
-        # f.title = "First friend"
-        # f.description = "Description of friend"
-        # f.root_service = "http://rrc1.example.com/jazz/rootservices"
-
-        # cls.root_service.add_friend(f)
 
         return cls.root_service

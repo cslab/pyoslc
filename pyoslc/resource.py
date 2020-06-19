@@ -5,7 +5,7 @@
 from datetime import date
 
 from rdflib import Literal, URIRef, BNode
-from rdflib.namespace import DCTERMS, RDF, XSD
+from rdflib.namespace import DCTERMS, RDF, XSD, Namespace
 from rdflib.resource import Resource
 
 from pyoslc.helpers import build_uri
@@ -14,19 +14,19 @@ from pyoslc.vocabulary import OSLCCore
 default_uri = 'http://examples.com/'
 
 
-class ServiceFactory:
-
-    def __init__(self):
-        pass
-
-    def get_service(self, map):
-        raise NotImplementedError()
-
-
-class Link:
-
-    def __init__(self, label=None):
-        self.__label = label if label is not None else None
+# class ServiceFactory:
+#
+#     def __init__(self):
+#         pass
+#
+#     def get_service(self, map):
+#         raise NotImplementedError()
+#
+#
+# class Link:
+#
+#     def __init__(self, label=None):
+#         self.__label = label if label is not None else None
 
 
 class BaseResource:
@@ -70,14 +70,14 @@ class BaseResource:
     def extended_properties(self, extended_properties):
         self.__extended_properties = extended_properties
 
-    def add_extended_propertie(self, extended_propertie):
-        if extended_propertie:
-            self.__extended_properties.append(extended_propertie)
+    def add_extended_property(self, extended_property):
+        if extended_property:
+            self.__extended_properties.append(extended_property)
 
 
-class ResourceShape(BaseResource):
-    def __init__(self):
-        BaseResource.__init__(self)
+# class ResourceShape(BaseResource):
+#     def __init__(self):
+#         BaseResource.__init__(self)
 
 
 class Resource_(BaseResource):
@@ -384,24 +384,27 @@ class ServiceProviderCatalog(Resource_):
         if self.description:
             spc.add(DCTERMS.description, Literal(self.description, datatype=XSD.Literal))
 
-        if self.publisher:
-            spc.add(DCTERMS.publisher, URIRef(self.publisher.about))
+        # if self.publisher:
+        #     spc.add(DCTERMS.publisher, URIRef(self.publisher.about))
 
-        if self.domain:
-            for item in self.domain:
-                spc.add(OSLCCore.domain, URIRef(item))
+        # if self.domain:
+        #     for item in self.domain:
+        #         spc.add(OSLCCore.domain, URIRef(item))
 
-        if self.service_provider:
-            for sp in self.service_provider:
-                r = sp.to_rdf(graph)
-                spc.add(OSLCCore.serviceProvider, r.identifier)
+        # if self.service_provider:
+        #     for sp in self.service_provider:
+        #         r = sp.to_rdf(graph)
+        #         spc.add(OSLCCore.serviceProvider, r.identifier)
+        #
+        # if self.service_provider_catalog:
+        #     for item in self.service_provider_catalog:
+        #         spc.add(OSLCCore.serviceProviderCatalog, URIRef(item.about))
+        #
+        # if self.oauth_configuration:
+        #     spc.add(OSLCCore.oauthConfiguration, URIRef(self.oauth_configuration.about))
 
-        if self.service_provider_catalog:
-            for item in self.service_provider_catalog:
-                spc.add(OSLCCore.serviceProviderCatalog, URIRef(item.about))
-
-        if self.oauth_configuration:
-            spc.add(OSLCCore.oauthConfiguration, URIRef(self.oauth_configuration.about))
+        #type = Resource(graph, URIRef(OSLCCore.ServiceProviderCatalog))
+        #spc.add(RDF.type, type)
 
         return spc
 
@@ -835,68 +838,68 @@ class CreationFactory(Resource_):
         return cf
 
 
-class OAuthConfiguration(Resource_):
-
-    def __init__(self, about, types=None, properties=None, description=None, identifier=None, short_title=None,
-                 title=None, contributor=None, creator=None, subject=None, created=None, modified=None, type=None,
-                 discussed_by=None, instance_shape=None, service_provider=None, relation=None,
-                 authorization_uri=None, oauth_access_token_uri=None, oauth_request_token_uri=None):
-        """
-        private URI authorizationURI;
-        private URI oauthAccessTokenURI;
-        private URI oauthRequestTokenURI;
-        """
-
-        Resource_.__init__(self, about=about, types=types, properties=properties, description=description,
-                          identifier=identifier, short_title=short_title, title=title, contributor=contributor,
-                          creator=creator, subject=subject, created=created, modified=modified, type=type,
-                          discussed_by=discussed_by, instance_shape=instance_shape, service_provider=service_provider,
-                          relation=relation)
-        self.__authorization_uri = authorization_uri if authorization_uri is not None else None
-        self.__oauth_access_token_uri = oauth_access_token_uri if oauth_access_token_uri is not None else None
-        self.__oauth_request_token_uri = oauth_request_token_uri if oauth_access_token_uri is not None else None
-
-    @property
-    def authorization_uri(self):
-        return self.__authorization_uri
-
-    @authorization_uri.setter
-    def authorization_uri(self, authorization_uri):
-        self.__authorization_uri = authorization_uri
-
-    @property
-    def oauth_access_token_uri(self):
-        return self.__oauth_access_token_uri
-
-    @oauth_access_token_uri.setter
-    def oauth_access_token_uri(self, oauth_access_token_uri):
-        self.__oauth_access_token_uri = oauth_access_token_uri
-
-    @property
-    def oauth_request_token_uri(self):
-        return self.__oauth_request_token_uri
-
-    @oauth_request_token_uri.setter
-    def oauth_request_token_uri(self, oauth_request_token_uri):
-        self.__oauth_request_token_uri = oauth_request_token_uri
-
-    def to_rdf(self, graph):
-        if not self.about:
-            raise Exception("The title is missing")
-
-        oac = Resource(graph, URIRef(self.about))
-        oac.add(RDF.type, URIRef(OSLCCore.oauthConfiguration))
-
-        if self.authorization_uri:
-            oac.add(OSLCCore.authorizationURI, URIRef(self.authorization_uri))
-
-        if self.oauth_access_token_uri:
-            oac.add(OSLCCore.oauthAccessTokenURI, URIRef(self.oauth_access_token_uri))
-
-        if self.oauth_request_token_uri:
-            oac.add(OSLCCore.oauthRequestTokenURI, URIRef(self.oauth_request_token_uri))
-
-        return oac
+# class OAuthConfiguration(Resource_):
+#
+#     def __init__(self, about, types=None, properties=None, description=None, identifier=None, short_title=None,
+#                  title=None, contributor=None, creator=None, subject=None, created=None, modified=None, type=None,
+#                  discussed_by=None, instance_shape=None, service_provider=None, relation=None,
+#                  authorization_uri=None, oauth_access_token_uri=None, oauth_request_token_uri=None):
+#         """
+#         private URI authorizationURI;
+#         private URI oauthAccessTokenURI;
+#         private URI oauthRequestTokenURI;
+#         """
+#
+#         Resource_.__init__(self, about=about, types=types, properties=properties, description=description,
+#                           identifier=identifier, short_title=short_title, title=title, contributor=contributor,
+#                           creator=creator, subject=subject, created=created, modified=modified, type=type,
+#                           discussed_by=discussed_by, instance_shape=instance_shape, service_provider=service_provider,
+#                           relation=relation)
+#         self.__authorization_uri = authorization_uri if authorization_uri is not None else None
+#         self.__oauth_access_token_uri = oauth_access_token_uri if oauth_access_token_uri is not None else None
+#         self.__oauth_request_token_uri = oauth_request_token_uri if oauth_access_token_uri is not None else None
+#
+#     @property
+#     def authorization_uri(self):
+#         return self.__authorization_uri
+#
+#     @authorization_uri.setter
+#     def authorization_uri(self, authorization_uri):
+#         self.__authorization_uri = authorization_uri
+#
+#     @property
+#     def oauth_access_token_uri(self):
+#         return self.__oauth_access_token_uri
+#
+#     @oauth_access_token_uri.setter
+#     def oauth_access_token_uri(self, oauth_access_token_uri):
+#         self.__oauth_access_token_uri = oauth_access_token_uri
+#
+#     @property
+#     def oauth_request_token_uri(self):
+#         return self.__oauth_request_token_uri
+#
+#     @oauth_request_token_uri.setter
+#     def oauth_request_token_uri(self, oauth_request_token_uri):
+#         self.__oauth_request_token_uri = oauth_request_token_uri
+#
+#     def to_rdf(self, graph):
+#         if not self.about:
+#             raise Exception("The title is missing")
+#
+#         oac = Resource(graph, URIRef(self.about))
+#         oac.add(RDF.type, URIRef(OSLCCore.oauthConfiguration))
+#
+#         if self.authorization_uri:
+#             oac.add(OSLCCore.authorizationURI, URIRef(self.authorization_uri))
+#
+#         if self.oauth_access_token_uri:
+#             oac.add(OSLCCore.oauthAccessTokenURI, URIRef(self.oauth_access_token_uri))
+#
+#         if self.oauth_request_token_uri:
+#             oac.add(OSLCCore.oauthRequestTokenURI, URIRef(self.oauth_request_token_uri))
+#
+#         return oac
 
 
 class Dialog(Resource_):
@@ -1038,20 +1041,20 @@ class PrefixDefinition(Resource_):
     def prefix_base(self, prefix_base):
         self.__prefix_base = prefix_base
 
-    def to_rdf(self, graph):
-        if not self.about:
-            raise Exception("The title is missing")
-
-        pd = Resource(graph, BNode())
-        pd.add(RDF.type, URIRef(OSLCCore.PrefixDefinition))
-
-        if self.prefix:
-            pd.add(OSLCCore.prefix, Literal(self.prefix))
-
-        if self.prefix_base:
-            pd.add(OSLCCore.prefixBase, URIRef(self.prefix_base.uri))
-
-        return pd
+#     def to_rdf(self, graph):
+#         if not self.about:
+#             raise Exception("The title is missing")
+#
+#         pd = Resource(graph, BNode())
+#         pd.add(RDF.type, URIRef(OSLCCore.PrefixDefinition))
+#
+#         if self.prefix:
+#             pd.add(OSLCCore.prefix, Literal(self.prefix))
+#
+#         if self.prefix_base:
+#             pd.add(OSLCCore.prefixBase, URIRef(self.prefix_base.uri))
+#
+#         return pd
 
 
 """

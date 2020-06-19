@@ -15,8 +15,8 @@ class ServiceProviderFactory(object):
     def initialize(cls, service_provider, base_uri, generic_base_uri, title, description, publisher, resouce_classes,
                    parameters):
 
-        # service_provider.title = title
-        # service_provider.description = description
+        service_provider.title = title
+        service_provider.description = description
         service_provider.publisher = publisher
 
         services = dict()
