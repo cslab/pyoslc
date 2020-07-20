@@ -6,7 +6,7 @@ Flask-Login
 flask-restplus==0.12.1
 pytest
 python-dotenv==0.10.1
-rdflib
+rdflib==5.0.0
 rdflib-jsonld
 
 Authlib
