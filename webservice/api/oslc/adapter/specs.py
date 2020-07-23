@@ -1,23 +1,23 @@
 class DataSpecsProjectA(object):
 
-    domain = 'http://jazz.net/ns/iot#'
+    domain = 'http://open-services.net/ns/rm#'
 
     @staticmethod
     def query_capability():
         return {
-            'title': 'Query Capability Title',
-            'label': 'Query Capability Label',
-            'resource_shape': 'resourceShapes/deviceType',
-            'resource_type': ['http://jazz.net/ns/iot#DeviceType'],
+            'title': 'Query Capability',
+            'label': 'Query Capability',
+            'resource_shape': 'resourceShapes/requirement',
+            'resource_type': ['http://open-services.net/ns/rm#Requirement'],
             'usages': []
         }
 
     @staticmethod
     def creation_factory():
         return {'title': 'Creation Factory',
-                'label': 'Creation Factory Label',
-                'resource_shape': ['resourceShapes/deviceType'],
-                'resource_type': ['http://jazz.net/ns/iot#DeviceType'],
+                'label': 'Creation Factory',
+                'resource_shape': ['resourceShapes/requirement'],
+                'resource_type': ['http://open-services.net/ns/rm#Requirement'],
                 'usages': []}
 
     @staticmethod

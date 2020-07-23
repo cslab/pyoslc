@@ -1,9 +1,13 @@
 Flask==1.0.2
+Flask-SQLAlchemy==2.4.1
+Flask-WTF
+Flask-Bootstrap
+Flask-Login
 flask-restplus==0.12.1
 pytest
 python-dotenv==0.10.1
-rdflib==4.2.2
-rdflib-jsonld==0.4.0
+rdflib==5.0.0
+rdflib-jsonld
 
 Authlib
 requests

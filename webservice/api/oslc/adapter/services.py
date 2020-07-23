@@ -1,11 +1,15 @@
 from datetime import datetime
 
-from rdflib.namespace import DCTERMS, RDF, RDFS
+from rdflib import RDFS, RDF, DCTERMS
 
 from pyoslc.model.factory import ServiceProviderFactory
-from pyoslc.jazz import RootService, Friend
-from pyoslc.resource import (ServiceProviderCatalog, PrefixDefinition, Resource_)
-from pyoslc.vocabulary import OSLCCore, OSLCData, OSLC_AM, OSLC_CM, OSLC_RM
+from pyoslc.jazz import RootService
+from pyoslc.resource import ServiceProviderCatalog, PrefixDefinition
+from pyoslc.vocabulary import OSLCCore
+from pyoslc.vocabulary.am import OSLC_AM
+from pyoslc.vocabulary.cm import OSLC_CM
+from pyoslc.vocabulary.data import OSLCData
+from pyoslc.vocabulary.rm import OSLC_RM
 from webservice.api.oslc.adapter.specs import DataSpecsProjectA
 
 
@@ -21,7 +25,7 @@ class ServiceProviderCatalogSingleton(object):
 
             cls.catalog = ServiceProviderCatalog()
             cls.catalog.title = 'Contact Software Platform Service Provider Catalog'
-            cls.catalog.description = 'A Service Provider Catalog describing the service providers for the Contact Software Platform.'
+            cls.catalog.description = 'A Service Provider for the Contact Software Platform.'
 
         return cls.instance
 
@@ -57,13 +61,18 @@ class ServiceProviderCatalogSingleton(object):
 
         # service_providers = client.get("htpp://server:port/endpoint", username="", password="")
 
-        service_providers = [{'id': 'PA', 'name': 'Project A'}]
+        service_providers = [
+            {
+                'id': 'Project-1',
+                'name': 'PyOSLC Service Provider for Project 1'
+            }
+        ]
 
         for sp in service_providers:
             identifier = sp.get('id')
             if identifier not in cls.providers.keys():
                 name = sp.get('name')
-                title = 'Service Provider {}'.format(name)
+                title = '{}'.format(name)
                 description = 'Service Provider for the Contact Software platform service (id: {}; kind: {})'.format(identifier, 'Specification')
                 publisher = None
                 parameters = {'id': sp.get('id')}
@@ -80,12 +89,14 @@ class ServiceProviderCatalogSingleton(object):
     @classmethod
     def register_provider(cls, sp_uri, identifier, provider):
 
+        uri = cls.construct_service_provider_uri(identifier)
+
         domains = cls.get_domains(provider)
 
-        provider.about = sp_uri
+        provider.about = uri
         provider.identifier = identifier
         provider.created = datetime.now()
-        provider.details = sp_uri
+        provider.details = uri
 
         cls.catalog.add_service_provider(provider)
 
@@ -105,6 +116,12 @@ class ServiceProviderCatalogSingleton(object):
 
         return domains
 
+    @classmethod
+    def construct_service_provider_uri(cls, identifier):
+        uri = cls.catalog.about
+        uri = uri.replace('catalog', 'provider') + '/' + identifier
+        return uri
+
 
 class ContactServiceProviderFactory(object):
 
@@ -113,7 +130,7 @@ class ContactServiceProviderFactory(object):
         classes = [DataSpecsProjectA]
         sp = ServiceProviderFactory.create(base_uri, 'project', title, description, publisher, classes, parameters)
 
-        sp.add_detail(base_uri)
+        # sp.add_detail(base_uri)
 
         prefix_definitions = list()
         prefix_definitions.append(PrefixDefinition(prefix='dcterms', prefix_base=DCTERMS))
@@ -141,7 +158,7 @@ class RootServiceSingleton(object):
 
             cls.root_service = RootService()
             cls.root_service.title = 'Root services for connecting with Jazz'
-            cls.root_service.description = 'List of services available on the PyOSLC to connect with Jazz applications.'
+            cls.root_service.description = 'Services available on the PyOSLC.'
 
         return cls.instance
 
@@ -149,12 +166,5 @@ class RootServiceSingleton(object):
     def get_root_service(cls):
         if not cls.instance:
             cls()
-
-        # f = Friend(about="http://localhost:5000/oslc/services")
-        # f.title = "First friend"
-        # f.description = "Description of friend"
-        # f.root_service = "http://rrc1.example.com/jazz/rootservices"
-
-        # cls.root_service.add_friend(f)
 
         return cls.root_service

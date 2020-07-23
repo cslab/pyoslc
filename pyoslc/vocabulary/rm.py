@@ -9,14 +9,17 @@ OSLC_RM = ClosedNamespace(
 
         # RDF Properties in this namespace
         # for Requirement
-        "elaboratedBy", "elaborates",
-        "specifiedBy", "specifies",
-        "affectedBy", "trackedBy", "implementedBy", "validatedBy",
-        "satisfiedBy", "satisfies",
-        "decomposedBy", "decomposes",
-        "constrainedBy", "constrains",
+        "affectedBy", "elaboratedBy", "implementedBy",
+        "specifiedBy", "satisfiedBy", "trackedBy",
+        "validatedBy",
 
         # for RequirementCollection
-        "uses"
+        "uses",
+        
+        # General
+        "elaborates", "specifies", "satisfies",
+        "decomposedBy", "decomposes",
+        "constrainedBy", "constrains",
+        "rmServiceProviders",
     ]
 )

@@ -1,0 +1,1 @@
+FLASK_APP=webservice.ws_api:api_oslc

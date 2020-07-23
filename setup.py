@@ -9,7 +9,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'RDFLib>=4.2',
+        'RDFLib>=5.0.0',
         'RDFLib-JSONLD',
         'Flask'
     ],
