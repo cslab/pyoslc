@@ -1,8 +1,0 @@
-image: python:2.7-stretch
-
-before_script:
-    - pip install -r requirements.txt
-
-test:
-  script:
-    - pytest webservice
