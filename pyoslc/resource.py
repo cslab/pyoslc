@@ -5,11 +5,12 @@
 from datetime import date
 
 from rdflib import Literal, URIRef, BNode
-from rdflib.namespace import DCTERMS, RDF, XSD, Namespace
+from rdflib.namespace import DCTERMS, RDF, XSD
 from rdflib.resource import Resource
 
 from pyoslc.helpers import build_uri
 from pyoslc.vocabulary import OSLCCore
+from pyoslc.vocabulary.jazz import JAZZ_PROCESS
 
 default_uri = 'http://examples.com/'
 
@@ -29,7 +30,7 @@ default_uri = 'http://examples.com/'
 #         self.__label = label if label is not None else None
 
 
-class BaseResource:
+class BaseResource(object):
     """
     Class to define generic resources.
     """
@@ -74,6 +75,10 @@ class BaseResource:
         if extended_property:
             self.__extended_properties.append(extended_property)
 
+    def to_rdf(self, graph):
+
+        if not self.about:
+            raise Exception("The about property is missing")
 
 # class ResourceShape(BaseResource):
 #     def __init__(self):
@@ -240,6 +245,9 @@ class Resource_(BaseResource):
     def relation(self, relation):
         self.__relation = relation
 
+    def to_rdf(self, graph):
+        super(Resource_, self).to_rdf(graph)
+
 
 class Publisher(BaseResource):
 
@@ -372,39 +380,37 @@ class ServiceProviderCatalog(Resource_):
         self.__oauth_configuration = oauth_configuration
 
     def to_rdf(self, graph):
-        if not self.about:
-            raise Exception("The about property is missing")
+        super(ServiceProviderCatalog, self).to_rdf(graph)
 
         spc = Resource(graph, URIRef(self.about))
-        spc.add(RDF.type, URIRef(OSLCCore.ServiceProviderCatalog))
+        spc.add(RDF.type, OSLCCore.ServiceProviderCatalog)
 
         if self.title:
-            spc.add(DCTERMS.title, Literal(self.title, datatype=XSD.Literal))
+            spc.add(DCTERMS.title, Literal(self.title))
 
         if self.description:
-            spc.add(DCTERMS.description, Literal(self.description, datatype=XSD.Literal))
+            spc.add(DCTERMS.description, Literal(self.description))
 
-        # if self.publisher:
-        #     spc.add(DCTERMS.publisher, URIRef(self.publisher.about))
+        if self.publisher:
+            spc.add(DCTERMS.publisher, URIRef(self.publisher.about))
 
-        # if self.domain:
-        #     for item in self.domain:
-        #         spc.add(OSLCCore.domain, URIRef(item))
+        if self.domain:
+            for item in self.domain:
+                spc.add(OSLCCore.domain, URIRef(item))
 
-        # if self.service_provider:
-        #     for sp in self.service_provider:
-        #         r = sp.to_rdf(graph)
-        #         spc.add(OSLCCore.serviceProvider, r.identifier)
-        #
-        # if self.service_provider_catalog:
-        #     for item in self.service_provider_catalog:
-        #         spc.add(OSLCCore.serviceProviderCatalog, URIRef(item.about))
-        #
-        # if self.oauth_configuration:
-        #     spc.add(OSLCCore.oauthConfiguration, URIRef(self.oauth_configuration.about))
+        if self.service_provider:
+            for sp in self.service_provider:
+                r = sp.to_rdf(graph)
+                spc.add(OSLCCore.serviceProvider, r)
 
-        #type = Resource(graph, URIRef(OSLCCore.ServiceProviderCatalog))
-        #spc.add(RDF.type, type)
+        if self.service_provider_catalog:
+            for item in self.service_provider_catalog:
+                spc.add(OSLCCore.serviceProviderCatalog, URIRef(item.about))
+
+        if self.oauth_configuration:
+            spc.add(OSLCCore.oauthConfiguration, URIRef(self.oauth_configuration.about))
+
+        spc.add(OSLCCore.domain, JAZZ_PROCESS.uri)
 
         return spc
 
@@ -484,22 +490,21 @@ class ServiceProvider(Resource_):
         self.__oauth_configuration = oauth_configuration
 
     def to_rdf(self, graph):
-        if not self.about:
-            raise Exception("The title is missing")
+        super(ServiceProvider, self).to_rdf(graph)
 
         uri = self.about if self.about.__contains__(self.identifier) else self.about + '/{}'.format(self.identifier) if self.identifier else ''
 
         sp = Resource(graph, URIRef(uri))
-        sp.add(RDF.type, URIRef(OSLCCore.ServiceProvider))
+        sp.add(RDF.type, OSLCCore.ServiceProvider)
 
         if self.identifier:
-            sp.add(DCTERMS.identifier, Literal(self.identifier))
+            sp.add(DCTERMS.identifier, Literal(self.identifier, datatype=XSD.string))
 
         if self.title:
             sp.add(DCTERMS.title, Literal(self.title, datatype=XSD.Literal))
 
         if self.description:
-            sp.add(DCTERMS.description, Literal(self.description, datatype=XSD.Literal))
+            sp.add(DCTERMS.description, Literal(self.description))
 
         if self.publisher:
             sp.add(DCTERMS.publisher, URIRef(self.publisher.about))
@@ -507,10 +512,10 @@ class ServiceProvider(Resource_):
         if self.service:
             for s in self.service:
                 r = s.to_rdf(graph)
-                sp.add(OSLCCore.service, r.identifier)
+                sp.add(OSLCCore.service, r)
 
         if self.details:
-            sp.add(OSLCCore.details, URIRef(self.details + '/{}'.format(self.identifier) if self.identifier else ''))
+            sp.add(OSLCCore.details, URIRef(self.details))
 
         if self.oauth_configuration:
             sp.add(OSLCCore.oauthConfiguration, URIRef(self.oauth_configuration.about))
@@ -518,7 +523,12 @@ class ServiceProvider(Resource_):
         if self.prefix_definition:
             for pd in self.prefix_definition:
                 r = pd.to_rdf(graph)
-                sp.add(OSLCCore.prefixDefinition, r.identifier)
+                sp.add(OSLCCore.prefixDefinition, r)
+
+        sp.add(JAZZ_PROCESS.supportContributionsToLinkIndexProvider, Literal(True, datatype=XSD.boolean))
+        sp.add(JAZZ_PROCESS.supportLinkDiscoveryViaLinkIndexProvider, Literal(True, datatype=XSD.boolean))
+        sp.add(JAZZ_PROCESS.supportOSLCSimpleQuery, Literal(True, datatype=XSD.boolean))
+        sp.add(JAZZ_PROCESS.globalConfigurationAware, Literal('yes', datatype=XSD.String))
 
         return sp
 
@@ -599,11 +609,13 @@ class Service(Resource_):
         self.__creation_dialog.append(creation_dialog)
 
     def to_rdf(self, graph):
-        if not self.about:
-            raise Exception("The about property is missing")
+        super(Service, self).to_rdf(graph)
+
+        uri = self.about if self.about.__contains__(self.identifier) else self.about + '/{}'.format(
+            self.identifier) if self.identifier else ''
 
         s = Resource(graph, BNode())
-        s.add(RDF.type, URIRef(OSLCCore.Service))
+        s.add(RDF.type, OSLCCore.Service)
 
         if self.title:
             s.add(DCTERMS.title, Literal(self.title, datatype=XSD.Literal))
@@ -617,17 +629,17 @@ class Service(Resource_):
         if self.creation_factory:
             for cf in self.creation_factory:
                 r = cf.to_rdf(graph)
-                s.add(OSLCCore.creationFactory, r.identifier)
+                s.add(OSLCCore.creationFactory, r)
 
         if self.query_capability:
             for qc in self.query_capability:
                 r = qc.to_rdf(graph)
-                s.add(OSLCCore.queryCapability, r.identifier)
+                s.add(OSLCCore.queryCapability, r)
 
         if self.selection_dialog:
             for sd in self.selection_dialog:
                 r = sd.to_rdf(graph)
-                s.add(OSLCCore.selectionDialog, r.identifier)
+                s.add(OSLCCore.selectionDialog, r)
 
         if self.creation_dialog:
             for cd in self.creation_dialog:
@@ -706,17 +718,18 @@ class QueryCapability(Resource_):
         self.__usage.update(usage)
 
     def to_rdf(self, graph):
-        if not self.about:
-            raise Exception("The about property is missing")
+        super(QueryCapability, self).to_rdf(graph)
 
         qc = Resource(graph, BNode())
-        qc.add(RDF.type, URIRef(OSLCCore.QueryCapability))
+        qc.add(RDF.type, OSLCCore.QueryCapability)
 
         if self.title:
             qc.add(DCTERMS.title, Literal(self.title))
 
         if self.label:
             qc.add(OSLCCore.label, Literal(self.label, datatype=XSD.string))
+        else:
+            qc.add(OSLCCore.label, Literal(self.title, datatype=XSD.string))
 
         if self.query_base:
             qc.add(OSLCCore.queryBase, URIRef(self.query_base))
@@ -808,11 +821,10 @@ class CreationFactory(Resource_):
         self.__usage.update(usage)
 
     def to_rdf(self, graph):
-        if not self.about:
-            raise Exception("The title is missing")
+        super(CreationFactory, self).to_rdf(graph)
 
         cf = Resource(graph, BNode())
-        cf.add(RDF.type, URIRef(OSLCCore.CreationFactory))
+        cf.add(RDF.type, OSLCCore.CreationFactory)
 
         if self.title:
             cf.add(DCTERMS.title, Literal(self.title))
@@ -838,68 +850,68 @@ class CreationFactory(Resource_):
         return cf
 
 
-# class OAuthConfiguration(Resource_):
-#
-#     def __init__(self, about, types=None, properties=None, description=None, identifier=None, short_title=None,
-#                  title=None, contributor=None, creator=None, subject=None, created=None, modified=None, type=None,
-#                  discussed_by=None, instance_shape=None, service_provider=None, relation=None,
-#                  authorization_uri=None, oauth_access_token_uri=None, oauth_request_token_uri=None):
-#         """
-#         private URI authorizationURI;
-#         private URI oauthAccessTokenURI;
-#         private URI oauthRequestTokenURI;
-#         """
-#
-#         Resource_.__init__(self, about=about, types=types, properties=properties, description=description,
-#                           identifier=identifier, short_title=short_title, title=title, contributor=contributor,
-#                           creator=creator, subject=subject, created=created, modified=modified, type=type,
-#                           discussed_by=discussed_by, instance_shape=instance_shape, service_provider=service_provider,
-#                           relation=relation)
-#         self.__authorization_uri = authorization_uri if authorization_uri is not None else None
-#         self.__oauth_access_token_uri = oauth_access_token_uri if oauth_access_token_uri is not None else None
-#         self.__oauth_request_token_uri = oauth_request_token_uri if oauth_access_token_uri is not None else None
-#
-#     @property
-#     def authorization_uri(self):
-#         return self.__authorization_uri
-#
-#     @authorization_uri.setter
-#     def authorization_uri(self, authorization_uri):
-#         self.__authorization_uri = authorization_uri
-#
-#     @property
-#     def oauth_access_token_uri(self):
-#         return self.__oauth_access_token_uri
-#
-#     @oauth_access_token_uri.setter
-#     def oauth_access_token_uri(self, oauth_access_token_uri):
-#         self.__oauth_access_token_uri = oauth_access_token_uri
-#
-#     @property
-#     def oauth_request_token_uri(self):
-#         return self.__oauth_request_token_uri
-#
-#     @oauth_request_token_uri.setter
-#     def oauth_request_token_uri(self, oauth_request_token_uri):
-#         self.__oauth_request_token_uri = oauth_request_token_uri
-#
-#     def to_rdf(self, graph):
-#         if not self.about:
-#             raise Exception("The title is missing")
-#
-#         oac = Resource(graph, URIRef(self.about))
-#         oac.add(RDF.type, URIRef(OSLCCore.oauthConfiguration))
-#
-#         if self.authorization_uri:
-#             oac.add(OSLCCore.authorizationURI, URIRef(self.authorization_uri))
-#
-#         if self.oauth_access_token_uri:
-#             oac.add(OSLCCore.oauthAccessTokenURI, URIRef(self.oauth_access_token_uri))
-#
-#         if self.oauth_request_token_uri:
-#             oac.add(OSLCCore.oauthRequestTokenURI, URIRef(self.oauth_request_token_uri))
-#
-#         return oac
+class OAuthConfiguration(Resource_):
+
+    def __init__(self, about, types=None, properties=None, description=None, identifier=None, short_title=None,
+                 title=None, contributor=None, creator=None, subject=None, created=None, modified=None, type=None,
+                 discussed_by=None, instance_shape=None, service_provider=None, relation=None,
+                 authorization_uri=None, oauth_access_token_uri=None, oauth_request_token_uri=None):
+        """
+        private URI authorizationURI;
+        private URI oauthAccessTokenURI;
+        private URI oauthRequestTokenURI;
+        """
+
+        Resource_.__init__(self, about=about, types=types, properties=properties, description=description,
+                          identifier=identifier, short_title=short_title, title=title, contributor=contributor,
+                          creator=creator, subject=subject, created=created, modified=modified, type=type,
+                          discussed_by=discussed_by, instance_shape=instance_shape, service_provider=service_provider,
+                          relation=relation)
+        self.__authorization_uri = authorization_uri if authorization_uri is not None else None
+        self.__oauth_access_token_uri = oauth_access_token_uri if oauth_access_token_uri is not None else None
+        self.__oauth_request_token_uri = oauth_request_token_uri if oauth_access_token_uri is not None else None
+
+    @property
+    def authorization_uri(self):
+        return self.__authorization_uri
+
+    @authorization_uri.setter
+    def authorization_uri(self, authorization_uri):
+        self.__authorization_uri = authorization_uri
+
+    @property
+    def oauth_access_token_uri(self):
+        return self.__oauth_access_token_uri
+
+    @oauth_access_token_uri.setter
+    def oauth_access_token_uri(self, oauth_access_token_uri):
+        self.__oauth_access_token_uri = oauth_access_token_uri
+
+    @property
+    def oauth_request_token_uri(self):
+        return self.__oauth_request_token_uri
+
+    @oauth_request_token_uri.setter
+    def oauth_request_token_uri(self, oauth_request_token_uri):
+        self.__oauth_request_token_uri = oauth_request_token_uri
+
+    def to_rdf(self, graph):
+        if not self.about:
+            raise Exception("The title is missing")
+
+        oac = Resource(graph, URIRef(self.about))
+        oac.add(RDF.type, URIRef(OSLCCore.oauthConfiguration))
+
+        if self.authorization_uri:
+            oac.add(OSLCCore.authorizationURI, URIRef(self.authorization_uri))
+
+        if self.oauth_access_token_uri:
+            oac.add(OSLCCore.oauthAccessTokenURI, URIRef(self.oauth_access_token_uri))
+
+        if self.oauth_request_token_uri:
+            oac.add(OSLCCore.oauthRequestTokenURI, URIRef(self.oauth_request_token_uri))
+
+        return oac
 
 
 class Dialog(Resource_):
@@ -977,11 +989,10 @@ class Dialog(Resource_):
         self.__usage.append(usage)
 
     def to_rdf(self, graph):
-        if not self.about:
-            raise Exception("The title is missing")
+        super(Dialog, self).to_rdf(graph)
 
         d = Resource(graph, BNode())
-        d.add(RDF.type, URIRef(OSLCCore.Dialog))
+        d.add(RDF.type, OSLCCore.Dialog)
 
         if self.label:
             d.add(OSLCCore.label, Literal(self.label, datatype=XSD.string))
@@ -1041,20 +1052,19 @@ class PrefixDefinition(Resource_):
     def prefix_base(self, prefix_base):
         self.__prefix_base = prefix_base
 
-#     def to_rdf(self, graph):
-#         if not self.about:
-#             raise Exception("The title is missing")
-#
-#         pd = Resource(graph, BNode())
-#         pd.add(RDF.type, URIRef(OSLCCore.PrefixDefinition))
-#
-#         if self.prefix:
-#             pd.add(OSLCCore.prefix, Literal(self.prefix))
-#
-#         if self.prefix_base:
-#             pd.add(OSLCCore.prefixBase, URIRef(self.prefix_base.uri))
-#
-#         return pd
+    def to_rdf(self, graph):
+        super(PrefixDefinition, self).to_rdf(graph)
+
+        pd = Resource(graph, BNode())
+        pd.add(RDF.type, OSLCCore.PrefixDefinition)
+
+        if self.prefix:
+            pd.add(OSLCCore.prefix, Literal(self.prefix))
+
+        if self.prefix_base:
+            pd.add(OSLCCore.prefixBase, URIRef(self.prefix_base.uri))
+
+        return pd
 
 
 """

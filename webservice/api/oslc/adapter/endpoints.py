@@ -1,28 +1,47 @@
+import logging
 from urlparse import urlparse
 
 # from rdflib.resource import Resource as RSRC
-from flask import make_response, request, url_for, current_app, Response, render_template
+from flask import make_response, request, url_for, Response, render_template
 from flask_restplus import Namespace, Resource
 
-from rdflib import Graph, URIRef, Literal
-from rdflib.namespace import DCTERMS, RDF, RDFS, XSD
+from rdflib import Graph
+from rdflib.namespace import DCTERMS, RDF, RDFS
+from rdflib.plugin import register
+from rdflib.serializer import Serializer
 
 from pyoslc.vocabulary import OSLCCore
 # from pyoslc.vocabulary.rm import OSLC_RM
+from pyoslc.vocabulary.jazz import JAZZ_PROCESS
 from webservice.api.oslc.adapter.services import ServiceProviderCatalogSingleton, RootServiceSingleton
 
 adapter_ns = Namespace(name='adapter', description='Python OSLC Adapter', path='/services', )
+
+register(
+    'rootservices-xml', Serializer,
+    'pyoslc.serializers.jazzxml', 'JazzRootServiceSerializer'
+)
 
 
 class OslcResource(Resource):
 
     def __init__(self, *args, **kwargs):
         super(OslcResource, self).__init__(*args, **kwargs)
+
+        self.logger = logging.getLogger('flask.app')
+        if not self.logger.handlers:
+            handler = logging.StreamHandler()
+            handler.setLevel(logging.INFO)
+            self.logger.addHandler(handler)
+
+        self.logger.debug('Instantiating Resource {}'.format(self))
+
         self.graph = kwargs.get('graph', Graph())
         self.graph.bind('oslc', OSLCCore)
         self.graph.bind('rdf', RDF)
         self.graph.bind('rdfs', RDFS)
         self.graph.bind('dcterms', DCTERMS)
+        self.graph.bind('j.0', JAZZ_PROCESS)
 
     def create_response(self, graph, format='pretty-xml'):
 
@@ -35,8 +54,6 @@ class OslcResource(Resource):
             content_type = 'json-ld'
 
         data = graph.serialize(format=content_type)
-
-        # print(data)
 
         # Sending the response to the client
         response = make_response(data.decode('utf-8'), 200)
@@ -57,16 +74,11 @@ class ServiceProviderCatalog(OslcResource):
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
 
         catalog_url = urlparse(base_url).geturl()
-        catalog_url = catalog_url.replace('localhost:5000', 'baseurl')
-        catalog_url = catalog_url.replace('127.0.0.1:5000', 'baseurl')
-        catalog_url = catalog_url.replace('0.0.0.0:5000', 'baseurl')
 
         catalog = ServiceProviderCatalogSingleton.get_catalog(catalog_url)
         catalog.to_rdf(self.graph)
 
-        print(self.graph.serialize(format='xml'))
-
-        return self.create_response(graph=self.graph, format='xml')
+        return self.create_response(graph=self.graph, format='pretty-xml')
 
 
 @adapter_ns.route('/<string:service_provider_id>')
@@ -170,8 +182,6 @@ class RootServices(OslcResource):
         return make_response(data.decode('utf-8'), 200)
         :return:
         """
-        current_app.logger.debug('Generating the rootservices resource')
-
         root_services = RootServiceSingleton.get_root_service()
         root_services.about = request.base_url
         root_services.to_rdf(self.graph)
@@ -189,11 +199,8 @@ class RootServices(OslcResource):
 
         )
 
-        return Response(response, content_type='application/rdf+xml')
-
-        # return Response(string, mimetype='application/rdf+xml')
-        # print(self.graph.serialize(format='pretty-xml'))
-        # return self.create_response(graph=self.graph, format='pretty-xml')
+        # return Response(response, content_type='application/rdf+xml')
+        return self.create_response(graph=self.graph, format='rootservices-xml')
 
 
 

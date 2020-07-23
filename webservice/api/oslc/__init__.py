@@ -1,6 +1,6 @@
 import logging
 
-from flask import Blueprint
+from flask import Blueprint, request
 from flask_restplus import Api
 from werkzeug.exceptions import BadRequest
 
@@ -22,6 +22,12 @@ api = Api(
 )
 
 
+@bp.app_errorhandler(500)
+def internal_error(error):
+    logger = logging.getLogger('flask.app')
+    logger.debug('Requesting INTERNAL_ERROR from: {}'.format(request.base_url))
+
+
 @api.errorhandler
 def default_error_handler(e):
     message = 'An unhandled exception occurred.'
@@ -39,6 +45,13 @@ def handle_root_exception(error):
     """
 
     return {'message': 'What you want'}, 400
+
+
+@bp.before_request
+def before_request_func():
+    logger = logging.getLogger('flask.app')
+    logger.debug('Requesting BEFORE_REQUEST from: {} to {}'.format(request.user_agent, request.base_url))
+    logger.debug('Request Referrer {}'.format(request.referrer))
 
 
 api.add_namespace(adapter_ns)

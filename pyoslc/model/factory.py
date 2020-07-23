@@ -12,7 +12,7 @@ class ServiceProviderFactory(object):
                               resource_classes, parameters)
 
     @classmethod
-    def initialize(cls, service_provider, base_uri, generic_base_uri, title, description, publisher, resouce_classes,
+    def initialize(cls, service_provider, base_uri, generic_base_uri, title, description, publisher, resource_classes,
                    parameters):
 
         service_provider.title = title
@@ -21,10 +21,10 @@ class ServiceProviderFactory(object):
 
         services = dict()
 
-        for class_ in resouce_classes:
-            service = services.get(class_.domain)
+        for class_ in resource_classes:
+            service = services.get(class_.__name__)
             if not service:
-                service = Service(about='http://baseurl/oslc/services/Project-1/service', domain=class_.domain)
+                service = Service(title=class_.__name__, about='{}/Project-1/service'.format(base_uri), domain=class_.domain)
                 services[class_.domain] = service
 
             cls.handle_resource_class(base_uri, generic_base_uri, class_, service, parameters)
@@ -71,15 +71,10 @@ class ServiceProviderFactory(object):
         attributes = method.__func__()
 
         title = attributes.get('title', 'OSLC Query Capability')
-        # label = attributes.get('label', 'Query Capability Service')
-        label = None
+        label = attributes.get('label', 'Query Capability Service')
         resource_shape = attributes.get('resource_shape', '')
         resource_type = attributes.get('resource_type', list())
         usages = attributes.get('usages', list())
-
-        base_uri = base_uri.replace('localhost:5000', 'baseurl')
-        base_uri = base_uri.replace('127.0.0.1:5000', 'baseurl')
-        base_uri = base_uri.replace('0.0.0.0:5000', 'baseurl')
 
         base_path = base_uri + '/'
         class_path = 'project/{id}/resources'
@@ -107,11 +102,6 @@ class ServiceProviderFactory(object):
 
     @classmethod
     def create_creation_factory(cls, base_uri, method, parameters):
-
-        base_uri = base_uri.replace('localhost:5000', 'baseurl')
-        base_uri = base_uri.replace('127.0.0.1:5000', 'baseurl')
-        base_uri = base_uri.replace('0.0.0.0:5000', 'baseurl')
-
         class_path = 'project/{id}/resources'
         method_path = 'logic/rule'
         creation_factory = cls.creation_factory(base_uri, method, parameters, class_path, method_path)

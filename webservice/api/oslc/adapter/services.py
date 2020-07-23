@@ -1,8 +1,15 @@
 from datetime import datetime
 
+from rdflib import RDFS, RDF, DCTERMS
+
 from pyoslc.model.factory import ServiceProviderFactory
 from pyoslc.jazz import RootService
-from pyoslc.resource import ServiceProviderCatalog
+from pyoslc.resource import ServiceProviderCatalog, PrefixDefinition
+from pyoslc.vocabulary import OSLCCore
+from pyoslc.vocabulary.am import OSLC_AM
+from pyoslc.vocabulary.cm import OSLC_CM
+from pyoslc.vocabulary.data import OSLCData
+from pyoslc.vocabulary.rm import OSLC_RM
 from webservice.api.oslc.adapter.specs import DataSpecsProjectA
 
 
@@ -54,13 +61,18 @@ class ServiceProviderCatalogSingleton(object):
 
         # service_providers = client.get("htpp://server:port/endpoint", username="", password="")
 
-        service_providers = [{'id': 'Project-1', 'name': 'Service Provider for Project 1'}]
+        service_providers = [
+            {
+                'id': 'Project-1',
+                'name': 'PyOSLC Service Provider for Project 1'
+            }
+        ]
 
         for sp in service_providers:
             identifier = sp.get('id')
             if identifier not in cls.providers.keys():
                 name = sp.get('name')
-                title = 'Service Provider {}'.format(name)
+                title = '{}'.format(name)
                 description = 'Service Provider for the Contact Software platform service (id: {}; kind: {})'.format(identifier, 'Specification')
                 publisher = None
                 parameters = {'id': sp.get('id')}
@@ -77,12 +89,14 @@ class ServiceProviderCatalogSingleton(object):
     @classmethod
     def register_provider(cls, sp_uri, identifier, provider):
 
+        uri = cls.construct_service_provider_uri(identifier)
+
         domains = cls.get_domains(provider)
 
-        provider.about = sp_uri
+        provider.about = uri
         provider.identifier = identifier
         provider.created = datetime.now()
-        # provider.details = sp_uri
+        provider.details = uri
 
         cls.catalog.add_service_provider(provider)
 
@@ -102,6 +116,12 @@ class ServiceProviderCatalogSingleton(object):
 
         return domains
 
+    @classmethod
+    def construct_service_provider_uri(cls, identifier):
+        uri = cls.catalog.about
+        uri = uri.replace('catalog', 'provider') + '/' + identifier
+        return uri
+
 
 class ContactServiceProviderFactory(object):
 
@@ -113,14 +133,14 @@ class ContactServiceProviderFactory(object):
         # sp.add_detail(base_uri)
 
         prefix_definitions = list()
-        # prefix_definitions.append(PrefixDefinition(prefix='dcterms', prefix_base=DCTERMS))
-        # prefix_definitions.append(PrefixDefinition(prefix='oslc', prefix_base=OSLCCore))
-        # prefix_definitions.append(PrefixDefinition(prefix='oslc_data', prefix_base=OSLCData))
-        # prefix_definitions.append(PrefixDefinition(prefix='rdf', prefix_base=RDF))
-        # prefix_definitions.append(PrefixDefinition(prefix='rdfs', prefix_base=RDFS))
-        # prefix_definitions.append(PrefixDefinition(prefix='oslc_am', prefix_base=OSLC_AM))
-        # prefix_definitions.append(PrefixDefinition(prefix='oslc_cm', prefix_base=OSLC_CM))
-        # prefix_definitions.append(PrefixDefinition(prefix='oslc_rm', prefix_base=OSLC_RM))
+        prefix_definitions.append(PrefixDefinition(prefix='dcterms', prefix_base=DCTERMS))
+        prefix_definitions.append(PrefixDefinition(prefix='oslc', prefix_base=OSLCCore))
+        prefix_definitions.append(PrefixDefinition(prefix='oslc_data', prefix_base=OSLCData))
+        prefix_definitions.append(PrefixDefinition(prefix='rdf', prefix_base=RDF))
+        prefix_definitions.append(PrefixDefinition(prefix='rdfs', prefix_base=RDFS))
+        prefix_definitions.append(PrefixDefinition(prefix='oslc_am', prefix_base=OSLC_AM))
+        prefix_definitions.append(PrefixDefinition(prefix='oslc_cm', prefix_base=OSLC_CM))
+        prefix_definitions.append(PrefixDefinition(prefix='oslc_rm', prefix_base=OSLC_RM))
 
         sp.prefix_definition = prefix_definitions
 
