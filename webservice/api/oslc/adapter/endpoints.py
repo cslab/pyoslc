@@ -1,8 +1,7 @@
 import logging
 from urlparse import urlparse
 
-# from rdflib.resource import Resource as RSRC
-from flask import make_response, request, url_for, Response, render_template
+from flask import make_response, request, url_for, render_template
 from flask_restplus import Namespace, Resource
 
 from rdflib import Graph
@@ -11,9 +10,8 @@ from rdflib.plugin import register
 from rdflib.serializer import Serializer
 
 from pyoslc.vocabulary import OSLCCore
-# from pyoslc.vocabulary.rm import OSLC_RM
 from pyoslc.vocabulary.jazz import JAZZ_PROCESS
-from webservice.api.oslc.adapter.services import ServiceProviderCatalogSingleton, RootServiceSingleton
+from webservice.api.oslc.adapter.services.providers import ServiceProviderCatalogSingleton, RootServiceSingleton
 
 adapter_ns = Namespace(name='adapter', description='Python OSLC Adapter', path='/services', )
 
@@ -43,15 +41,19 @@ class OslcResource(Resource):
         self.graph.bind('dcterms', DCTERMS)
         self.graph.bind('j.0', JAZZ_PROCESS)
 
-    def create_response(self, graph, format='pretty-xml'):
+    def create_response(self, graph):
 
         # Getting the content-type for checking the
         # response we will use to serialize the RDF response.
-        content_type = request.headers['accept'] if format is None else format
+        content_type = request.headers['accept']
+
         if content_type in ('application/json-ld', 'application/ld+json', 'application/json', '*/*'):
             # If the content-type is any kind of json,
             # we will use the json-ld format for the response.
             content_type = 'json-ld'
+
+        if content_type in ('application/xml', 'application/rdf+xml'):
+            content_type = 'pretty-xml'
 
         data = graph.serialize(format=content_type)
 
@@ -78,7 +80,7 @@ class ServiceProviderCatalog(OslcResource):
         catalog = ServiceProviderCatalogSingleton.get_catalog(catalog_url)
         catalog.to_rdf(self.graph)
 
-        return self.create_response(graph=self.graph, format='pretty-xml')
+        return self.create_response(graph=self.graph)
 
 
 @adapter_ns.route('/<string:service_provider_id>')

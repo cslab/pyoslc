@@ -8,29 +8,6 @@ from pyoslc.vocabulary.rm import OSLC_RM
 
 class Requirement(Resource_):
 
-    specification_map = {
-        # RDF and OSLC attributes
-        'Specification_id': {'attribute': '_Resource___identifier', 'oslc_property': 'DCTERMS.identifier'},
-        'Title': {'attribute': '_Resource___title', 'oslc_property': 'DCTERMS.title'},
-        'Description': {'attribute': '_Resource___description', 'oslc_property': 'DCTERMS.description'},
-        'Author': {'attribute': '_Resource___creator', 'oslc_property': 'DCTERMS.creator'},
-
-        # RM and Custom attributes
-        'Product': {'attribute': '_Resource___short_title', 'oslc_property': 'DCTERMS.shortTitle'},
-        'Subject': {'attribute': '_Resource___subject', 'oslc_property': 'DCTERMS.subject'},
-        'Source': {'attribute': '_Requirement__elaborated_by', 'oslc_property': 'OSLC_RM.elaboratedBy'},
-        'Category': {'attribute': '_Requirement__constrained_by', 'oslc_property': 'OSLC_RM.constrainedBy'},
-        'Discipline': {'attribute': '_Requirement__satisfied_by', 'oslc_property': 'OSLC_RM.satisfiedBy'},
-        'Revision': {'attribute': '_Requirement__tracked_by', 'oslc_property': 'OSLC_RM.trackedBy'},
-        'Target_Value': {'attribute': '_Requirement__validated_by', 'oslc_property': 'OSLC_RM.validatedBy'},
-        'Degree_of_fulfillment': {'attribute': '_Requirement__affected_by', 'oslc_property': 'OSLC_RM.affectedBy'},
-        'Status': {'attribute': '_Requirement__decomposed_by', 'oslc_property': 'OSLC_RM.decomposedBy'},
-
-        # CUSTOM attributes
-        'PUID': {'attribute': '_Requirement__puid', 'oslc_property': 'OSLC_RM.puid'},
-        'Project': {'attribute': '_Requirement__project', 'oslc_property': 'OSLC_RM.project'},
-    }
-
     def __init__(self, about=None, types=None, properties=None,
                  description=None, identifier=None, short_title=None,
                  title=None, contributor=None, creator=None, subject=None,
@@ -62,10 +39,11 @@ class Requirement(Resource_):
         self.__constrained_by = constrained_by if constrained_by is not None else set()
         self.__constrains = constrains if constrains is not None else set()
 
-    def update(self, data):
+    def update(self, data, attributes):
+        assert attributes is not None, 'The mapping for attributes is required'
         for k, v in data.items():
-            if k in self.specification_map:
-                attribute = self.specification_map[k]['attribute']
+            if k in attributes:
+                attribute = attributes[k]['attribute']
                 if hasattr(self, attribute):
                     attr = getattr(self, attribute, None)
                     if isinstance(attr, set):
@@ -77,7 +55,8 @@ class Requirement(Resource_):
     def get_absolute_url(base_url, identifier):
         return base_url + "/" + identifier
 
-    def to_rdf(self, base_url):
+    def to_rdf(self, base_url, attributes):
+        assert attributes is not None, 'The mapping for attributes is required'
 
         graph = Graph()
         graph.bind('dcterms', DCTERMS)
@@ -91,21 +70,24 @@ class Requirement(Resource_):
         d.rdftype(OSLC_RM.Requirement)
 
         for attribute_key in self.__dict__.keys():
-            item = {attribute_key: v.values() for k, v in self.specification_map.iteritems() if v['attribute'] == attribute_key}
+            item = {attribute_key: v.values() for k, v in attributes.iteritems() if v['attribute'] == attribute_key}
 
             if item.values() and attribute_key in item.values()[0]:
                 predicate = eval(item.values()[0][1])
                 attr = getattr(self, attribute_key)
                 if isinstance(attr, set):
-                    d.value(predicate, attr.pop())
+                    if len(attr) > 0:
+                        d.value(predicate, attr.pop())
+                    else:
+                        d.value(predicate, set())
                 else:
                     d.value(predicate, getattr(self, attribute_key))
 
         return graph
 
-    def from_json(self, data):
+    def from_json(self, data, attributes):
         for key in data.iterkeys():
-            item = {key: v.values() for k, v in self.specification_map.iteritems() if k.lower() == key.lower()}
+            item = {key: v.values() for k, v in attributes.iteritems() if k.lower() == key.lower()}
 
             if item:
                 attribute_name = item[key][0]

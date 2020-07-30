@@ -11,9 +11,12 @@ from rdflib.plugin import PluginException
 from pyoslc.resources.requirement import Requirement
 from pyoslc.vocabulary.rm import OSLC_RM
 from webservice.api.oslc import api
+from webservice.api.oslc.adapter.mappings.specification import specification_map
 from webservice.api.oslc.rm import parsers
 from webservice.api.oslc.rm.models import specification
 from webservice.api.oslc.rm.parsers import specification_parser
+
+attributes = specification_map
 
 
 @api.representation('application/rdf+xml')
@@ -52,9 +55,9 @@ class RequirementList(Resource):
             with open(path, 'rb') as f:
                 reader = csv.DictReader(f, delimiter=';')
                 for row in reader:
-                    req = Requirement()               # instantiating the Requirement object
-                    req.update(row)          # Parsing the specification to requirement
-                    graph += req.to_rdf(request.base_url)    # Accumulating the triples on the graph
+                    req = Requirement()      # instantiating the Requirement object
+                    req.update(row, attributes)          # Parsing the specification to requirement
+                    graph += req.to_rdf(request.base_url, attributes)    # Accumulating the triples on the graph
 
             if 'text/html' in content_type:
                 # Validating whether the request comes from
@@ -128,7 +131,7 @@ class RequirementList(Resource):
             print('TODO - transform from rdf')
 
         req = Requirement()
-        req.from_json(data)
+        req.from_json(data, attributes)
         data = req.to_mapped_object()
 
         if data:
@@ -207,8 +210,8 @@ class RequirementItem(Resource):
                 for row in reader:
                     if row['Specification_id'] == id:
                         rq = Requirement()               # instantiating the Requirement object
-                        rq.update(row)          # Parsing the specification to requirement
-                        graph += rq.to_rdf(request.base_url)    # Accumulating the triples on the graph
+                        rq.update(row, attributes)          # Parsing the specification to requirement
+                        graph += rq.to_rdf(request.base_url, attributes)    # Accumulating the triples on the graph
 
             if 'text/html' in content_type:
                 # Passing the graph as a parameter to the template
