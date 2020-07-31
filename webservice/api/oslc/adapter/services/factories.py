@@ -7,23 +7,28 @@ from pyoslc.vocabulary.am import OSLC_AM
 from pyoslc.vocabulary.cm import OSLC_CM
 from pyoslc.vocabulary.data import OSLCData
 from pyoslc.vocabulary.rm import OSLC_RM
+from webservice.api.oslc.adapter.resources.resource_service import get_service_resources
+from webservice.api.oslc.adapter.services.specification import ServiceResource
 from webservice.api.oslc.adapter.specs import DataSpecsProjectA
 
 
 class ContactServiceProviderFactory(object):
 
     @classmethod
-    def create_provider(cls, base_uri, title, description, publisher, parameters):
+    def create_service_provider(cls, base_uri, title, description, publisher, parameters):
         classes = [DataSpecsProjectA]
-        sp = ServiceProviderFactory.create(base_uri,
-                                           'project',
-                                           title,
-                                           description,
-                                           publisher,
-                                           classes,
-                                           parameters)
+        klasses = get_service_resources(ServiceResource)
 
-        # sp.add_detail(base_uri)
+        sp = ServiceProviderFactory.create_service_provider(base_uri,
+                                                            'project',
+                                                            title,
+                                                            description,
+                                                            publisher,
+                                                            classes,
+                                                            klasses,
+                                                            parameters)
+
+        sp.add_detail(base_uri)
 
         prefix_definitions = list()
         prefix_definitions.append(PrefixDefinition(prefix='dcterms', prefix_base=DCTERMS))

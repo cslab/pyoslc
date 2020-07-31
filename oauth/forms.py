@@ -33,7 +33,6 @@ class ConfirmForm(BaseForm):
 
 class LoginConfirmForm(ConfirmForm):
     username = StringField(validators=[DataRequired()])
-    # email = EmailField(validators=[DataRequired()])
     password = PasswordField(validators=[DataRequired()])
 
     def validate_password(self, field):

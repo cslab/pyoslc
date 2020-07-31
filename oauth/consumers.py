@@ -76,11 +76,6 @@ def approve():
     consumer_key = request.args.get('key') or request.json['key']
 
     oauth_config = OAuthConfiguration.get_instance()
-    # oauth_app = oauth_config.application
-
-    # if not oauth_app.is_admin_session():
-    #     return redirect(url_for('oauth.authorize'))
-    #     # return show_admin_login(oauth_app)
 
     consumer_store = oauth_config.consumer_store
     consumers = consumer_store.consumers

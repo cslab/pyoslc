@@ -1,6 +1,5 @@
-from rdflib import Graph
+from rdflib import Graph, DCTERMS
 from rdflib.extras.describer import Describer
-from rdflib.namespace import DCTERMS
 
 from pyoslc.resource import Resource_
 from pyoslc.vocabulary.rm import OSLC_RM
@@ -99,12 +98,12 @@ class Requirement(Resource_):
                     else:
                         setattr(self, attribute_name, data[key])
 
-    def to_mapped_object(self):
+    def to_mapped_object(self, attributes):
         specification = dict()
 
-        for key in self.specification_map:
+        for key in attributes:
 
-            attribute_name = self.specification_map[key]['attribute']
+            attribute_name = attributes[key]['attribute']
             if hasattr(self, attribute_name):
                 attribute_value = getattr(self, attribute_name)
                 if attribute_value:
@@ -114,3 +113,7 @@ class Requirement(Resource_):
                         specification[key] = attribute_value
 
         return specification
+
+
+class RequirementCollection(Resource_):
+    pass

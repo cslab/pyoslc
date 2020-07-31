@@ -8,7 +8,7 @@ from flask_restplus import Resource
 from rdflib import Graph, RDF
 from rdflib.plugin import PluginException
 
-from pyoslc.resources.requirement import Requirement
+from pyoslc.resources.domains.rm import Requirement
 from pyoslc.vocabulary.rm import OSLC_RM
 from webservice.api.oslc import api
 from webservice.api.oslc.adapter.mappings.specification import specification_map

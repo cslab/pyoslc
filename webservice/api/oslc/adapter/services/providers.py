@@ -37,7 +37,8 @@ class ServiceProviderCatalogSingleton(object):
     @classmethod
     def get_provider(cls, request, identifier):
         if not cls.instance:
-            cls()
+            catalog_url = request.base_url.replace('provider/Project-1', 'catalog')
+            cls.get_catalog(catalog_url)
 
         sp = cls.providers.get(identifier)
         if not sp:
@@ -68,8 +69,8 @@ class ServiceProviderCatalogSingleton(object):
                 description = 'Service Provider for the Contact Software platform service (id: {}; kind: {})'.format(identifier, 'Specification')
                 publisher = None
                 parameters = {'id': sp.get('id')}
-                sp = ContactServiceProviderFactory.create_provider(catalog_url, title, description, publisher, parameters)
-                cls.register_provider(catalog_url, identifier, sp)
+                sp = ContactServiceProviderFactory.create_service_provider(catalog_url, title, description, publisher, parameters)
+                cls.register_service_provider(catalog_url, identifier, sp)
 
         return cls.providers
 
@@ -79,7 +80,7 @@ class ServiceProviderCatalogSingleton(object):
         return cls.providers
 
     @classmethod
-    def register_provider(cls, sp_uri, identifier, provider):
+    def register_service_provider(cls, sp_uri, identifier, provider):
 
         uri = cls.construct_service_provider_uri(identifier)
 
