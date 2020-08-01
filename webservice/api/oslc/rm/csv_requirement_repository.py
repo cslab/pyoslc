@@ -2,7 +2,7 @@ import csv
 import os
 
 from webservice.api.oslc.adapter.repository import Repository
-from pyoslc.resources.requirement import Requirement
+from pyoslc.resources.domains.rm import Requirement
 
 
 class CsvRequirementRepository(Repository):
@@ -23,8 +23,9 @@ class CsvRequirementRepository(Repository):
         'Status': {'attribute': '_Requirement__decomposed_by', 'oslc_property': 'OSLC_RM.decomposedBy'}
     }
 
-    def __init__(self):
+    def __init__(self, title):
         # self.csv_file_path = csv_file_path
+        Repository.__init__(self, title)
         self.csv_file_path = os.path.join(
             os.path.abspath(''), 'examples', 'specifications.csv')
 
@@ -100,7 +101,7 @@ class CsvRequirementRepository(Repository):
                         setattr(requirement, attribute, v)
 
 
-repository = CsvRequirementRepository()
+# repository = CsvRequirementRepository()
 
-for req in repository.get():
-    print req
+# for req in repository.get():
+#     print req

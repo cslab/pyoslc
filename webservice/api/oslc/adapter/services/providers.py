@@ -1,16 +1,8 @@
 from datetime import datetime
 
-from rdflib import RDFS, RDF, DCTERMS
-
-from pyoslc.model.factory import ServiceProviderFactory
 from pyoslc.jazz import RootService
-from pyoslc.resource import ServiceProviderCatalog, PrefixDefinition
-from pyoslc.vocabulary import OSLCCore
-from pyoslc.vocabulary.am import OSLC_AM
-from pyoslc.vocabulary.cm import OSLC_CM
-from pyoslc.vocabulary.data import OSLCData
-from pyoslc.vocabulary.rm import OSLC_RM
-from webservice.api.oslc.adapter.specs import DataSpecsProjectA
+from pyoslc.resource import ServiceProviderCatalog
+from webservice.api.oslc.adapter.services.factories import ContactServiceProviderFactory
 
 
 class ServiceProviderCatalogSingleton(object):
@@ -45,7 +37,8 @@ class ServiceProviderCatalogSingleton(object):
     @classmethod
     def get_provider(cls, request, identifier):
         if not cls.instance:
-            cls()
+            catalog_url = request.base_url.replace('provider/Project-1', 'catalog')
+            cls.get_catalog(catalog_url)
 
         sp = cls.providers.get(identifier)
         if not sp:
@@ -76,8 +69,8 @@ class ServiceProviderCatalogSingleton(object):
                 description = 'Service Provider for the Contact Software platform service (id: {}; kind: {})'.format(identifier, 'Specification')
                 publisher = None
                 parameters = {'id': sp.get('id')}
-                sp = ContactServiceProviderFactory.create_provider(catalog_url, title, description, publisher, parameters)
-                cls.register_provider(catalog_url, identifier, sp)
+                sp = ContactServiceProviderFactory.create_service_provider(catalog_url, title, description, publisher, parameters)
+                cls.register_service_provider(catalog_url, identifier, sp)
 
         return cls.providers
 
@@ -87,7 +80,7 @@ class ServiceProviderCatalogSingleton(object):
         return cls.providers
 
     @classmethod
-    def register_provider(cls, sp_uri, identifier, provider):
+    def register_service_provider(cls, sp_uri, identifier, provider):
 
         uri = cls.construct_service_provider_uri(identifier)
 
@@ -121,30 +114,6 @@ class ServiceProviderCatalogSingleton(object):
         uri = cls.catalog.about
         uri = uri.replace('catalog', 'provider') + '/' + identifier
         return uri
-
-
-class ContactServiceProviderFactory(object):
-
-    @classmethod
-    def create_provider(cls, base_uri, title, description, publisher, parameters):
-        classes = [DataSpecsProjectA]
-        sp = ServiceProviderFactory.create(base_uri, 'project', title, description, publisher, classes, parameters)
-
-        # sp.add_detail(base_uri)
-
-        prefix_definitions = list()
-        prefix_definitions.append(PrefixDefinition(prefix='dcterms', prefix_base=DCTERMS))
-        prefix_definitions.append(PrefixDefinition(prefix='oslc', prefix_base=OSLCCore))
-        prefix_definitions.append(PrefixDefinition(prefix='oslc_data', prefix_base=OSLCData))
-        prefix_definitions.append(PrefixDefinition(prefix='rdf', prefix_base=RDF))
-        prefix_definitions.append(PrefixDefinition(prefix='rdfs', prefix_base=RDFS))
-        prefix_definitions.append(PrefixDefinition(prefix='oslc_am', prefix_base=OSLC_AM))
-        prefix_definitions.append(PrefixDefinition(prefix='oslc_cm', prefix_base=OSLC_CM))
-        prefix_definitions.append(PrefixDefinition(prefix='oslc_rm', prefix_base=OSLC_RM))
-
-        sp.prefix_definition = prefix_definitions
-
-        return sp
 
 
 class RootServiceSingleton(object):

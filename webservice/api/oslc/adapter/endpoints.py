@@ -1,8 +1,11 @@
+import csv
 import logging
+import os
+import shutil
+from tempfile import NamedTemporaryFile
 from urlparse import urlparse
 
-# from rdflib.resource import Resource as RSRC
-from flask import make_response, request, url_for, Response, render_template
+from flask import make_response, request, url_for, render_template
 from flask_restplus import Namespace, Resource
 
 from rdflib import Graph
@@ -10,16 +13,24 @@ from rdflib.namespace import DCTERMS, RDF, RDFS
 from rdflib.plugin import register
 from rdflib.serializer import Serializer
 
+from pyoslc.resources.domains.rm import Requirement
 from pyoslc.vocabulary import OSLCCore
-# from pyoslc.vocabulary.rm import OSLC_RM
 from pyoslc.vocabulary.jazz import JAZZ_PROCESS
-from webservice.api.oslc.adapter.services import ServiceProviderCatalogSingleton, RootServiceSingleton
+from webservice.api.oslc.adapter.resources.resource_service import config_service_resource
+from webservice.api.oslc.adapter.services.providers import ServiceProviderCatalogSingleton, RootServiceSingleton
+from webservice.api.oslc.adapter.services.specification import ServiceResource
+from webservice.api.oslc.rm.models import specification
 
 adapter_ns = Namespace(name='adapter', description='Python OSLC Adapter', path='/services', )
 
 register(
     'rootservices-xml', Serializer,
     'pyoslc.serializers.jazzxml', 'JazzRootServiceSerializer'
+)
+
+config_service_resource(
+    'specification', ServiceResource,
+    'webservice.api.oslc.adapter.services.specification', 'Specification',
 )
 
 
@@ -43,15 +54,19 @@ class OslcResource(Resource):
         self.graph.bind('dcterms', DCTERMS)
         self.graph.bind('j.0', JAZZ_PROCESS)
 
-    def create_response(self, graph, format='pretty-xml'):
+    def create_response(self, graph):
 
         # Getting the content-type for checking the
         # response we will use to serialize the RDF response.
-        content_type = request.headers['accept'] if format is None else format
+        content_type = request.headers['accept']
+
         if content_type in ('application/json-ld', 'application/ld+json', 'application/json', '*/*'):
             # If the content-type is any kind of json,
             # we will use the json-ld format for the response.
             content_type = 'json-ld'
+
+        if content_type in ('application/xml', 'application/rdf+xml'):
+            content_type = 'pretty-xml'
 
         data = graph.serialize(format=content_type)
 
@@ -78,10 +93,10 @@ class ServiceProviderCatalog(OslcResource):
         catalog = ServiceProviderCatalogSingleton.get_catalog(catalog_url)
         catalog.to_rdf(self.graph)
 
-        return self.create_response(graph=self.graph, format='pretty-xml')
+        return self.create_response(graph=self.graph)
 
 
-@adapter_ns.route('/<string:service_provider_id>')
+@adapter_ns.route('/provider/<string:service_provider_id>')
 class ServiceProvider(OslcResource):
 
     def __init__(self, *args, **kwargs):
@@ -98,43 +113,80 @@ class ServiceProvider(OslcResource):
         return self.create_response(graph=self.graph)
 
 
-# @adapter_ns.route('/<string:service_provider_id>/requirement')
-# class IoTPlatformService(OslcResource):
-#
-#     def get(self):
-#         return self.create_response(graph=self.graph)
-#
-#
-# # @adapter_ns.route('/catalog/id/<string:service_provider_id>')
-# class SP(OslcResource):
-#
-#     def get(self):
-#         # Here we will retrieve information using the Repository pattern
-#
-#         pass
-#
-#
-# @adapter_ns.route('/project/<string:service_provider_id>/resources/requirement')
-# class QC(OslcResource):
-#     def get(self, service_provider_id):
-#         graph = self.graph
-#
-#         url = 'http://baseurl/oslc/services/project/{}/resources/requirement'.format(service_provider_id)
-#         ri = RSRC(graph, URIRef(url))
-#         ri.add(RDF.type, URIRef(OSLCCore.ResponseInfo))
-#
-#         ri1 = RSRC(ri, URIRef(url + '/X1C2V3B1'))
-#         ri2 = RSRC(ri, URIRef(url + '/X1C2V3B2'))
-#         ri3 = RSRC(ri, URIRef(url + '/X1C2V3B3'))
-#
-#         ri.add(RDFS.member, ri1.identifier)
-#         ri.add(RDFS.member, ri2.identifier)
-#         ri.add(RDFS.member, ri3.identifier)
-#         ri.add(OSLCCore.totalCount, Literal("03", datatype=XSD.integer))
-#
-#         return self.create_response(graph=self.graph)
-#
-#
+@adapter_ns.route('/provider/<string:service_provider_id>/resources/requirement')
+class QC(OslcResource):
+
+    def get(self, service_provider_id):
+        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
+                               service_provider_id=service_provider_id)
+        base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
+
+        from webservice.api.oslc.rm.business import get_requirement_list
+        data = get_requirement_list(base_url)
+
+        return self.create_response(graph=data)
+
+    @adapter_ns.expect(specification)
+    def post(self, service_provider_id):
+        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
+                               service_provider_id=service_provider_id)
+        base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
+
+        from webservice.api.oslc.adapter.mappings.specification import specification_map
+        attributes = specification_map
+
+        from webservice.api.oslc.rm.parsers import specification_parser
+        data = specification_parser.parse_args()
+
+        req = Requirement()
+        req.from_json(data, attributes)
+        data = req.to_mapped_object(attributes)
+
+        if data:
+            path = os.path.join(os.path.abspath(''), 'examples', 'specifications.csv')
+
+            tempfile = NamedTemporaryFile(mode='w', delete=False)
+
+            with open(path, 'rb') as f:
+                reader = csv.DictReader(f, delimiter=';')
+                field_names = reader.fieldnames
+
+            with open(path, 'r') as csvfile, tempfile:
+                reader = csv.DictReader(csvfile, fieldnames=field_names, delimiter=';')
+                writer = csv.DictWriter(tempfile, fieldnames=field_names, delimiter=';')
+                exist = False
+                for row in reader:
+                    if row['Specification_id'] == data['Specification_id']:
+                        exist = True
+                    writer.writerow(row)
+
+                if not exist:
+                    writer.writerow(data)
+
+            shutil.move(tempfile.name, path)
+
+            if exist:
+                response_object = {
+                    'status': 'fail',
+                    'message': 'Not Modified'
+                }
+                return response_object, 304
+
+        else:
+            response_object = {
+                'status': 'fail',
+                'message': 'Not Found'
+            }
+            return response_object, 400
+
+        response = make_response('', 201)
+        response.headers['Content-Type'] = 'application/rdf+xml; charset=UTF-8'
+        response.headers['OSLC-Core-Version'] = "2.0"
+        response.headers['Location'] = base_url + '/' + req.identifier
+
+        return response
+
+
 # @adapter_ns.route('/project/<service_provider_id>/resources/requirement/<requirement_id>')
 # class RS(OslcResource):
 #     def get(self, service_provider_id, requirement_id):
@@ -252,28 +304,6 @@ class RootServices(OslcResource):
 # #         response.headers['Oslc-Core-Version'] = "2.0"
 # #
 # #         return response
-# #
-# #
-# # class CreationFactory(Resource):
-# #
-# #     def get(self, creation_factory_id):
-# #         content_type = 'text/turtle'
-# #         graph = Graph()
-# #
-# #         creation_factory.to_rdf(graph)
-# #         data = graph.serialize(format=content_type)
-# #
-# #         # Sending the response to the client
-# #         response = make_response(data.decode('utf-8'), 200)
-# #         response.headers['Content-Type'] = content_type
-# #         response.headers['Oslc-Core-Version'] = "2.0"
-# #
-# #         return response
-# #
-# #     def post(self):
-# #         return make_response('{}', 200)
-# #
-# #
 # # class Publisher(Resource):
 # #
 # #     def get(self):

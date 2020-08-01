@@ -4,7 +4,6 @@ from flask import Blueprint, request
 from flask_restplus import Api
 from werkzeug.exceptions import BadRequest
 
-from webservice.api.oslc.adapter.endpoints import adapter_ns
 
 log = logging.getLogger(__name__)
 
@@ -30,9 +29,7 @@ def internal_error(error):
 
 @api.errorhandler
 def default_error_handler(e):
-    message = 'An unhandled exception occurred.'
     log.exception(e)
-
     # if not settings.FLASK_DEBUG:
     return {'message': e}, 500
 
@@ -43,8 +40,7 @@ def handle_root_exception(error):
     Return a custom message and 400 status code
     for bad requests from the html section
     """
-
-    return {'message': 'What you want'}, 400
+    return {'message': error}, 400
 
 
 @bp.before_request
@@ -54,8 +50,10 @@ def before_request_func():
     logger.debug('Request Referrer {}'.format(request.referrer))
 
 
-api.add_namespace(adapter_ns)
-
+from webservice.api.oslc.adapter.endpoints import adapter_ns
 # from webservice.api.oslc.adapter import adapter_ns
 from webservice.api.oslc.rm import rm_ns
 # from webservice.api.oslc.cm import cm_ns
+
+api.add_namespace(adapter_ns)
+api.add_namespace(rm_ns)

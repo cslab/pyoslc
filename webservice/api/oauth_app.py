@@ -7,6 +7,12 @@ from oauth.resources import OAuthException
 
 
 class PyOSLCApplication(OAuthApplication):
+    """
+    This application was implemented for managing the
+    authentication of the adapter, it extends the
+    OAuthApplication from pyoslc to meet the implementation
+    of the pyoslc authentication process.
+    """
 
     def get_realm(self):
         pass
