@@ -1,5 +1,5 @@
-from pyoslc.resource import Resource_
+from pyoslc.resources.models import BaseResource
 
 
-class TestCase(Resource_):
+class TestCase(BaseResource):
     pass

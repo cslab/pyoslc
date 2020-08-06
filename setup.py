@@ -11,6 +11,7 @@ setup(
     install_requires=[
         'RDFLib>=5.0.0',
         'RDFLib-JSONLD',
-        'Flask'
+        'Flask',
+        'Flask-RESTx',
     ],
 )

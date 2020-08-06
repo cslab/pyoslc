@@ -3,7 +3,7 @@ Flask-SQLAlchemy==2.4.1
 Flask-WTF
 Flask-Bootstrap
 Flask-Login
-flask-restplus==0.12.1
+Flask-RESTx
 pytest
 python-dotenv==0.10.1
 rdflib==5.0.0

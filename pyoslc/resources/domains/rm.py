@@ -1,27 +1,22 @@
 from rdflib import Graph, DCTERMS
 from rdflib.extras.describer import Describer
 
-from pyoslc.resource import Resource_
-from pyoslc.vocabulary.rm import OSLC_RM
+from pyoslc.resources.models import BaseResource
+from pyoslc.vocabularies.rm import OSLC_RM
 
 
-class Requirement(Resource_):
+class Requirement(BaseResource):
 
-    def __init__(self, about=None, types=None, properties=None,
-                 description=None, identifier=None, short_title=None,
-                 title=None, contributor=None, creator=None, subject=None,
-                 created=None, modified=None, type=None, discussed_by=None,
-                 instance_shape=None, service_provider=None, relation=None,
-                 elaborated_by=None, elaborates=None, specified_by=None, specifies=None,
-                 affected_by=None, tracked_by=None, implemented_by=None, validated_by=None,
-                 satisfied_by=None, satisfies=None, decomposed_by=None, decomposes=None,
-                 constrained_by=None, constrains=None):
+    def __init__(self, about=None, types=None, properties=None, description=None, identifier=None, short_title=None,
+                 title=None, contributor=None, creator=None, subject=None, created=None, modified=None, type=None,
+                 discussed_by=None, instance_shape=None, service_provider=None, relation=None, elaborated_by=None,
+                 elaborates=None, specified_by=None, specifies=None, affected_by=None, tracked_by=None,
+                 implemented_by=None, validated_by=None, satisfied_by=None, satisfies=None, decomposed_by=None,
+                 decomposes=None, constrained_by=None, constrains=None):
 
-        Resource_.__init__(self, about=about, types=types, properties=properties, description=description,
-                           identifier=identifier, short_title=short_title, title=title, contributor=contributor,
-                           creator=creator, subject=subject, created=created, modified=modified, type=type,
-                           discussed_by=discussed_by, instance_shape=instance_shape, service_provider=service_provider,
-                           relation=relation)
+        super(Requirement, self).__init__(about, types, properties, description, identifier, short_title, title,
+                                          contributor, creator, subject, created, modified, type, discussed_by,
+                                          instance_shape, service_provider, relation)
 
         self.__elaborated_by = elaborated_by if elaborated_by is not None else set()
         self.__elaborates = elaborates if elaborates is not None else set()
@@ -62,8 +57,8 @@ class Requirement(Resource_):
         graph.bind('oslc_rm', OSLC_RM)
 
         d = Describer(graph, base=base_url)
-        if getattr(self, '_Resource___identifier') not in base_url.split('/'):
-            base_url = self.get_absolute_url(base_url, getattr(self, '_Resource___identifier'))
+        if getattr(self, '_BaseResource__identifier') not in base_url.split('/'):
+            base_url = self.get_absolute_url(base_url, getattr(self, '_BaseResource__identifier'))
 
         d.about(base_url)
         d.rdftype(OSLC_RM.Requirement)
@@ -115,5 +110,5 @@ class Requirement(Resource_):
         return specification
 
 
-class RequirementCollection(Resource_):
+class RequirementCollection(BaseResource):
     pass

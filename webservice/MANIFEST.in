@@ -1,5 +1,0 @@
-
-graft api/static
-graft api/templates
-
-global-exclude *.pyc
