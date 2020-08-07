@@ -1,0 +1,18 @@
+{% extends "dialogs/base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block content %}
+    <div class="container">
+        {{ wtf.quick_form(form, action=form.action) }}
+    </div>
+    {% if list_req %}
+    <div class="container">
+        <ul>
+            {% for r in list_req %}
+            <li><a href="{{ r.about }}">{{ r.title }}</a></li>
+            {% endfor %}
+        </ul>
+
+    </div>
+    {% endif %}
+{% endblock %}

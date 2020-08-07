@@ -19,5 +19,5 @@ logs/
 webservice/logs/
 
 _cache
-webservice/oauth.sqlite
-oauth/OAuthStore.rdf
+app/oauth.sqlite
+pyoslc_oauth/OAuthStore.rdf

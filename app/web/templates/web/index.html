@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block button_home %}
+  <a class="btn btn-primary btn-lg" href="{{ url_for('web.index') }}" role="button">Home</a>
+{% endblock %}
+
+{% block header %}
+  <h1>{% block title %}{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+<a class="btn btn-primary btn-lg" href="{{ url_for('oslc.rm_requirement_list') }}"> List Requirements </a>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "pyoslc_oauth/base.html" %}
+{% from "pyoslc_oauth/macros.html" import render_form %}
+
+{% block form %}
+  <h2>Authorization</h2>
+  <p>Client <strong>{{ client.name }}</strong> is requesting:</p>
+  {% if scopes is defined and grant.scopes %}
+    <ul>
+      <li>Access to public resources.</li>
+      {% for scope in grant.scopes %}
+        <li>{{ scopes[scope] }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+  <form action="" method="post" class="form" role="form">
+    {{ render_form(form) }}
+    <button class="btn">Authorize</button>
+  </form>
+{% endblock %}
+
+
+{#    <form action="http://127.0.0.1:5000/auth/server/authorize" id="oauth_form" method="post" target="_self">#}
+{##}
+{#        <div>#}
+{#            <input name="granted" type="hidden" value="true">#}
+{#            <input name="client_id" type="hidden" value="{{ req.credential.client_id }}">#}
+{#            <input id="oauth_token" name="oauth_token" type="hidden" value="{{ req.credential.oauth_token }}">#}
+{#        </div>#}
+{##}
+{#        <fieldset class="buttons">#}
+{#            <legend>Authorize {{ req.name }} access to use your account?</legend>#}
+{#            <input type="submit" value="Authorize app" class="submit button selected" id="allow">#}
+{##}
+{#            <input class="submit button" id="cancel" name="cancel" type="submit" value="Cancel">#}
+{#        </fieldset>#}
+{#    </form>#}
+
