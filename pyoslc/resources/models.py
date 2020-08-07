@@ -885,15 +885,14 @@ class PrefixDefinition(BaseResource):
         return pd
 
 
-class Publisher(BaseResource):
+class Publisher(AbstractResource):
 
-    def __init__(self, about, types=None, properties=None, icon=None, identifier=None, label=None, title=None):
+    def __init__(self, about=None, types=None, properties=None, icon=None, identifier=None, label=None, title=None):
         """
         Resource for publisher
         """
 
-        super(Publisher, self).__init__(about, types, properties, identifier, title)
-
+        super(Publisher, self).__init__(about, types, properties)
         self.__icon = icon if icon is not None else None
         self.__identifier = identifier if identifier is not None else None
         self.__label = label if label is not None else None
@@ -935,11 +934,10 @@ class Publisher(BaseResource):
             raise ValueError('The title must be an instance of str')
 
     def to_rdf(self, graph):
-        if not self.about:
-            raise Exception("The title is missing")
+        super(Publisher, self).to_rdf(graph)
 
         p = Resource(graph, URIRef(self.about))
-        p.add(RDF.type, URIRef(DCTERMS.publisher))
+        p.add(RDF.type, DCTERMS.Publisher)
 
         if self.title:
             p.add(DCTERMS.title, Literal(self.title))
@@ -1018,6 +1016,31 @@ class OAuthConfiguration(BaseResource):
         return oac
 
 
+class FilteredResource(AbstractResource):
+
+    def __init__(self, about, types, properties, resource):
+        super(FilteredResource, self).__init__(about, types, properties)
+        self.__resource = resource if resource is not None else None
+
+
+class ResponseInfo(FilteredResource):
+
+    def __init__(self, about=None, types=None, properties=None, resource=None,
+                 total_count=None, next_page=None, container=None):
+        super(ResponseInfo, self).__init__(about, types, properties, resource)
+        self.__total_count = total_count if total_count is not None else 0
+        self.__next_page = next_page if next_page is not None else None
+        self.__container = container if container is not None else None
+
+    def to_rdf(self, graph):
+        super(ResponseInfo, self).to_rdf(graph)
+
+        ri = Resource(graph, BNode())
+        ri.add(RDF.type, OSLC.ResponseInfo)
+
+        return ri
+
+
 """
 
 class ResourceShape(BaseResource):
@@ -1062,21 +1085,7 @@ class ResourceShape(BaseResource):
         self.__title = title
 
 
-class FilteredResource(BaseResource):
 
-    def __init__(self, about, types, properties, resource):
-        BaseResource.__init__(self, about, types, properties)
-        self.__resource = resource if resource is not None else None
-
-
-class ResponseInfo(FilteredResource):
-
-    def __init__(self, about, types, properties, resource, total_count, next_page, container):
-        FilteredResource.__init__(self, about, types, properties, resource)
-
-        self.__total_count = total_count if total_count is not None else 0
-        self.__next_page = next_page if next_page is not None else None
-        self.__container = container if container is not None else None
 
 
 

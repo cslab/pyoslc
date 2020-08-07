@@ -2,7 +2,6 @@ from rdflib import DCTERMS, RDF, RDFS
 
 from app.api.adapter.resources.resource_service import get_service_resources
 from app.api.adapter.services.specification import ServiceResource
-from app.api.adapter.services.specs import DataSpecsProjectA
 from pyoslc.resources.factories import ServiceProviderFactory
 from pyoslc.resources.models import PrefixDefinition
 from pyoslc.vocabularies.am import OSLC_AM
@@ -16,17 +15,9 @@ class ContactServiceProviderFactory(object):
 
     @classmethod
     def create_service_provider(cls, base_uri, title, description, publisher, parameters):
-        classes = [DataSpecsProjectA]
-        klasses = get_service_resources(ServiceResource)
+        classes = get_service_resources(ServiceResource)
 
-        sp = ServiceProviderFactory.create_service_provider(base_uri,
-                                                            'project',
-                                                            title,
-                                                            description,
-                                                            publisher,
-                                                            classes,
-                                                            klasses,
-                                                            parameters)
+        sp = ServiceProviderFactory.create_service_provider(base_uri, title, description, publisher, classes, parameters)
 
         sp.add_detail(base_uri)
 

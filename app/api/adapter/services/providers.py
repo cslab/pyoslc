@@ -1,8 +1,11 @@
 from datetime import datetime
 
+from flask import url_for
+
+from app.api.adapter.manager import CSVImplementation
 from app.api.adapter.services.factories import ContactServiceProviderFactory
 from pyoslc.resources.jazz import RootService
-from pyoslc.resources.models import ServiceProviderCatalog
+from pyoslc.resources.models import ServiceProviderCatalog, Publisher
 
 
 class ServiceProviderCatalogSingleton(object):
@@ -36,31 +39,23 @@ class ServiceProviderCatalogSingleton(object):
         return cls.providers
 
     @classmethod
-    def get_provider(cls, request, identifier):
+    def get_provider(cls, service_provider_url, identifier):
         if not cls.instance:
-            catalog_url = request.base_url.replace('provider/Project-1', 'catalog')
+            sp = 'provider/{}'.format(identifier)
+            catalog_url = service_provider_url.replace(sp, 'catalog')
             cls.get_catalog(catalog_url)
 
         sp = cls.providers.get(identifier)
         if not sp:
-            cls.get_providers(request.base_url)
+            cls.get_providers(service_provider_url)
             sp = cls.providers.get(identifier)
 
         return sp
 
     @classmethod
     def initialize_providers(cls, catalog_url):
-        service_providers = []  # Get information from the external container
-        # GET Request for those applications
 
-        # service_providers = client.get("htpp://server:port/endpoint", username="", password="")
-
-        service_providers = [
-            {
-                'id': 'Project-1',
-                'name': 'PyOSLC Service Provider for Project 1'
-            }
-        ]
+        service_providers = CSVImplementation.get_service_provider_info()
 
         for sp in service_providers:
             identifier = sp.get('id')
@@ -68,8 +63,8 @@ class ServiceProviderCatalogSingleton(object):
                 name = sp.get('name')
                 title = '{}'.format(name)
                 description = 'Service Provider for the Contact Software platform service (id: {}; kind: {})'.format(
-                    identifier, 'Specification')
-                publisher = None
+                    identifier, sp.get('class').__name__)
+                publisher = PublisherSingleton.get_publisher(catalog_url)
                 parameters = {'id': sp.get('id')}
                 sp = ContactServiceProviderFactory.create_service_provider(catalog_url, title, description, publisher,
                                                                            parameters)
@@ -130,8 +125,36 @@ class RootServiceSingleton(object):
         return cls.instance
 
     @classmethod
-    def get_root_service(cls):
+    def get_root_service(cls, rootservices_url):
         if not cls.instance:
             cls()
 
+        cls.root_service.about = rootservices_url
+
         return cls.root_service
+
+
+class PublisherSingleton(object):
+    instance = None
+    publisher = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls.instance:
+            cls.instance = super(PublisherSingleton, cls).__new__(cls, *args, **kwargs)
+
+            cls.publisher = Publisher()
+            cls.publisher.title = 'PyOSLC Publisher'
+            cls.publisher.description = 'Implementer of the PyOSLC adapter.'
+
+        return cls.instance
+
+    @classmethod
+    def get_publisher(cls, publisher_url):
+        if not cls.instance:
+            cls()
+
+        publisher_url = publisher_url.replace('catalog', 'publisher')
+        cls.publisher.about = publisher_url
+        cls.publisher.identifier = publisher_url.replace('publisher', '')
+
+        return cls.publisher

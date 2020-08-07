@@ -7,22 +7,18 @@ from pyoslc.resources.models import ServiceProvider, Service, QueryCapability, C
 class ServiceProviderFactory(object):
 
     @classmethod
-    def create_service_provider(cls, base_uri, generic_base_uri, title, description, publisher, resource_classes, klasses, parameters):
-        return cls.initialize(ServiceProvider(), base_uri, generic_base_uri, title, description, publisher,
-                              resource_classes, klasses, parameters)
+    def create_service_provider(cls, base_uri, title, description, publisher, resource_classes, parameters):
+        return cls.initialize(ServiceProvider(), base_uri, title, description, publisher, resource_classes, parameters)
 
     @classmethod
-    def initialize(cls, service_provider, base_uri, generic_base_uri, title, description, publisher, resource_classes,
-                   klasses, parameters):
+    def initialize(cls, service_provider, base_uri, title, description, publisher, resource_classes,
+                   parameters):
 
         service_provider.title = title
         service_provider.description = description
         service_provider.publisher = publisher
 
         services = dict()
-
-        for class_ in klasses:
-            print(class_.__name__)
 
         for class_ in resource_classes:
             service = services.get(class_.__name__)
@@ -32,7 +28,7 @@ class ServiceProviderFactory(object):
 
             path = class_.service_path
 
-            cls.handle_resource_class(base_uri, generic_base_uri, class_, service, parameters, path)
+            cls.handle_resource_class(base_uri, class_, service, parameters, path)
 
         for s in services.values():
             service_provider.add_service(s)
@@ -40,38 +36,34 @@ class ServiceProviderFactory(object):
         return service_provider
 
     @classmethod
-    def handle_resource_class(cls, base_uri, generic_base_uri, klass, service, parameters, path):
+    def handle_resource_class(cls, base_uri, klass, service, parameters, path):
 
         for item in inspect.classify_class_attrs(klass):
             if item.kind.__contains__('method') and item.defining_class == klass:
 
                 resource_shape = None
                 if item.name is 'query_capability':
-                    query_capability = cls.create_query_capability(base_uri, item.object, parameters, path)
+                    query_capability = cls.create_query_capability(base_uri, item.object, parameters)
                     service.add_query_capability(query_capability)
                     resource_shape = query_capability.resource_shape
 
                 if item.name is 'creation_factory':
-                    creation_factory = cls.create_creation_factory(base_uri, item.object, parameters, path)
+                    creation_factory = cls.create_creation_factory(base_uri, item.object, parameters)
                     service.add_creation_factory(creation_factory)
                     resource_shape = creation_factory.resource_shape
 
                 if item.name is 'selection_dialog':
-                    annotation = item.name
-                    dialog = cls.create_selection_dialog(base_uri, generic_base_uri, item.object, annotation,
-                                                         resource_shape, parameters, path)
+                    dialog = cls.create_selection_dialog(base_uri, item.object, parameters)
                     service.add_selection_dialog(dialog)
 
                 if item.name is 'creation_dialog':
-                    annotation = item.name
-                    dialog = cls.create_creation_dialog(base_uri, generic_base_uri, item.object, annotation,
-                                                         resource_shape, parameters, path)
+                    dialog = cls.create_creation_dialog(base_uri, item.object, parameters)
                     service.add_creation_dialog(dialog)
 
         return True
 
     @classmethod
-    def create_query_capability(cls, base_uri, method, parameters, path):
+    def create_query_capability(cls, base_uri, method, parameters):
 
         attributes = method.__func__()
 
@@ -82,12 +74,12 @@ class ServiceProviderFactory(object):
         usages = attributes.get('usages', list())
 
         base_path = base_uri + '/'
-        class_path = 'project/{id}/resources'
+        class_path = 'provider/{id}/resources'
         method_path = 'requirement'
 
         base_path = base_path.replace('/catalog', '')
 
-        query = cls.resolve_path_parameter(base_path, class_path, method_path, parameters, path)
+        query = cls.resolve_path_parameter(base_path, class_path, method_path, parameters)
 
         query_capability = QueryCapability(about=query, title=title, query_base=query)
         if label:
@@ -106,14 +98,14 @@ class ServiceProviderFactory(object):
         return query_capability
 
     @classmethod
-    def create_creation_factory(cls, base_uri, method, parameters, path):
-        class_path = 'project/{id}/resources'
-        method_path = 'logic/rule'
-        creation_factory = cls.creation_factory(base_uri, method, parameters, class_path, method_path, path)
+    def create_creation_factory(cls, base_uri, method, parameters):
+        class_path = 'provider/{id}/resources'
+        method_path = 'requirement'
+        creation_factory = cls.creation_factory(base_uri, method, parameters, class_path, method_path)
         return creation_factory
 
     @classmethod
-    def creation_factory(cls, base_uri, method, parameters, path, annotation, pa):
+    def creation_factory(cls, base_uri, method, parameters, class_path, method_path):
 
         attributes = method.__func__()
 
@@ -124,10 +116,8 @@ class ServiceProviderFactory(object):
         usages = attributes.get('usages', list())
 
         base_path = base_uri + '/'
-        class_path = 'project/{id}/resources'
-        method_path = 'requirement'
 
-        creation = cls.resolve_path_parameter(base_path, class_path, method_path, parameters, pa)
+        creation = cls.resolve_path_parameter(base_path, class_path, method_path, parameters)
         creation = creation.replace('/catalog', '')
 
         creation_factory = CreationFactory(about=creation, title=title, creation=creation)
@@ -148,30 +138,15 @@ class ServiceProviderFactory(object):
         return creation_factory
 
     @classmethod
-    def create_selection_dialog(cls, base_uri, generic_base_uri, method, annotation, resource_shape, parameters, path):
-        return cls.create_dialog(base_uri,
-                                 generic_base_uri,
-                                 'Selection',
-                                 'query_base',
-                                 method,
-                                 annotation,
-                                 resource_shape,
-                                 parameters, path)
+    def create_selection_dialog(cls, base_uri, method, parameters):
+        return cls.create_dialog(base_uri, 'Selection', method, parameters)
 
     @classmethod
-    def create_creation_dialog(cls, base_uri, generic_base_uri, method, annotation, resource_shape, parameters, path):
-        return cls.create_dialog(base_uri,
-                                 generic_base_uri,
-                                 'Creation',
-                                 'creation',
-                                 method,
-                                 annotation,
-                                 resource_shape,
-                                 parameters, path)
+    def create_creation_dialog(cls, base_uri, method, parameters):
+        return cls.create_dialog(base_uri, 'Creation', method, parameters)
 
     @classmethod
-    def create_dialog(cls, base_uri, generic_base_uri, dialog_type, parameter_name, method, annotation, resource_shape,
-                      parameters, path):
+    def create_dialog(cls, base_uri, dialog_type, method, parameters):
         attributes = method.__func__()
 
         title = attributes.get('title', 'OSLC Dialog Resource Shape')
@@ -182,13 +157,11 @@ class ServiceProviderFactory(object):
         resource_type = attributes.get('resource_type', list())
         usages = attributes.get('usages', list())
 
-        uri = ''
-        class_method = 'project/{id}/resources'
-
         if dialog_uri:
-            uri = cls.resolve_path_parameter(base_uri, None, dialog_uri, parameters, path)
+            uri = cls.resolve_path_parameter(base_uri, None, dialog_uri, parameters)
+            uri = uri.replace('/catalog', '')
         else:
-            uri = generic_base_uri + 'generic/generic' + dialog_type + '.html'
+            uri = base_uri + 'generic/generic' + dialog_type + '.html'
             # Continue implementing generic dialog selector
 
         dialog = Dialog(title=title, dialog=uri)
@@ -211,7 +184,7 @@ class ServiceProviderFactory(object):
         return dialog
 
     @classmethod
-    def resolve_path_parameter(cls, base_path, class_path, method_path, parameters, path):
+    def resolve_path_parameter(cls, base_path, class_path, method_path, parameters):
 
         base_path = base_path.rstrip('/')
 

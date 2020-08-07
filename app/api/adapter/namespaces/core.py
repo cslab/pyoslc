@@ -15,13 +15,14 @@ from app.api.adapter.namespaces.business import get_requirement_list
 from app.api.adapter.namespaces.rm.models import specification
 from app.api.adapter.namespaces.rm.parsers import specification_parser
 from app.api.adapter.resources.resource_service import config_service_resource
-from app.api.adapter.services.providers import ServiceProviderCatalogSingleton, RootServiceSingleton
+from app.api.adapter.services.providers import ServiceProviderCatalogSingleton, RootServiceSingleton, PublisherSingleton
 from app.api.adapter.services.specification import ServiceResource
 from pyoslc.resources.domains.rm import Requirement
+from pyoslc.resources.models import ResponseInfo
 from pyoslc.vocabularies.core import OSLC
 from pyoslc.vocabularies.jazz import JAZZ_PROCESS
 
-adapter_ns = Namespace(name='adapter', description='Python OSLC Adapter')
+adapter_ns = Namespace(name='adapter', description='Python OSLC Adapter', path='/services',)
 
 register(
     'rootservices-xml', Serializer,
@@ -47,11 +48,13 @@ class OslcResource(Resource):
         self.graph.bind('dcterms', DCTERMS)
         self.graph.bind('j.0', JAZZ_PROCESS)
 
-    def create_response(self, graph, format=None):
+    def create_response(self, graph, rdf_format=None):
 
         # Getting the content-type for checking the
         # response we will use to serialize the RDF response.
-        content_type = request.headers['accept'] if format is None else unicode(format)
+        content_type = request.headers['accept'] if rdf_format is None else unicode(rdf_format)
+
+
 
         if content_type in ('application/json-ld', 'application/ld+json', 'application/json', '*/*'):
             # If the content-type is any kind of json,
@@ -63,6 +66,8 @@ class OslcResource(Resource):
 
         if content_type in 'rootservices-xml':
             content_type = 'rootservices-xml'
+        else:
+            content_type = 'pretty-xml'
 
         data = graph.serialize(format=content_type)
 
@@ -99,26 +104,30 @@ class ServiceProvider(OslcResource):
         super(ServiceProvider, self).__init__(*args, **kwargs)
 
     def get(self, service_provider_id):
-        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint), service_provider_id=service_provider_id)
+        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
+                               service_provider_id=service_provider_id)
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
 
-        url = urlparse(base_url)
+        service_provider_url = urlparse(base_url).geturl()
 
-        provider = ServiceProviderCatalogSingleton.get_provider(request, service_provider_id)
+        provider = ServiceProviderCatalogSingleton.get_provider(service_provider_url, service_provider_id)
         provider.to_rdf(self.graph)
         return self.create_response(graph=self.graph)
 
 
-@adapter_ns.route('/provider/<string:service_provider_id>/resources/requirement')
-class QC(OslcResource):
+@adapter_ns.route('/provider/<service_provider_id>/resources/requirement')
+class ResourceOperation(OslcResource):
 
     def get(self, service_provider_id):
         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
                                service_provider_id=service_provider_id)
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
 
-        # from webservice.api.oslc.rm.business import get_requirement_list
         data = get_requirement_list(base_url)
+        response_info = ResponseInfo()
+        response_info.total_count = len(data)
+
+        graph = response_info.to_rdf(self.graph)
 
         return self.create_response(graph=data)
 
@@ -187,13 +196,15 @@ class RootServices(OslcResource):
     def get(self):
 
         """
-        g = Graph()
-        data = g.serialize(format='application/rdf+xml')
-
-        return make_response(data.decode('utf-8'), 200)
+        Generate Rootservices response
         :return:
         """
-        root_services = RootServiceSingleton.get_root_service()
+        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint))
+        base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
+
+        rootservices_url = urlparse(base_url).geturl()
+
+        root_services = RootServiceSingleton.get_root_service(rootservices_url)
         root_services.about = request.base_url
         root_services.to_rdf(self.graph)
 
@@ -210,6 +221,19 @@ class RootServices(OslcResource):
         # )
 
         # return Response(response, content_type='application/rdf+xml')
-        return self.create_response(graph=self.graph, format='rootservices-xml')
+        return self.create_response(graph=self.graph, rdf_format='rootservices-xml')
 
 
+@adapter_ns.route('/publisher')
+class Publisher(OslcResource):
+
+    def get(self):
+        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint))
+        base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
+        publisher_url = urlparse(base_url).geturl()
+
+        publisher = PublisherSingleton.get_publisher(publisher_url)
+
+        publisher.to_rdf(self.graph)
+
+        return self.create_response(graph=self.graph, rdf_format='pretty-xml')
