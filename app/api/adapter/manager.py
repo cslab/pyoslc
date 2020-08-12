@@ -12,3 +12,12 @@ class CSVImplementation(object):
         }]
 
         return service_providers
+
+    @classmethod
+    def get_configuration_info(cls):
+        components = [{
+            'id': 'Component-1',
+            'name': 'PyOSLC Configuration Component'
+        }]
+
+        return components

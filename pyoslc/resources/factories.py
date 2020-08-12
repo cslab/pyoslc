@@ -2,6 +2,7 @@ import inspect
 from urlparse import urlparse
 
 from pyoslc.resources.models import ServiceProvider, Service, QueryCapability, CreationFactory, Dialog
+from pyoslc.vocabularies.config import OSLC_CONFIG
 
 
 class ServiceProviderFactory(object):
@@ -42,30 +43,29 @@ class ServiceProviderFactory(object):
             if item.kind.__contains__('method') and item.defining_class == klass:
 
                 resource_shape = None
+                resource_attributes = item.object.__func__()
                 if item.name is 'query_capability':
-                    query_capability = cls.create_query_capability(base_uri, item.object, parameters)
+                    query_capability = cls.create_query_capability(base_uri, resource_attributes, parameters)
                     service.add_query_capability(query_capability)
                     resource_shape = query_capability.resource_shape
 
                 if item.name is 'creation_factory':
-                    creation_factory = cls.create_creation_factory(base_uri, item.object, parameters)
+                    creation_factory = cls.create_creation_factory(base_uri, resource_attributes, parameters)
                     service.add_creation_factory(creation_factory)
                     resource_shape = creation_factory.resource_shape
 
                 if item.name is 'selection_dialog':
-                    dialog = cls.create_selection_dialog(base_uri, item.object, parameters)
+                    dialog = cls.create_selection_dialog(base_uri, resource_attributes, parameters)
                     service.add_selection_dialog(dialog)
 
                 if item.name is 'creation_dialog':
-                    dialog = cls.create_creation_dialog(base_uri, item.object, parameters)
+                    dialog = cls.create_creation_dialog(base_uri, resource_attributes, parameters)
                     service.add_creation_dialog(dialog)
 
         return True
 
     @classmethod
-    def create_query_capability(cls, base_uri, method, parameters):
-
-        attributes = method.__func__()
+    def create_query_capability(cls, base_uri, attributes, parameters):
 
         title = attributes.get('title', 'OSLC Query Capability')
         label = attributes.get('label', 'Query Capability Service')
@@ -98,16 +98,14 @@ class ServiceProviderFactory(object):
         return query_capability
 
     @classmethod
-    def create_creation_factory(cls, base_uri, method, parameters):
+    def create_creation_factory(cls, base_uri, attributes, parameters):
         class_path = 'provider/{id}/resources'
         method_path = 'requirement'
-        creation_factory = cls.creation_factory(base_uri, method, parameters, class_path, method_path)
+        creation_factory = cls.creation_factory(base_uri, attributes, parameters, class_path, method_path)
         return creation_factory
 
     @classmethod
-    def creation_factory(cls, base_uri, method, parameters, class_path, method_path):
-
-        attributes = method.__func__()
+    def creation_factory(cls, base_uri, attributes, parameters, class_path, method_path):
 
         title = attributes.get('title', 'OSLC Creation Factory')
         label = attributes.get('label', 'Creation Factory Service')
@@ -138,22 +136,20 @@ class ServiceProviderFactory(object):
         return creation_factory
 
     @classmethod
-    def create_selection_dialog(cls, base_uri, method, parameters):
-        return cls.create_dialog(base_uri, 'Selection', method, parameters)
+    def create_selection_dialog(cls, base_uri, attributes, parameters):
+        return cls.create_dialog(base_uri, 'Selection', attributes, parameters)
 
     @classmethod
-    def create_creation_dialog(cls, base_uri, method, parameters):
-        return cls.create_dialog(base_uri, 'Creation', method, parameters)
+    def create_creation_dialog(cls, base_uri, attributes, parameters):
+        return cls.create_dialog(base_uri, 'Creation', attributes, parameters)
 
     @classmethod
-    def create_dialog(cls, base_uri, dialog_type, method, parameters):
-        attributes = method.__func__()
-
+    def create_dialog(cls, base_uri, dialog_type, attributes, parameters):
         title = attributes.get('title', 'OSLC Dialog Resource Shape')
         label = attributes.get('label', 'OSLC Dialog for Service')
         dialog_uri = attributes.get('uri', None)
-        hint_width = attributes.get('hint_width', 100)
-        hint_height = attributes.get('hint_height', 100)
+        hint_width = attributes.get('hint_width', '100px')
+        hint_height = attributes.get('hint_height', '100px')
         resource_type = attributes.get('resource_type', list())
         usages = attributes.get('usages', list())
 
@@ -197,3 +193,26 @@ class ServiceProviderFactory(object):
         uri = urlparse(base_path.format(**parameters))
 
         return uri.geturl()
+
+
+class ConfigurationFactory(object):
+
+    @classmethod
+    def create_component(cls, base_uri, title, description, publisher, attributes, parameters):
+        component = ServiceProvider()
+        component.title = title
+        component.description = description
+        component.publisher = publisher
+
+        items = dict()
+        item = Service(domain=OSLC_CONFIG.uri)
+
+        items[OSLC_CONFIG.uri] = item
+
+        dialog = ServiceProviderFactory.create_selection_dialog(base_uri, attributes, parameters)
+        item.add_selection_dialog(dialog)
+
+        for s in items.values():
+            component.add_service(s)
+
+        return component

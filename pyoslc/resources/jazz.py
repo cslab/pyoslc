@@ -18,7 +18,7 @@ class RootService(BaseResource):
     def __init__(self, about=None, types=None, properties=None, description=None, identifier=None, short_title=None,
                  title=None, contributor=None, creator=None, subject=None, created=None, modified=None, type=None,
                  discussed_by=None, instance_shape=None, service_provider=None, relation=None, friends=None,
-                 service=None, details=None, prefix_definition=None, oauth_configuration=None):
+                 publisher=None, service=None, details=None, prefix_definition=None, oauth_configuration=None):
         """
         Initialize Root Service
         """
@@ -28,6 +28,7 @@ class RootService(BaseResource):
                                           instance_shape, service_provider, relation)
 
         self.__friends = friends or list()
+        self.__publisher = publisher or ''
 
     @property
     def friends(self):
@@ -39,6 +40,14 @@ class RootService(BaseResource):
 
     def add_friend(self, friend):
         self.__friends.append(friend)
+
+    @property
+    def publisher(self):
+        return self.__publisher
+
+    @publisher.setter
+    def publisher(self, publisher):
+        self.__publisher = publisher
 
     def to_rdf(self, graph):
 
@@ -56,6 +65,12 @@ class RootService(BaseResource):
         if self.description:
             rs.add(DCTERMS.description, Literal(self.description))
 
+        if self.publisher:
+            # rs.add(DCTERMS.publisher, URIRef(self.publisher.about))
+            # rs.add(DCTERMS.publisher, URIRef(self.publisher.about))
+            publisher_url = url_for('oslc.adapter_configuration_publisher', _external=True)
+            rs.add(OSLC.publisher, URIRef(publisher_url))
+
         OSLC_RM_JAZZ = Namespace("http://open-services.net/xmlns/rm/1.0/")
         OSLC_CM_JAZZ = Namespace("http://open-services.net/xmlns/cm/1.0/")
 
@@ -67,14 +82,15 @@ class RootService(BaseResource):
         graph.bind('trs', OSLC_TRS)
 
         test_url = url_for('oslc.adapter_service_provider_catalog', _external=True)
+        config_url = url_for('oslc.adapter_configuration_catalog', _external=True)
 
         # rs.add(OSLC_AM.amServiceProviders, URIRef(test_url))
         rs.add(OSLC_RM_JAZZ.rmServiceProviders, URIRef(test_url))
         # rs.add(OSLC_CM_JAZZ.cmServiceProviders, URIRef(test_url))
-        # rs.add(OSLC_CONFIG.cmServiceProviders, URIRef(test_url))
+        rs.add(OSLC_CONFIG.cmServiceProviders, URIRef(config_url))
 
         rs.add(JFS.oauthRealmName, Literal("PyOSLC"))
-        rs.add(JFS.oauthDomain, Literal(url_for('web.index', _external=True)))
+        rs.add(JFS.oauthDomain, Literal(url_for('oslc.doc', _external=True)))
         rs.add(JFS.oauthRequestConsumerKeyUrl, URIRef(url_for('consumer.register', _external=True)))
         rs.add(JFS.oauthApprovalModuleUrl, URIRef(url_for('consumer.approve', _external=True)))
         rs.add(JFS.oauthRequestTokenUrl, URIRef(url_for('oauth.issue_token', _external=True)))
@@ -87,7 +103,7 @@ class RootService(BaseResource):
         trs = Resource(graph, BNode())
         trs.add(RDF.type, pyoslc.TrackedResourceSetProvider)
 
-        trs_url = URIRef(url_for('web.index', _external=True))
+        trs_url = URIRef(url_for('oslc.doc', _external=True))
 
         tr = Resource(graph, BNode())
         tr.add(RDF.type, OSLC_TRS.TrackedResourceSet)

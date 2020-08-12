@@ -1,7 +1,7 @@
-from flask import Blueprint, render_template, url_for, request
+from flask import Blueprint, render_template
 
 from app.api.adapter.forms import SpecificationForm, SelectSpecificationForm
-from app.api.adapter.namespaces.business import get_requirement_list, get_requirements
+from app.api.adapter.namespaces.business import get_requirements
 
 dialog_bp = Blueprint('dialog', __name__, template_folder='templates')
 
@@ -13,8 +13,8 @@ def index(service_provider_id):
 
     if form.validate_on_submit():
         base_url = 'http://localhost:5000/oslc/services/provider/Project-1/resources/selector'
-
         list_req = get_requirements()
+        form.selection.choices = dict(list_req)
 
     return render_template("dialogs/selector.html", form=form, list_req=list_req)
 

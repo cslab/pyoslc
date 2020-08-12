@@ -1,17 +1,17 @@
 import xml
 
-from rdflib import RDF, BNode, URIRef, RDFS, Literal
+from rdflib import RDF, BNode, Literal, URIRef, RDFS
 from rdflib.collection import Collection
-from rdflib.plugins.serializers.rdfxml import PrettyXMLSerializer, XMLBASE, fix, OWL_NS, XMLLANG
+from rdflib.plugins.serializers.rdfxml import PrettyXMLSerializer, XMLBASE, fix, XMLLANG, OWL_NS
 from rdflib.plugins.serializers.xmlwriter import XMLWriter
 from rdflib.util import first, more_than
 from six import b
 
 
-class JazzRootServiceSerializer(PrettyXMLSerializer):
+class ConfigurationSerializer(PrettyXMLSerializer):
 
     def __init__(self, store, max_depth=3):
-        super(JazzRootServiceSerializer, self).__init__(store, max_depth=3)
+        super(ConfigurationSerializer, self).__init__(store, max_depth=3)
         self.__root_serialized = {}
         self.__serialized = {}
 
@@ -39,20 +39,9 @@ class JazzRootServiceSerializer(PrettyXMLSerializer):
             namespaces[prefix] = namespace
 
         namespaces["rdf"] = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-        namespaces["dc"] = "http://purl.org/dc/terms/"
-        namespaces["jd"] = "http://jazz.net/xmlns/prod/jazz/discovery/1.0/"
+        namespaces["vvc"] = "http://jazz.net/ns/vvc#"
 
-        namespaces["jfs"] = "http://jazz.net/xmlns/prod/jazz/jfs/1.0/"
-        namespaces["trs"] = "http://open-services.net/ns/core/trs#"
-        namespaces["jp06"] = "http://jazz.net/xmlns/prod/jazz/process/0.6/"
-        namespaces["jp"] = "http://jazz.net/xmlns/prod/jazz/process/1.0/"
-
-        writer.push(RDF.Description)
-        for subject in store.subjects():
-            if not (None, None, subject) in store:
-                writer.attribute(RDF.about, self.relativize(subject))
-                self.__root_serialized[subject] = 1
-                break
+        writer.push(RDF.RDF)
 
         if "xml_base" in args:
             writer.attribute(XMLBASE, args["xml_base"])
@@ -84,18 +73,23 @@ class JazzRootServiceSerializer(PrettyXMLSerializer):
             if bnode not in self.__serialized:
                 self.subject(subject, 1)
 
-        writer.pop(RDF.Description)
+        writer.pop(RDF.RDF)
         stream.write(b("\n"))
 
         # Set to None so that the memory can get garbage collected.
         self.__serialized = None
-        self.__root_serialized = None
 
     def subject(self, subject, depth=1):
         store = self.store
         writer = self.writer
 
-        if not subject in self.__serialized:
+        if subject in self.forceRDFAbout:
+            writer.push(RDF.Description)
+            writer.attribute(RDF.about, self.relativize(subject))
+            writer.pop(RDF.Description)
+            self.forceRDFAbout.remove(subject)
+
+        elif not subject in self.__serialized:
             self.__serialized[subject] = 1
             type = first(store.objects(subject, RDF.type))
 
@@ -105,9 +99,7 @@ class JazzRootServiceSerializer(PrettyXMLSerializer):
                 type = None
 
             element = type or RDF.Description
-
-            if not subject in self.__root_serialized:
-                writer.push(element)
+            writer.push(element)
 
             if isinstance(subject, BNode):
                 def subj_as_obj_more_than(ceil):
@@ -121,16 +113,20 @@ class JazzRootServiceSerializer(PrettyXMLSerializer):
                     writer.attribute(RDF.nodeID, fix(subject))
 
             else:
-                if not subject in self.__root_serialized:
-                    writer.attribute(RDF.about, self.relativize(subject))
+                writer.attribute(RDF.about, self.relativize(subject))
 
             if (subject, None, None) in store:
                 for predicate, object in store.predicate_objects(subject):
                     if not (predicate == RDF.type and object == type):
                         self.predicate(predicate, object, depth + 1)
 
-            if not subject in self.__root_serialized:
-                writer.pop(element)
+            writer.pop(element)
+
+        elif subject in self.forceRDFAbout:
+            writer.push(RDF.Description)
+            writer.attribute(RDF.about, self.relativize(subject))
+            writer.pop(RDF.Description)
+            self.forceRDFAbout.remove(subject)
 
     def predicate(self, predicate, object, depth=1):
         writer = self.writer

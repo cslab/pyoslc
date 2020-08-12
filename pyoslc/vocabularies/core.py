@@ -35,6 +35,6 @@ OSLC = ClosedNamespace(
         "range", "readOnly", "rel", "representation", "resourceShape", "resourceType",
         "results", "selectionDialog", "service", "serviceProvider", "serviceProviderCatalog",
         "shortId", "shortTitle", "smallPreview", "statusCode", "totalCount", "usage",
-        "valueShape", "valueType"
+        "valueShape", "valueType", "publisher",
     ]
 )

@@ -118,3 +118,18 @@ class Specification(ServiceResource):
                               'http://open-services.net/ns/rm#Requirement'],
             'usages': ['http://open-services.net/ns/am#PyOSLCCreationDialog']
         }
+
+
+class Configuration(ServiceResource):
+
+    @staticmethod
+    def selection_dialog():
+        return {
+            'title': 'Configuration Picker',
+            'label': 'Selection Component',
+            'uri': 'config/selection',
+            'hintWidth': '600px',
+            'hintHeight': '500px',
+            'resource_type': ['http://jazz.net/ns/vvc#Configuration'],
+            'usages': ['http://jazz.net/ns/vvc#Configuration']
+        }

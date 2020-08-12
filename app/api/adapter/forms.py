@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
+from wtforms import StringField, SubmitField, SelectField, FieldList
 from wtforms.validators import DataRequired
 
 
@@ -17,4 +17,5 @@ class SpecificationForm(FlaskForm):
 
 class SelectSpecificationForm(FlaskForm):
     title = StringField(validators=[DataRequired()])
+    selection = SelectField(option_widget="size=10")
     submit = SubmitField("Search")
