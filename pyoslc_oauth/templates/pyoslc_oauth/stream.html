@@ -1,0 +1,30 @@
+<rdf:RDF
+        xmlns:dcterms="http://purl.org/dc/terms/"
+        xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+        xmlns:oslc="http://open-services.net/ns/core#"
+        xmlns:oslc_config="http://open-services.net/ns/config#"
+        xmlns:j.0="http://jazz.net/ns/rm/dng/config#"
+        xmlns:acc="http://open-services.net/ns/core/acc#"
+        xmlns:process="http://jazz.net/ns/process#">
+    <oslc_config:Configuration rdf:about="{{ stream_url }}">
+        <dcterms:identifier>{{ stream_id }}</dcterms:identifier>
+        <oslc_config:selections
+                rdf:resource="{{ selection_url }}"/>
+        <dcterms:title rdf:parseType="Literal">PyOSLC Initial Stream</dcterms:title>
+
+        <oslc:serviceProvider
+                rdf:resource="{{ service_provider_url }}"/>
+        <rdf:type rdf:resource="http://open-services.net/ns/config#Stream"/>
+        <process:projectArea rdf:resource="{{ project_area }}"/>
+        <j.0:changesets
+                rdf:resource="{{ stream_url }}/changesets"/>
+        <dcterms:creator rdf:resource="https://46.101.103.36:9443/jts/users/koneksys"/>
+        <oslc_config:component rdf:resource="~{{ service_provider_url }}"/>
+        <dcterms:description>Description</dcterms:description>
+        <acc:accessContext
+                rdf:resource="{{ stream_url }}/acclist/{{ stream_id }}"/>
+        <oslc_config:acceptedBy rdf:resource="http://open-services.net/ns/config#Configuration"/>
+            <oslc_config:baselines
+                    rdf:resource="{{ stream_url }}/baselines"/>
+    </oslc_config:Configuration>
+</rdf:RDF>

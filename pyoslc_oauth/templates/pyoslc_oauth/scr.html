@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<rdf:RDF
+        xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+        xmlns:dc="http://purl.org/dc/terms/"
+        xmlns:jfs="http://jazz.net/xmlns/foundation/1.0/"
+        xmlns:jd="http://jazz.net/xmlns/prod/jazz/discovery/1.0/"
+        xmlns:jdb="http://jazz.net/xmlns/prod/jazz/dashboard/1.0/"
+        xmlns:jp06="http://jazz.net/xmlns/prod/jazz/process/0.6/"
+        xmlns:jp="http://jazz.net/xmlns/prod/jazz/process/1.0/"
+        xmlns:jfs3="http://jazz.net/xmlns/prod/jazz/jfs/3.0/"
+        xmlns:oslc="http://open-services.net/ns/core#"
+        xmlns:oslc_rm="http://open-services.net/xmlns/rm/1.0/"
+        xmlns:ju="http://jazz.net/ns/ui#"
+        xmlns:jtp="http://jazz.net/xmlns/prod/jazz/jtp/0.6/"
+        xmlns:juentry="http://jazz.net/ns/ui/entry#"
+        xmlns:suspect="http://www.ibm.com/xmlns/suspect#"
+        xmlns:trs="http://jazz.net/ns/trs#"
+        xmlns:trs2="http://open-services.net/ns/core/trs#">
+
+    <jd:Application>
+        <jd:contextRoot>http://192.168.1.66:5000/oslc/hereistheservice</jd:contextRoot>
+        <jd:rootServices rdf:resource="http://192.168.1.66:5000/oslc/hereistheservice/rootservices"/>
+        <oslc:publisher rdf:resource="http://192.168.1.66:5000/oslc/hereistheservice/config/publisher"/>
+        <jd:domain rdf:parseType="Resource">
+            <dc:identifier>http://open-services.net/ns/rm#</dc:identifier>
+        </jd:domain>
+        <jd:jsaSsoEnabled>false</jd:jsaSsoEnabled>
+    </jd:Application>
+
+    <jfs:compatibleLicenseBehavior jfs:id="RequirementsManagement-7.0"/>
+
+    <!--
+     Catalog of Requirements Management Service Providers on this server
+    -->
+    <oslc_rm:RmServiceProviders>
+        <jd:service rdf:resource="http://192.168.1.66:5000/oslc/hereistheservice/catalog"/>
+    </oslc_rm:RmServiceProviders>
+
+</rdf:RDF>

@@ -1,0 +1,17 @@
+<rdf:RDF
+        xmlns:dcterms="http://purl.org/dc/terms/"
+        xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+        xmlns:oslc="http://open-services.net/ns/core#"
+        xmlns:vvc="http://jazz.net/ns/vvc#">
+    <oslc:ServiceProviderCatalog rdf:about="{{ about }}">
+        <oslc:serviceProvider>
+            <oslc:ServiceProvider rdf:about="{{ components }}">
+                <oslc:details rdf:resource="{{ components }}" />
+                <dcterms:title>PyOSLC Configuration Management Service Provider</dcterms:title>
+            </oslc:ServiceProvider>
+        </oslc:serviceProvider>
+        <oslc:domain rdf:resource="http://open-services.net/ns/config#"/>
+        <dcterms:description>Configuration Services Provided by the PyOSLC application.</dcterms:description>
+        <dcterms:title>PyOSLC Configuration Management Catalog</dcterms:title>
+    </oslc:ServiceProviderCatalog>
+</rdf:RDF>

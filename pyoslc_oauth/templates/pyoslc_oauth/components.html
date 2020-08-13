@@ -1,0 +1,23 @@
+<rdf:RDF
+        xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+        xmlns:oslc="http://open-services.net/ns/core#"
+        xmlns:vvc="http://jazz.net/ns/vvc#"
+        xmlns:dcterms="http://purl.org/dc/terms/">
+    <oslc:ServiceProvider>
+        <oslc:service>
+            <oslc:Service>
+                <oslc:selectionDialog>
+                    <oslc:Dialog>
+                        <dcterms:title>PyOSLC Configuration Picker</dcterms:title>
+                        <oslc:label>PyOSLC Configuration Picker</oslc:label>
+                        <oslc:dialog rdf:resource="{{ dialog }}"/>
+                        <oslc:hintWidth>600px</oslc:hintWidth>
+                        <oslc:hintHeight>500px</oslc:hintHeight>
+                        <oslc:resourceType rdf:resource="http://jazz.net/ns/vvc#Configuration"/>
+                        <oslc:usage rdf:resource="http://jazz.net/ns/vvc#Configuration"/>
+                    </oslc:Dialog>
+                </oslc:selectionDialog>
+            </oslc:Service>
+        </oslc:service>
+    </oslc:ServiceProvider>
+</rdf:RDF>

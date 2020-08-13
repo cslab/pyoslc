@@ -6,6 +6,7 @@ from rdflib.resource import Resource
 from pyoslc.helpers import build_uri
 from pyoslc.vocabularies.core import OSLC
 from pyoslc.vocabularies.jazz import JAZZ_PROCESS
+from pyoslc.vocabularies.jfs import JFS
 
 default_uri = 'http://examples.com/'
 
@@ -816,16 +817,16 @@ class Dialog(BaseResource):
         d.add(RDF.type, OSLC.Dialog)
 
         if self.label:
-            d.add(OSLC.label, Literal(self.label, datatype=XSD.string))
+            d.add(OSLC.label, Literal(self.label))
 
         if self.title:
             d.add(DCTERMS.title, Literal(self.title))
 
         if self.hint_width:
-            d.add(DCTERMS.hintWidth, Literal(self.hint_width, datatype=XSD.integer))
+            d.add(DCTERMS.hintWidth, Literal(self.hint_width))
 
         if self.hint_height:
-            d.add(DCTERMS.hintHeight, Literal(self.hint_height, datatype=XSD.integer))
+            d.add(DCTERMS.hintHeight, Literal(self.hint_height))
 
         if self.dialog:
             d.add(OSLC.dialog, URIRef(self.dialog))
@@ -936,6 +937,8 @@ class Publisher(AbstractResource):
     def to_rdf(self, graph):
         super(Publisher, self).to_rdf(graph)
 
+        graph.bind('jfs', JFS)
+
         p = Resource(graph, URIRef(self.about))
         p.add(RDF.type, DCTERMS.Publisher)
 
@@ -946,10 +949,14 @@ class Publisher(AbstractResource):
             p.add(OSLC.label, Literal(self.label))
 
         if self.identifier:
-            p.add(DCTERMS.identifier, URIRef(self.identifier))
+            p.add(DCTERMS.identifier, Literal(self.identifier))
 
         if self.icon:
             p.add(OSLC.icon, URIRef(self.icon))
+
+        p.add(JFS.nonLocalizedTitle, Literal('Configuration'))
+        p.add(JFS.version, Literal('7.0'))
+        p.add(JFS.instanceName, Literal('/pyoslc'))
 
         return p
 

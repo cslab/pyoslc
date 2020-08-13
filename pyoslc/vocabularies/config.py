@@ -10,3 +10,10 @@ OSLC_CONFIG = ClosedNamespace(
         "cmServiceProviders",
     ]
 )
+
+PROV = ClosedNamespace(
+    uri=URIRef("http://www.w3.org/ns/prov#"),
+    terms=[
+        "wasDerivedFrom", "wasRevisionOf", "wasGeneratedBy"
+    ]
+)

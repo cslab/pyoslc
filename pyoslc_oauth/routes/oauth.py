@@ -8,7 +8,7 @@ from pyoslc_oauth.models import User, Client
 from pyoslc_oauth.resources import OAuthConfiguration
 from pyoslc_oauth.server import auth_server
 
-oauth_bp = Blueprint('oauth', __name__, template_folder='templates')
+oauth_bp = Blueprint('oauth', __name__, template_folder='../templates', static_folder='../static')
 
 
 @login.user_loader
@@ -56,7 +56,7 @@ def authorize():
     client_id = credential.get_client_id()
     client = Client.query.filter_by(client_id=client_id).first()
     return render_template(
-        'oauth/authorize.html',
+        'pyoslc_oauth/authorize.html',
         grant=grant,
         client=client,
         form=form,

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html
+        PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <title>Configuratin Selection Dialog</title>
+    <script type="text/javascript" src="{{ url_for('oslc.static', filename='delegatedUI.js') }}"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+
+    <script>
+        var selectionUri = {};
+        $(document).ready(function () {
+            var selectType = document.getElementById("selectType");
+            $('#selectType').on('click', function load() {
+                var type = selectType.options[selectType.selectedIndex].value
+                selectionUri = '{{ selection_uri }}?type=' + type  // provide the selected type as a query parameter
+            });
+            selectType.selectedIndex = 1;
+            selectType.click()
+        })
+    </script>
+
+</head>
+<body style="padding: 10px;">
+    <div id="selector-body">
+        Type:
+        <select id="selectType">
+            <option value="stream">Streams</option>
+            <option value="baseline">Baseline</option>
+        </select>
+
+        <p id="searchMessage">Click on <b>Load</b> to retrieve the Streams from PyOSLC-Adaptor.</p>
+        <p id="loadingMessage" style="display: none;">Please stand by ...</p>
+
+        <div>
+            <button type="button" onclick="search(selectionUri)">Load</button>
+        </div>
+
+        <div style="margin-top: 5px;">
+            <select id="results" size="10" style="width: 400px" multiple="multiple"></select>
+        </div>
+
+        <div style="width: 400px; margin-top: 5px;">
+            <button style="float: right;" type="button"
+                    onclick="javascript: cancel()">Cancel
+            </button>
+            <button style="float: right;" type="button"
+                    onclick="javascript: select();">OK
+            </button>
+        </div>
+
+        <div style="clear: both;"></div>
+
+    </div>
+
+</body>
+</html>

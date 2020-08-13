@@ -1,0 +1,14 @@
+<rdf:RDF xmlns:jfs="http://jazz.net/xmlns/prod/jazz/jfs/1.0/"
+         xmlns:oslc="http://open-services.net/ns/core#"
+         xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:dcterms="http://purl.org/dc/terms/">
+    <oslc:Publisher rdf:about="{{ about }}">
+        <dcterms:title>PyOSLC-Adaptor Project</dcterms:title>
+        <jfs:nonLocalizedTitle>PyOSLC Specification Management</jfs:nonLocalizedTitle>
+        <dcterms:description>This application provides the capabilities to create and manage requirements</dcterms:description>
+        <dcterms:identifier>http://rm.provider.local</dcterms:identifier>
+        <jfs:version>6.0.6</jfs:version>
+        <oslc:icon rdf:resource="{{ url_for('oslc.static', filename='pyicon16.ico', _external=True) }}"/>
+        <jfs:instanceName>/pyoslc</jfs:instanceName>
+    </oslc:Publisher>
+</rdf:RDF>

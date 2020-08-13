@@ -4,7 +4,7 @@ import shutil
 from tempfile import NamedTemporaryFile
 from urlparse import urlparse
 
-from flask import request, make_response, url_for
+from flask import request, make_response, url_for, render_template, Response, jsonify
 from flask_restx import Namespace, Resource
 from rdflib import Graph, RDF, RDFS, DCTERMS
 from rdflib.plugin import register
@@ -54,8 +54,6 @@ class OslcResource(Resource):
         # response we will use to serialize the RDF response.
         content_type = request.headers['accept'] if rdf_format is None else unicode(rdf_format)
 
-
-
         if content_type in ('application/json-ld', 'application/ld+json', 'application/json', '*/*'):
             # If the content-type is any kind of json,
             # we will use the json-ld format for the response.
@@ -66,6 +64,8 @@ class OslcResource(Resource):
 
         if content_type in 'rootservices-xml':
             content_type = 'rootservices-xml'
+        elif content_type in 'config-xml':
+            content_type = 'config-xml'
         else:
             content_type = 'pretty-xml'
 
@@ -206,34 +206,185 @@ class RootServices(OslcResource):
 
         root_services = RootServiceSingleton.get_root_service(rootservices_url)
         root_services.about = request.base_url
+        publisher_url = rootservices_url.replace('rootservices', 'publisher')
+        root_services.publisher = PublisherSingleton.get_publisher(publisher_url)
         root_services.to_rdf(self.graph)
 
         # response = render_template(
         #     'pyoslc_oauth/rootservices.html',
         #     about=root_services.about,
         #     catalogUri=url_for('oslc.adapter_service_provider_catalog', _external=True),
-        #     authDomain=url_for('web.index', _external=True),
+        #     configUri=url_for('oslc.adapter_configuration_catalog', _external=True),
+        #     authDomain=url_for('oslc.doc', _external=True),
         #     requestKey=url_for('consumer.register', _external=True),
         #     approveKey=url_for('consumer.approve', _external=True),
         #     requestToken=url_for('oauth.issue_token', _external=True),
         #     authorize=url_for('oauth.authorize', _external=True),
-        #     accessToken=url_for('oauth.issue_token', _external=True)
+        #     accessToken=url_for('oauth.issue_token', _external=True),
+        #     publisherUrl=url_for('oslc.adapter_configuration_publisher', _external=True),
         # )
-
+        #
         # return Response(response, content_type='application/rdf+xml')
         return self.create_response(graph=self.graph, rdf_format='rootservices-xml')
 
 
-@adapter_ns.route('/publisher')
-class Publisher(OslcResource):
+# @adapter_ns.route('/publisher')
+# class Publisher(OslcResource):
+#
+#     def get(self):
+#         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint))
+#         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
+#         publisher_url = urlparse(base_url).geturl()
+#
+#         publisher = PublisherSingleton.get_publisher(publisher_url)
+#
+#         publisher.to_rdf(self.graph)
+#
+#         return self.create_response(graph=self.graph, rdf_format='pretty-xml')
+
+
+@adapter_ns.route('/config')
+class ConfigurationCatalog(OslcResource):
 
     def get(self):
         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint))
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
-        publisher_url = urlparse(base_url).geturl()
 
-        publisher = PublisherSingleton.get_publisher(publisher_url)
+        catalog_url = urlparse(base_url).geturl()
 
-        publisher.to_rdf(self.graph)
+        response = make_response(render_template('pyoslc_oauth/configuration.html',
+                                                 about=catalog_url,
+                                                 components=catalog_url + '/components'))
 
-        return self.create_response(graph=self.graph, rdf_format='pretty-xml')
+        response.headers['max-age'] = '0'
+        response.headers['pragma'] = 'no-cache'
+        response.headers['Cache-Control'] = 'no-cache'
+        response.headers['Content-Length'] = len(response.data)
+        response.headers['Content-Type'] = 'application/rdf+xml;charset=UTF-8'
+        response.headers['OSLC-Core-Version'] = "2.0"
+
+        return response
+
+
+@adapter_ns.route('/config/components')
+class ConfigurationComponent(OslcResource):
+
+    def get(self):
+        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint))
+        base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
+
+        components_url = urlparse(base_url).geturl()
+
+        response = make_response(render_template('pyoslc_oauth/components.html',
+                                                 dialog=components_url.replace('components', 'selection')))
+
+        response.headers['max-age'] = '0'
+        response.headers['pragma'] = 'no-cache'
+        response.headers['Cache-Control'] = 'no-cache'
+        response.headers['Content-Length'] = len(response.data)
+        response.headers['Content-Type'] = 'application/rdf+xml;charset=UTF-8'
+        response.headers['OSLC-Core-Version'] = "2.0"
+
+        return response
+
+
+@adapter_ns.route('/config/publisher')
+class ConfigurationPublisher(OslcResource):
+
+    def get(self):
+        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint))
+        base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
+
+        components_url = urlparse(base_url).geturl()
+
+        response = make_response(render_template('pyoslc_oauth/publisher.html',
+                                                 about=components_url))
+
+        response.headers['max-age'] = '0'
+        response.headers['pragma'] = 'no-cache'
+        response.headers['Cache-Control'] = 'no-cache'
+        response.headers['Content-Length'] = len(response.data)
+        response.headers['Content-Type'] = 'application/rdf+xml;charset=UTF-8'
+        response.headers['OSLC-Core-Version'] = "2.0"
+
+        return response
+
+
+@adapter_ns.route('/config/selection')
+class ConfigurationSelection(OslcResource):
+
+    def get(self):
+        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint))
+        base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
+
+        components_url = urlparse(base_url).geturl()
+
+        stream = request.args.get('stream')
+        if stream:
+
+            result = [
+                {
+                    'oslc:label': 'PyOSLC Stream 1',
+                    'rdf:resource': 'http://192.168.1.66:5000/oslc/services/config/stream/1',
+                    'rdf:type': 'http://open-services.net/ns/config#Stream'
+
+                },
+                {
+                    'oslc:label': 'PyOSLC Stream 2',
+                    'rdf:resource': 'http://192.168.1.66:5000/oslc/services/config/stream/2',
+                    'rdf:type': 'http://open-services.net/ns/config#Stream'
+                }
+            ]
+
+            return {"oslc:results": result}
+
+        response = make_response(render_template('pyoslc_oauth/selection.xhtml',
+                                                 selection_uri=components_url.replace('components', 'selection')))
+
+        response.headers['max-age'] = '0'
+        response.headers['pragma'] = 'no-cache'
+        response.headers['Cache-Control'] = 'no-cache'
+        response.headers['Content-Length'] = len(response.data)
+        response.headers['Content-Type'] = 'application/rdf+xml;charset=UTF-8'
+        response.headers['OSLC-Core-Version'] = "2.0"
+
+        return response
+
+
+@adapter_ns.route('/config/stream/<int:stream_id>')
+class ConfigurationStream(OslcResource):
+
+    def get(self, stream_id):
+        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint), stream_id=stream_id)
+        base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
+
+        stream_url = urlparse(base_url).geturl()
+
+        catalog_url = url_for('oslc.adapter_service_provider_catalog', _external=True)
+        service_provider_url = url_for('oslc.adapter_service_provider', service_provider_id='Project-1', _external=True)
+
+
+        response = make_response(render_template('pyoslc_oauth/stream.html',
+                                                 stream_url=stream_url,
+                                                 selection_url=url_for('oslc.adapter_configuration_selection', _external=True),
+                                                 stream_id=stream_id,
+                                                 project_area=catalog_url,
+                                                 service_provider_url=service_provider_url,
+                                                 selection_uri=stream_url.replace('components', 'selection')))
+
+        response.headers['max-age'] = '0'
+        response.headers['pragma'] = 'no-cache'
+        response.headers['Cache-Control'] = 'no-cache'
+        response.headers['Content-Length'] = len(response.data)
+        response.headers['Content-Type'] = 'application/rdf+xml;charset=UTF-8'
+        response.headers['OSLC-Core-Version'] = "2.0"
+
+        return response
+
+
+@adapter_ns.route('/scr')
+class Source(OslcResource):
+
+    def get(self):
+        response = make_response(render_template('pyoslc_oauth/scr.html'))
+        return response

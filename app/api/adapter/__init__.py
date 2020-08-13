@@ -4,7 +4,7 @@ from flask import Blueprint, request
 from flask_restx import Api
 from werkzeug.exceptions import BadRequest
 
-bp = Blueprint('oslc', __name__, url_prefix='/services')
+bp = Blueprint('oslc', __name__, url_prefix='/services', static_folder='static')
 
 api = Api(
     app=bp,
@@ -27,7 +27,7 @@ def internal_error(error):
 @bp.before_request
 def before_request_func():
     logger = logging.getLogger('flask.app')
-    logger.debug('Requesting BEFORE_REQUEST from: {} to {}'.format(request.user_agent, request.base_url))
+    logger.debug('Requesting BEFORE_REQUEST from: {} {} to {}'.format(request.access_route, request.user_agent, request.base_url))
     logger.debug('Request Referrer {}'.format(request.referrer))
 
 

@@ -13,6 +13,9 @@ JFS = ClosedNamespace(
         "oauthApprovalModuleUrl",
         "oauthRequestTokenUrl",
         "oauthUserAuthorizationUrl",
-        "oauthAccessTokenUrl"
+        "oauthAccessTokenUrl",
+        "nonLocalizedTitle",
+        "version",
+        "instanceName",
     ]
 )

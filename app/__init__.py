@@ -3,12 +3,16 @@ import os
 from logging.handlers import RotatingFileHandler
 
 from flask import Flask
+from flask_cors import CORS
 
 from app import config
+
+cors = CORS()
 
 
 def create_app(app_config=None):
     app = Flask(__name__, instance_relative_config=False)
+    cors.init_app(app)
 
     if app_config is None:
         # load the instance config, if it exists, when not testing
