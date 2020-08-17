@@ -1,18 +1,53 @@
-{% extends "dialogs/base.html" %}
-{% import "bootstrap/wtf.html" as wtf %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+    <title>CustomSelectionDialog</title>
+    <script type="text/javascript" src="{{ url_for('dialog.static', filename='delegatedUI.js', _external=True) }}"></script>
+    <script src = "https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+    <script>
+        var selectionUri = {}
+        $(document).ready(function () {
+            var selectType = document.getElementById("selectType")
+            $('#selectType').on('click', function load() {
+                var type = selectType.options[selectType.selectedIndex].value
+                selectionUri = '{{ selection_url }}?type=' + type  // provide the selected type as a query parameter
+            })
+            selectType.selectedIndex = 0
+            selectType.click()
+        })
+    </script>
+</head>
+<body style="padding: 10px;">
 
-{% block content %}
-    <div class="container">
-        {{ wtf.quick_form(form, action=form.action) }}
-    </div>
-    {% if list_req %}
-    <div class="container">
-        <ul>
-            {% for r in list_req %}
-            <li><a href="{{ r.about }}">{{ r.title }}</a></li>
-            {% endfor %}
-        </ul>
+    <div id="selector-body">
+        Type:
+        <select id="selectType">
+            <option value="specification">Specification</option>
+        </select>
 
+        <p id="searchMessage">Find a specific resource through a free-text search.</p>
+
+        <p id="loadingMessage" style="display: none;">Pondering your search. Please stand by ...</p>
+
+        <div>
+            <input type="search" style="width: 335px" id="searchTerms" placeholder="Enter search terms" autofocus>
+            <button type="button" onclick="search(selectionUri)">Search</button>
+        </div>
+
+        <div style="margin-top: 5px;">
+            <select id="results" size="10" style="width: 400px" multiple="multiple"></select>
+        </div>
+
+        <div style="width: 400px; margin-top: 5px;">
+            <button style="float: right;" type="button"
+                    onclick="javascript: cancel()">Cancel
+            </button>
+            <button style="float: right;" type="button"
+                    onclick="javascript: select();">OK
+            </button>
+        </div>
+        <div style="clear: both;"></div>
     </div>
-    {% endif %}
-{% endblock %}
+</body>
+</html>

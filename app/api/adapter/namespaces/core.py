@@ -18,7 +18,7 @@ from app.api.adapter.resources.resource_service import config_service_resource
 from app.api.adapter.services.providers import ServiceProviderCatalogSingleton, RootServiceSingleton, PublisherSingleton
 from app.api.adapter.services.specification import ServiceResource
 from pyoslc.resources.domains.rm import Requirement
-from pyoslc.resources.models import ResponseInfo
+from pyoslc.resources.models import ResponseInfo, Compact, Preview
 from pyoslc.vocabularies.core import OSLC
 from pyoslc.vocabularies.jazz import JAZZ_PROCESS
 
@@ -186,6 +186,122 @@ class ResourceOperation(OslcResource):
         response.headers['Content-Type'] = 'application/rdf+xml; charset=UTF-8'
         response.headers['OSLC-Core-Version'] = "2.0"
         response.headers['Location'] = base_url + '/' + req.identifier
+
+        return response
+
+
+@adapter_ns.route('/provider/<service_provider_id>/resources/requirement/<requirement_id>')
+class ResourcePreview(OslcResource):
+
+    def get(self, service_provider_id, requirement_id):
+        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
+                               service_provider_id=service_provider_id, requirement_id=requirement_id   )
+        base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
+
+        print(request.headers)
+
+        compact = Compact(about=base_url)
+        compact.title = 'title'
+        compact.icon = url_for('oslc.static', filename='pyicon24.ico', _external=True)
+
+        small_preview = Preview()
+        small_preview.document = base_url + '/smallPreview'
+        small_preview.hint_width = '45em'
+        small_preview.hint_height = '10em'
+
+        large_preview = Preview()
+        large_preview.document = base_url + '/largePreview'
+        large_preview.hint_width = '45em'
+        large_preview.hint_height = '20em'
+
+        compact.small_preview = small_preview
+        compact.large_preview = large_preview
+
+        compact.to_rdf(self.graph)
+
+        # return self.create_response(graph=self.graph, rdf_format='pretty-xml')
+        # return render_template('pyoslc_oauth/compact.html', compact=compact)
+
+        response = make_response(render_template('pyoslc_oauth/compact.html',
+                                                 compact=compact))
+        response.headers['max-age'] = '0'
+        response.headers['pragma'] = 'no-cache'
+        response.headers['Cache-Control'] = 'no-cache'
+        response.headers['Content-Type'] = 'application/x-oslc-compact+xml  ;charset=UTF-8'
+        response.headers['OSLC-Core-Version'] = "2.0"
+
+        return response
+
+    @adapter_ns.expect(specification)
+    def post(self, service_provider_id):
+        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
+                               service_provider_id=service_provider_id)
+        base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
+
+        attributes = specification_map
+
+        data = specification_parser.parse_args()
+
+        req = Requirement()
+        req.from_json(data, attributes)
+        data = req.to_mapped_object(attributes)
+
+        if data:
+            path = os.path.join(os.path.abspath(''), 'examples', 'specifications.csv')
+
+            tempfile = NamedTemporaryFile(mode='w', delete=False)
+
+            with open(path, 'rb') as f:
+                reader = csv.DictReader(f, delimiter=';')
+                field_names = reader.fieldnames
+
+            with open(path, 'r') as csvfile, tempfile:
+                reader = csv.DictReader(csvfile, fieldnames=field_names, delimiter=';')
+                writer = csv.DictWriter(tempfile, fieldnames=field_names, delimiter=';')
+                exist = False
+                for row in reader:
+                    if row['Specification_id'] == data['Specification_id']:
+                        exist = True
+                    writer.writerow(row)
+
+                if not exist:
+                    writer.writerow(data)
+
+            shutil.move(tempfile.name, path)
+
+            if exist:
+                response_object = {
+                    'status': 'fail',
+                    'message': 'Not Modified'
+                }
+                return response_object, 304
+
+        else:
+            response_object = {
+                'status': 'fail',
+                'message': 'Not Found'
+            }
+            return response_object, 400
+
+        response = make_response('', 201)
+        response.headers['Content-Type'] = 'application/rdf+xml; charset=UTF-8'
+        response.headers['OSLC-Core-Version'] = "2.0"
+        response.headers['Location'] = base_url + '/' + req.identifier
+
+        return response
+
+
+@adapter_ns.route('/provider/<service_provider_id>/resources/requirement/<requirement_id>/smallPreview')
+class ResourcePreviewSmallLarge(OslcResource):
+
+    def get(self, service_provider_id, requirement_id):
+        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
+                               service_provider_id=service_provider_id, requirement_id=requirement_id   )
+        base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
+
+        response = make_response(render_template("dialogs/smallpreview.html", title='small'))
+        response.headers['Content-Type'] = 'text/html;charset=UTF-8'
+        response.headers['OSLC-Core-Version'] = "2.0"
 
         return response
 

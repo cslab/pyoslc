@@ -1,0 +1,57 @@
+{% import "bootstrap/wtf.html" as wtf %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+    <title>ResourceCreationDialog</title>
+    <link href="{{bootstrap_find_resource('css/bootstrap.css', cdn='bootstrap')}}" rel="stylesheet">
+    <script type="text/javascript"
+            src="{{ url_for('dialog.static', filename='delegatedUI.js', _external=True) }}"></script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+    <script>
+        var creatorUri = {}
+        $(document).ready(function () {
+            var selectType = document.getElementById("selectType")
+            $('#selectType').on('click', function load() {
+                var type = selectType.options[selectType.selectedIndex].value
+                var parser = document.createElement('a')
+                parser.href = document.URL
+                //var uri = parser.protocol + '//' + parser.host + '/iotp/creators/' + type + '.jsp'
+                creatorUri = '{{ creator_url }}' + '?type=' + type  // provide the selected type as a query parameter
+                //$('#Create #resourceProperties').load(uri)
+            })
+            selectType.selectedIndex = 0
+            selectType.click()
+        })
+    </script>
+</head>
+<body style="padding: 10px;">
+    Type:
+    <select id="selectType">
+        <option value="specification">Specification</option>
+    </select>
+    <div id="bugzilla-body">
+        <form id="Create" method="POST" class="enter_bug_form">
+            <div id="resourceProperties"></div>
+            {{ form.hidden_tag() }}
+            {{ wtf.form_errors(form, hiddens="only") }}
+
+            {{ wtf.form_field(form.specification_id, form_type="horizontal", extra_classes='from-control-sm') }}
+            {{ wtf.form_field(form.title, form_type="horizontal", horizontal_columns=('sm', 2, 10)) }}
+            {{ wtf.form_field(form.description, form_type="horizontal", horizontal_columns=('sm', 2, 10)) }}
+            {{ wtf.form_field(form.author, form_type="horizontal", horizontal_columns=('sm', 2, 10)) }}
+            {{ wtf.form_field(form.product, form_type="horizontal", horizontal_columns=('sm', 2, 10)) }}
+            {{ wtf.form_field(form.subject, form_type="horizontal", horizontal_columns=('sm', 2, 10)) }}
+            {{ wtf.form_field(form.source, form_type="horizontal", horizontal_columns=('sm', 2, 10)) }}
+            {{ wtf.form_field(form.category, form_type="horizontal", horizontal_columns=('sm', 2, 10)) }}
+
+            <input type="button"
+                   value="Submit"
+                   onclick="javascript: create(creatorUri)">
+            <input type="reset">
+        </form>
+        <div style="clear: both;"></div>
+    </div>
+</body>
+</html>
