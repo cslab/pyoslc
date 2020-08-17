@@ -1048,6 +1048,150 @@ class ResponseInfo(FilteredResource):
         return ri
 
 
+class Preview(AbstractResource):
+
+    def __init__(self, about=None, types=None, properties=None, document=None,
+                 hint_height=None, hint_width=None, initial_height=None):
+        super(Preview, self).__init__(about, types, properties)
+
+        self.__document = document if document is not None else None
+        self.__hint_height = hint_height if hint_height is not None else None
+        self.__hint_width = hint_width if hint_width is not None else None
+        self.__initial_height = initial_height if initial_height is not None else None
+
+    @property
+    def document(self):
+        return self.__document
+
+    @document.setter
+    def document(self, document):
+        self.__document = document
+
+    @property
+    def hint_height(self):
+        return self.__hint_height
+
+    @hint_height.setter
+    def hint_height(self, hint_height):
+        self.__hint_height = hint_height
+
+    @property
+    def hint_width(self):
+        return self.__hint_width
+
+    @hint_width.setter
+    def hint_width(self, hint_width):
+        self.__hint_width = hint_width
+
+    @property
+    def initial_height(self):
+        return self.__initial_height
+
+    @initial_height.setter
+    def initial_height(self, initial_height):
+        self.__initial_height = initial_height
+
+    def to_rdf(self, graph):
+        super(Preview, self).to_rdf(graph)
+
+        p = Resource(graph, BNode())
+        p.add(RDF.type, OSLC.Preview)
+
+        if self.document:
+            p.add(OSLC.document, URIRef(self.document))
+
+        if self.hint_height:
+            p.add(OSLC.hintHeight, Literal(self.hint_height, datatype=XSD.string))
+
+        if self.hint_width:
+            p.add(OSLC.hintWidth, Literal(self.hint_width, datatype=XSD.string))
+
+        if self.initial_height:
+            p.add(OSLC.initialHeight, Literal(self.initial_height, datatype=XSD.string))
+
+        return p
+
+
+class Compact(AbstractResource):
+
+    def __init__(self, about=None, types=None, properties=None,
+                 icon=None, large_preview=None, short_title=None,
+                 small_preview=None, title=None):
+        super(Compact, self).__init__(about, types, properties)
+        self.__icon = icon if icon is not None else None
+        self.__large_preview = large_preview if large_preview is not None else Preview(about, types, properties)
+        self.__short_title = short_title if short_title is not None else ''
+        self.__small_preview = small_preview if small_preview is not None else Preview(about, types, properties)
+        self.__title = title if title is not None else Preview(about, types, properties)
+
+    @property
+    def icon(self):
+        return self.__icon
+
+    @icon.setter
+    def icon(self, icon):
+        self.__icon = icon
+
+    @property
+    def short_title(self):
+        return self.__short_title
+
+    @short_title.setter
+    def short_title(self, short_title):
+        self.__short_title = short_title
+
+    @property
+    def title(self):
+        return self.__title
+
+    @title.setter
+    def title(self, title):
+        self.__title = title
+
+    @property
+    def small_preview(self):
+        return self.__small_preview
+
+    @small_preview.setter
+    def small_preview(self, small_preview):
+        self.__small_preview = small_preview
+
+    @property
+    def large_preview(self):
+        return self.__large_preview
+
+    @large_preview.setter
+    def large_preview(self, large_preview):
+        self.__large_preview = large_preview
+
+    def to_rdf(self, graph):
+        super(Compact, self).to_rdf(graph)
+
+        uri = self.about if self.about else ''
+
+        d = Resource(graph, URIRef(uri))
+        d.add(RDF.type, OSLC.Compact)
+
+        if self.icon:
+            d.add(OSLC.icon, URIRef(self.icon))
+
+        if self.short_title:
+            d.add(DCTERMS.shortTitle, Literal(self.short_title, datatype=XSD.string))
+
+        if self.title:
+            d.add(DCTERMS.title, Literal(self.title, datatype=XSD.string ))
+
+        if self.small_preview:
+            sp = self.small_preview.to_rdf(graph)
+            d.add(OSLC.smallPreview, sp)
+
+        if self.large_preview:
+            sp = self.large_preview.to_rdf(graph)
+            d.add(OSLC.largePreview, sp)
+
+        return d
+
+
 """
 
 class ResourceShape(BaseResource):

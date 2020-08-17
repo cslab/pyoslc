@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF
+        xmlns:dcterms="http://purl.org/dc/terms/"
+        xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+        xmlns:oslc="http://open-services.net/ns/core#"
+        xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
+    <oslc:Compact
+            rdf:about="{{ compact.about }}">
+        <dcterms:title rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Bulb</dcterms:title>
+        <oslc:icon rdf:resource="{{ compact.icon }}"/>
+        <oslc:smallPreview>
+            <oslc:Preview>
+                <oslc:document
+                        rdf:resource="{{ compact.small_preview.document }}"/>
+                <oslc:hintWidth rdf:datatype="http://www.w3.org/2001/XMLSchema#string">45em</oslc:hintWidth>
+                <oslc:hintHeight rdf:datatype="http://www.w3.org/2001/XMLSchema#string">10em</oslc:hintHeight>
+            </oslc:Preview>
+        </oslc:smallPreview>
+        <oslc:largePreview>
+            <oslc:Preview>
+                <oslc:document
+                        rdf:resource="{{ compact.large_preview.document }}"/>
+                <oslc:hintWidth rdf:datatype="http://www.w3.org/2001/XMLSchema#string">45em</oslc:hintWidth>
+                <oslc:hintHeight rdf:datatype="http://www.w3.org/2001/XMLSchema#string">20em</oslc:hintHeight>
+            </oslc:Preview>
+        </oslc:largePreview>
+    </oslc:Compact>
+</rdf:RDF>

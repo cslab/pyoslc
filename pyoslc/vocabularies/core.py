@@ -19,6 +19,7 @@ OSLC = ClosedNamespace(
         "PrefixDefinition", "Preview", "Property", "Publisher",
         "QueryCapability", "ResourceShape", "ResponseInfo",
         "Service", "ServiceProvider", "ServiceProviderCatalog",
+        "Compact", "Preview",
 
         # RDF Properties in this namespace
         "allowedValue", "allowedValues", "archived", "attachment", "attachmentSize",
@@ -36,5 +37,7 @@ OSLC = ClosedNamespace(
         "results", "selectionDialog", "service", "serviceProvider", "serviceProviderCatalog",
         "shortId", "shortTitle", "smallPreview", "statusCode", "totalCount", "usage",
         "valueShape", "valueType", "publisher",
+        "document", "hintHeight", "hintWidth", "initialHeight", "icon",
+        "smallPreview", "largePreview",
     ]
 )

@@ -1,5 +1,7 @@
 import csv
 import os
+import shutil
+from tempfile import NamedTemporaryFile
 
 from rdflib import Graph, DCTERMS
 
@@ -41,14 +43,15 @@ def get_requirement_list(base_url):
     # return requirements
 
 
-def get_requirements():
+def get_requirements(base_url):
     path = os.path.join(os.path.abspath(''), 'examples', 'specifications.csv')
     requirements = list()
     with open(path, 'rb') as f:
         reader = csv.DictReader(f, delimiter=';')
 
         for row in reader:
-            requirement = Requirement()
+            about = base_url.replace('selector', 'requirement') + '/' + row['Specification_id']
+            requirement = Requirement(about=about)
             requirement.update(row, attributes=attributes)
             requirements.append(requirement)
 
@@ -56,7 +59,41 @@ def get_requirements():
 
 
 def create_requirement(data):
-    pass
+    if data:
+        requirement = Requirement()
+        requirement.from_json(data=data, attributes=attributes)
+        specification = requirement.to_mapped_object(attributes)
+
+        path = os.path.join(os.path.abspath(''), 'examples', 'specifications.csv')
+        tempfile = NamedTemporaryFile(mode='w', delete=False)
+
+        with open(path, 'rb') as f:
+            reader = csv.DictReader(f, delimiter=';')
+            field_names = reader.fieldnames
+
+        with open(path, 'r') as csvfile, tempfile:
+            reader = csv.DictReader(csvfile, fieldnames=field_names, delimiter=';')
+            writer = csv.DictWriter(tempfile, fieldnames=field_names, delimiter=';')
+            exist = False
+
+            for row in reader:
+                if row['Specification_id'] == specification['Specification_id']:
+                    exist = True
+                writer.writerow(row)
+
+            if not exist:
+                writer.writerow(specification)
+
+        shutil.move(tempfile.name, path)
+
+        if exist:
+            response_object = {
+                'status': 'fail',
+                'message': 'Not Modified'
+            }
+            return response_object, 304
+
+        return requirement
 
 
 def update_requirement(id, data):
