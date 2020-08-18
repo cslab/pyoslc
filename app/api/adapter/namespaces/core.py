@@ -4,14 +4,14 @@ import shutil
 from tempfile import NamedTemporaryFile
 from urlparse import urlparse
 
-from flask import request, make_response, url_for, render_template, Response, jsonify
+from flask import request, make_response, url_for, render_template
 from flask_restx import Namespace, Resource
 from rdflib import Graph, RDF, RDFS, DCTERMS
 from rdflib.plugin import register
 from rdflib.serializer import Serializer
 
 from app.api.adapter.mappings.specification import specification_map
-from app.api.adapter.namespaces.business import get_requirement_list
+from app.api.adapter.namespaces.business import get_requirement_list, get_requirement
 from app.api.adapter.namespaces.rm.models import specification
 from app.api.adapter.namespaces.rm.parsers import specification_parser
 from app.api.adapter.resources.resource_service import config_service_resource
@@ -198,10 +198,16 @@ class ResourcePreview(OslcResource):
                                service_provider_id=service_provider_id, requirement_id=requirement_id   )
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
 
+        # application/x-oslc-compact+xml,application/x-jazz-compact-rendering
+
+        requirement = get_requirement(base_url, requirement_id)
+        if requirement:
+            requirement.about = base_url
+
         print(request.headers)
 
         compact = Compact(about=base_url)
-        compact.title = 'title'
+        compact.title = requirement.short_title if requirement else 'REQ Not Found'
         compact.icon = url_for('oslc.static', filename='pyicon24.ico', _external=True)
 
         small_preview = Preview()
@@ -224,10 +230,10 @@ class ResourcePreview(OslcResource):
 
         response = make_response(render_template('pyoslc_oauth/compact.html',
                                                  compact=compact))
-        response.headers['max-age'] = '0'
-        response.headers['pragma'] = 'no-cache'
-        response.headers['Cache-Control'] = 'no-cache'
-        response.headers['Content-Type'] = 'application/x-oslc-compact+xml  ;charset=UTF-8'
+        #response.headers['max-age'] = '0'
+        #response.headers['pragma'] = 'no-cache'
+        #response.headers['Cache-Control'] = 'no-cache'
+        response.headers['Content-Type'] = 'application/x-oslc-compact+xml'
         response.headers['OSLC-Core-Version'] = "2.0"
 
         return response
@@ -291,15 +297,26 @@ class ResourcePreview(OslcResource):
         return response
 
 
-@adapter_ns.route('/provider/<service_provider_id>/resources/requirement/<requirement_id>/smallPreview')
+@adapter_ns.route('/provider/<service_provider_id>/resources/requirement/<requirement_id>/<preview_type>')
 class ResourcePreviewSmallLarge(OslcResource):
 
-    def get(self, service_provider_id, requirement_id):
+    def get(self, service_provider_id, requirement_id, preview_type):
         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
-                               service_provider_id=service_provider_id, requirement_id=requirement_id   )
+                               service_provider_id=service_provider_id, requirement_id=requirement_id,
+                               preview_type=preview_type)
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
 
-        response = make_response(render_template("dialogs/smallpreview.html", title='small'))
+        requirement = get_requirement(base_url, requirement_id)
+
+        template = "dialogs/"
+        if preview_type == 'smallPreview':
+            template += "smallpreview.html"
+
+        if preview_type == 'largePreview':
+            template += "/largepreview.html"
+
+        response = make_response(render_template(template, title='small', requirement=requirement))
+
         response.headers['Content-Type'] = 'text/html;charset=UTF-8'
         response.headers['OSLC-Core-Version'] = "2.0"
 
@@ -342,21 +359,6 @@ class RootServices(OslcResource):
         #
         # return Response(response, content_type='application/rdf+xml')
         return self.create_response(graph=self.graph, rdf_format='rootservices-xml')
-
-
-# @adapter_ns.route('/publisher')
-# class Publisher(OslcResource):
-#
-#     def get(self):
-#         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint))
-#         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
-#         publisher_url = urlparse(base_url).geturl()
-#
-#         publisher = PublisherSingleton.get_publisher(publisher_url)
-#
-#         publisher.to_rdf(self.graph)
-#
-#         return self.create_response(graph=self.graph, rdf_format='pretty-xml')
 
 
 @adapter_ns.route('/config')
