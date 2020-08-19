@@ -8,10 +8,7 @@
     <title>{{ title }}</title>
     <link href="{{bootstrap_find_resource('css/bootstrap.css', cdn='bootstrap')}}" rel="stylesheet">
 </head>
-
 <body>
-
-<!-- Begin page content -->
 <div>
     <div>
         <dl class="row">
@@ -19,8 +16,15 @@
             <dd class="col-sm-9">{{ requirement.identifier }}</dd>
             <dt class="col-sm-3">Description</dt>
             <dd class="col-sm-9">{{ requirement.description }}</dd>
+            <dt class="col-sm-3">Title</dt>
+            <dd class="col-sm-9">{{ requirement.title }}</dd>
+            <dt class="col-sm-3">Product</dt>
+            <dd class="col-sm-9">{{ requirement.short_title }}</dd>
+            <dt class="col-sm-3">Subject</dt>
+            <dd class="col-sm-9">{{ requirement.subject }}</dd>
         </dl>
     </div>
 </div>
+
 </body>
 </html>

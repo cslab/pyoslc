@@ -13,13 +13,17 @@ from pyoslc.vocabularies.rm import OSLC_RM
 attributes = specification_map
 
 
-def get_requirement(specification_id):
+def get_requirement(base_url, specification_id):
     path = os.path.join(os.path.abspath(''), 'examples', 'specifications.csv')
     with open(path, 'rb') as f:
         reader = csv.DictReader(f, delimiter=';')
         for row in reader:
             if row['Specification_id'] == specification_id:
-                return row
+                about = base_url.replace('selector', 'requirement')
+                requirement = Requirement(about=about)
+                requirement.update(row, attributes)
+
+                return requirement
 
 
 def get_requirement_list(base_url):
