@@ -97,7 +97,7 @@ class ServiceProviderCatalog(OslcResource):
         return self.create_response(graph=self.graph)
 
 
-@adapter_ns.route('/provider/<string:service_provider_id>')
+@adapter_ns.route('/provider/<service_provider_id>')
 class ServiceProvider(OslcResource):
 
     def __init__(self, *args, **kwargs):
@@ -207,7 +207,7 @@ class ResourcePreview(OslcResource):
         print(request.headers)
 
         compact = Compact(about=base_url)
-        compact.title = requirement.short_title if requirement else 'REQ Not Found'
+        compact.title = requirement.identifier if requirement else 'REQ Not Found'
         compact.icon = url_for('oslc.static', filename='pyicon24.ico', _external=True)
 
         small_preview = Preview()
@@ -228,11 +228,7 @@ class ResourcePreview(OslcResource):
         # return self.create_response(graph=self.graph, rdf_format='pretty-xml')
         # return render_template('pyoslc_oauth/compact.html', compact=compact)
 
-        response = make_response(render_template('pyoslc_oauth/compact.html',
-                                                 compact=compact))
-        #response.headers['max-age'] = '0'
-        #response.headers['pragma'] = 'no-cache'
-        #response.headers['Cache-Control'] = 'no-cache'
+        response = make_response(render_template('pyoslc_oauth/compact.html', compact=compact))
         response.headers['Content-Type'] = 'application/x-oslc-compact+xml'
         response.headers['OSLC-Core-Version'] = "2.0"
 
