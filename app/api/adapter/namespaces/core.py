@@ -48,32 +48,45 @@ class OslcResource(Resource):
         self.graph.bind('dcterms', DCTERMS)
         self.graph.bind('j.0', JAZZ_PROCESS)
 
-    def create_response(self, graph, rdf_format=None):
+    @staticmethod
+    def create_response(graph, accept=None, rdf_format=None):
 
         # Getting the content-type for checking the
         # response we will use to serialize the RDF response.
-        content_type = request.headers['accept'] if rdf_format is None else unicode(rdf_format)
+        content_type2 = request.headers['accept'] if rdf_format is None else unicode(rdf_format)
+        print('{} - {} - {}'.format(request.base_url, content_type2, rdf_format))
 
-        if content_type in ('application/json-ld', 'application/ld+json', 'application/json', '*/*'):
+        accept = accept if accept is not None else request.headers.get('accept', 'application/rdf+xml')
+        if accept in ('application/xml', 'application/rdf+xml'):
+            accept = 'application/rdf+xml'
+
+        content_type = request.headers.get('content-type', accept)
+        if content_type.find('x-www-form-urlencoded'):
+            content_type = accept
+
+        rdf_format = accept if rdf_format is None else rdf_format
+
+        if rdf_format in ('application/json-ld', 'application/ld+json', 'application/json', '*/*'):
             # If the content-type is any kind of json,
             # we will use the json-ld format for the response.
-            content_type = 'json-ld'
+            rdf_format = 'json-ld'
 
-        if content_type in ('application/xml', 'application/rdf+xml'):
-            content_type = 'pretty-xml'
+        # if rdf_format in 'config-xml':
+        #     rdf_format = 'config-xml'
+        # else:
+        #     rdf_format = 'pretty-xml'
 
-        if content_type in 'rootservices-xml':
-            content_type = 'rootservices-xml'
-        elif content_type in 'config-xml':
-            content_type = 'config-xml'
-        else:
-            content_type = 'pretty-xml'
+        if rdf_format.__contains__('rootservices-xml') and (not accept.__contains__('xml')):
+            rdf_format = accept
 
-        data = graph.serialize(format=content_type)
+        data = graph.serialize(format=rdf_format)
+
+        print("Content-Type: {}".format(content_type))
 
         # Sending the response to the client
         response = make_response(data.decode('utf-8'), 200)
-        response.headers['Content-Type'] = 'application/rdf+xml;charset=UTF-8'
+        response.headers['Accept'] = accept + '; charset=UTF-8'
+        response.headers['Content-Type'] = content_type + ';charset=UTF-8'
         response.headers['OSLC-Core-Version'] = "2.0"
 
         return response
@@ -194,45 +207,37 @@ class ResourceOperation(OslcResource):
 class ResourcePreview(OslcResource):
 
     def get(self, service_provider_id, requirement_id):
-        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
-                               service_provider_id=service_provider_id, requirement_id=requirement_id   )
-        base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
+        accept = request.headers['accept']
 
-        # application/x-oslc-compact+xml,application/x-jazz-compact-rendering
+        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
+                               service_provider_id=service_provider_id, requirement_id=requirement_id)
+        base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
 
         requirement = get_requirement(base_url, requirement_id)
         if requirement:
             requirement.about = base_url
 
-        print(request.headers)
+        if accept.find('application/x-oslc-compact+xml') or accept.find(', application/x-jazz-compact-rendering'):
+            compact = Compact(about=base_url)
+            compact.title = requirement.identifier if requirement else 'REQ Not Found'
+            compact.icon = url_for('oslc.static', filename='pyicon24.ico', _external=True)
 
-        compact = Compact(about=base_url)
-        compact.title = requirement.identifier if requirement else 'REQ Not Found'
-        compact.icon = url_for('oslc.static', filename='pyicon24.ico', _external=True)
+            small_preview = Preview()
+            small_preview.document = base_url + '/smallPreview'
+            small_preview.hint_width = '45em'
+            small_preview.hint_height = '10em'
 
-        small_preview = Preview()
-        small_preview.document = base_url + '/smallPreview'
-        small_preview.hint_width = '45em'
-        small_preview.hint_height = '10em'
+            large_preview = Preview()
+            large_preview.document = base_url + '/largePreview'
+            large_preview.hint_width = '45em'
+            large_preview.hint_height = '20em'
 
-        large_preview = Preview()
-        large_preview.document = base_url + '/largePreview'
-        large_preview.hint_width = '45em'
-        large_preview.hint_height = '20em'
+            compact.small_preview = small_preview
+            compact.large_preview = large_preview
 
-        compact.small_preview = small_preview
-        compact.large_preview = large_preview
+            compact.to_rdf(self.graph)
 
-        compact.to_rdf(self.graph)
-
-        # return self.create_response(graph=self.graph, rdf_format='pretty-xml')
-        # return render_template('pyoslc_oauth/compact.html', compact=compact)
-
-        response = make_response(render_template('pyoslc_oauth/compact.html', compact=compact))
-        response.headers['Content-Type'] = 'application/x-oslc-compact+xml'
-        response.headers['OSLC-Core-Version'] = "2.0"
-
-        return response
+        return self.create_response(graph=self.graph, accept='application/x-oslc-compact+xml', rdf_format='pretty-xml')
 
     @adapter_ns.expect(specification)
     def post(self, service_provider_id):
