@@ -14,7 +14,8 @@ api = Api(
     default_mediatype='application/rdf+xml',
     contact='Contact Software & Koneksys',
     contact_url='https://www.contact-software.com/en/',
-    contact_email="mario.carrasco@koneksys.com"
+    contact_email="mario.carrasco@koneksys.com",
+    validate=True
 )
 
 

@@ -1,4 +1,4 @@
-from rdflib import Graph, DCTERMS
+from rdflib import Graph, DCTERMS, RDF, URIRef
 from rdflib.extras.describer import Describer
 
 from pyoslc.resources.models import BaseResource
@@ -92,6 +92,74 @@ class Requirement(BaseResource):
                         attribute_value.add(data[key])
                     else:
                         setattr(self, attribute_name, data[key])
+
+    def from_rdf(self, g, attributes):
+
+        nss = [n for n in g.namespaces()]
+
+        for r in g.subjects(RDF.type, OSLC_RM.Requirement):
+
+            reviewed = list()
+
+            for k, v in attributes.iteritems():
+                reviewed.append(v['attribute'])
+                item = {v['attribute']: a for a in self.__dict__.keys() if a.lower() == v['attribute'].lower()}
+                if item:
+                    try:
+                        predicate = eval(v['oslc_property'])
+                    except AttributeError:
+                        pass
+                else:
+                    ns, ln = v['oslc_property'].split('.')
+                    predicate = eval(ns).uri + ln
+
+                print('predicate: {}'.format(URIRef(predicate)))
+
+                for i in g.objects(r, predicate=predicate):
+                    attribute_name = v['attribute']
+                    if hasattr(self, attribute_name):
+                        attribute_value = getattr(self, attribute_name)
+                        if isinstance(attribute_value, set):
+                            attribute_value.clear()
+                            # attribute_value.add(data[key])
+                        else:
+                            setattr(self, attribute_name, i)
+
+            no_reviewed = [a for a in self.__dict__.keys() if a not in reviewed]
+
+            for attr in no_reviewed:
+                print('attr {}'.format(attr))
+                item = {attr: v for k, v in attributes.iteritems() if v['attribute'].lower() == attr.lower()}
+
+                if item:
+                    print('item {}'.format(item))
+                    for i in g.objects(r, eval(item.get(attr)['oslc_property'])):
+                        attribute_name = item.get(attr)['attribute']
+                        print(attribute_name)
+                        if hasattr(self, attribute_name):
+                            attribute_value = getattr(self, attribute_name)
+                            if isinstance(attribute_value, set):
+                                attribute_value.clear()
+                                # attribute_value.add(data[key])
+                            else:
+                                setattr(self, attribute_name, i)
+
+            for attr in self.__dict__.keys():
+                print('attr {}'.format(attr))
+                item = {attr: v for k, v in attributes.iteritems() if v['attribute'].lower() == attr.lower()}
+                if item:
+                    print('item {}'.format(item))
+                    for i in g.objects(r, eval(item.get(attr)['oslc_property'])):
+                        attribute_name = item.get(attr)['attribute']
+                        print(attribute_name)
+                        if hasattr(self, attribute_name):
+                            attribute_value = getattr(self, attribute_name)
+                            if isinstance(attribute_value, set):
+                                attribute_value.clear()
+                                # attribute_value.add(data[key])
+                            else:
+                                setattr(self, attribute_name, i)
+
 
     def to_mapped_object(self, attributes):
         specification = dict()

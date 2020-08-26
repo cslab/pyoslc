@@ -6,7 +6,7 @@ from urlparse import urlparse
 
 from flask import request, make_response, url_for, render_template
 from flask_restx import Namespace, Resource
-from rdflib import Graph, RDF, RDFS, DCTERMS
+from rdflib import Graph, RDF, RDFS, DCTERMS, BNode
 from rdflib.plugin import register
 from rdflib.serializer import Serializer
 
@@ -39,7 +39,6 @@ class OslcResource(Resource):
 
     def __init__(self, *args, **kwargs):
         super(OslcResource, self).__init__(*args, **kwargs)
-        # self.logger.debug('Instantiating Resource {}'.format(self))
 
         self.graph = kwargs.get('graph', Graph())
         self.graph.bind('oslc', OSLC)
@@ -49,24 +48,24 @@ class OslcResource(Resource):
         self.graph.bind('j.0', JAZZ_PROCESS)
 
     @staticmethod
-    def create_response(graph, accept=None, rdf_format=None):
+    def create_response(graph, accept=None, content=None, rdf_format=None):
 
         # Getting the content-type for checking the
         # response we will use to serialize the RDF response.
-        content_type2 = request.headers['accept'] if rdf_format is None else unicode(rdf_format)
-        print('{} - {} - {}'.format(request.base_url, content_type2, rdf_format))
+        # content_type2 = request.headers['accept'] if rdf_format is None else unicode(rdf_format)
+        # print('{} - {} - {}'.format(request.base_url, content_type2, rdf_format))
 
         accept = accept if accept is not None else request.headers.get('accept', 'application/rdf+xml')
         if accept in ('application/xml', 'application/rdf+xml'):
             accept = 'application/rdf+xml'
 
-        content_type = request.headers.get('content-type', accept)
-        if content_type.find('x-www-form-urlencoded'):
-            content_type = accept
+        content = content if content is not None else request.headers.get('content-type', accept)
+        if content.__contains__('x-www-form-urlencoded'):
+            content = accept
 
         rdf_format = accept if rdf_format is None else rdf_format
 
-        if rdf_format in ('application/json-ld', 'application/ld+json', 'application/json', '*/*'):
+        if accept in ('application/json-ld', 'application/ld+json', 'application/json', '*/*'):
             # If the content-type is any kind of json,
             # we will use the json-ld format for the response.
             rdf_format = 'json-ld'
@@ -76,17 +75,18 @@ class OslcResource(Resource):
         # else:
         #     rdf_format = 'pretty-xml'
 
+        if rdf_format in 'application/rdf+xml':
+            rdf_format = 'pretty-xml'
+
         if rdf_format.__contains__('rootservices-xml') and (not accept.__contains__('xml')):
             rdf_format = accept
 
         data = graph.serialize(format=rdf_format)
 
-        print("Content-Type: {}".format(content_type))
-
         # Sending the response to the client
         response = make_response(data.decode('utf-8'), 200)
         response.headers['Accept'] = accept + '; charset=UTF-8'
-        response.headers['Content-Type'] = content_type + ';charset=UTF-8'
+        response.headers['Content-Type'] = content + ';charset=UTF-8'
         response.headers['OSLC-Core-Version'] = "2.0"
 
         return response
@@ -144,7 +144,7 @@ class ResourceOperation(OslcResource):
 
         return self.create_response(graph=data)
 
-    @adapter_ns.expect(specification)
+    # @adapter_ns.expect(specification)
     def post(self, service_provider_id):
         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
                                service_provider_id=service_provider_id)
@@ -152,10 +152,12 @@ class ResourceOperation(OslcResource):
 
         attributes = specification_map
 
-        data = specification_parser.parse_args()
+        g = Graph()
+        g.parse(data=request.data, format='xml')
 
         req = Requirement()
-        req.from_json(data, attributes)
+        req.from_rdf(g, attributes=attributes)
+
         data = req.to_mapped_object(attributes)
 
         if data:

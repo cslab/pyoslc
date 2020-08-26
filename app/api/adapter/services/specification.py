@@ -67,7 +67,7 @@ class ServiceResource(ProviderResource, Provider):
 
 class Specification(ServiceResource):
 
-    domain = 'http://example.com/pyoslc/ns/python'
+    domain = 'http://open-services.net/ns/rm#'
     service_path = 'provider/{id}/resources'
 
     @staticmethod
