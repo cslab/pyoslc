@@ -158,6 +158,9 @@ class ResourceOperation(OslcResource):
         req = Requirement()
         req.from_rdf(g, attributes=attributes)
 
+        req.identifier = BNode().title()
+        req.about = base_url + '/' + req.identifier
+
         data = req.to_mapped_object(attributes)
 
         if data:
