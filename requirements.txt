@@ -1,14 +1,18 @@
+python-dotenv
+
 Flask==1.0.2
-Flask-SQLAlchemy==2.4.1
+Flask-CORS
+Flask-RESTx
 Flask-WTF
 Flask-Bootstrap
+Flask-SQLAlchemy
 Flask-Login
-Flask-RESTx
-pytest
-python-dotenv==0.10.1
-rdflib==5.0.0
-rdflib-jsonld
+
+RDFLib==5.0.0
+RDFLib-jsonld
 
 Authlib
-requests
+
 Werkzeug==0.16.1
+requests
+pytest

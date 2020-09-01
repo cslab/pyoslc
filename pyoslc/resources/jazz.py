@@ -1,5 +1,6 @@
 from flask import url_for
-from rdflib import DCTERMS, URIRef, Literal, Namespace, BNode, RDF
+from rdflib import URIRef, Literal, Namespace, BNode, RDF
+from rdflib.namespace import DCTERMS
 from rdflib.resource import Resource
 
 from pyoslc.resources.models import BaseResource
@@ -84,9 +85,7 @@ class RootService(BaseResource):
         test_url = url_for('oslc.adapter_service_provider_catalog', _external=True)
         config_url = url_for('oslc.adapter_configuration_catalog', _external=True)
 
-        # rs.add(OSLC_AM.amServiceProviders, URIRef(test_url))
         rs.add(OSLC_RM_JAZZ.rmServiceProviders, URIRef(test_url))
-        # rs.add(OSLC_CM_JAZZ.cmServiceProviders, URIRef(test_url))
         rs.add(OSLC_CONFIG.cmServiceProviders, URIRef(config_url))
 
         rs.add(JFS.oauthRealmName, Literal("PyOSLC"))
@@ -113,7 +112,6 @@ class RootService(BaseResource):
         # # trs.add(DCTERMS.title, Literal('Title', datatype=XSD.Literal))
         tr.add(DCTERMS.title, Literal('Title'))
         tr.add(DCTERMS.description, Literal('Description'))
-        # # trs.add(OSLC_TRS.trackedResourceSet, URIRef(url_for('web.index', _external=True)))
 
         tr.add(DCTERMS.type, OSLC_CM.uri)
         tr.add(OSLC.domain, OSLC_RM.uri)

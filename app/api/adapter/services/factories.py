@@ -1,14 +1,6 @@
-from rdflib import DCTERMS, RDF, RDFS
-
 from app.api.adapter.resources.resource_service import get_service_resources
 from app.api.adapter.services.specification import ServiceResource
 from pyoslc.resources.factories import ServiceProviderFactory, ConfigurationFactory
-from pyoslc.resources.models import PrefixDefinition
-from pyoslc.vocabularies.am import OSLC_AM
-from pyoslc.vocabularies.cm import OSLC_CM
-from pyoslc.vocabularies.core import OSLC
-from pyoslc.vocabularies.data import OSLCData
-from pyoslc.vocabularies.rm import OSLC_RM
 
 
 class ContactServiceProviderFactory(object):

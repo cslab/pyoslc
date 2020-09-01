@@ -18,9 +18,6 @@ from pyoslc.vocabularies.rm import OSLC_RM
 attributes = specification_map
 
 
-@api.representation('application/rdf+xml')
-@api.representation('application/json-ld')
-@api.representation('text/turtle')
 class RequirementList(Resource):
     """
     Class for implementing the methods to manage

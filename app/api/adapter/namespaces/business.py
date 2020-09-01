@@ -3,7 +3,9 @@ import os
 import shutil
 from tempfile import NamedTemporaryFile
 
-from rdflib import Graph, DCTERMS
+# from rdflib import Graph, DCTERMS
+from rdflib import Graph
+from rdflib.namespace import DCTERMS
 
 from app.api.adapter.mappings.specification import specification_map
 from pyoslc.resources.domains.rm import Requirement
@@ -26,7 +28,7 @@ def get_requirement(base_url, specification_id):
                 return requirement
 
 
-def get_requirement_list(base_url):
+def get_requirement_list(base_url, select, where):
     path = os.path.join(os.path.abspath(''), 'examples', 'specifications.csv')
     requirements = list()
     with open(path, 'rb') as f:
@@ -41,7 +43,7 @@ def get_requirement_list(base_url):
             requirement = Requirement()
             requirement.update(row, attributes=attributes)
 
-            graph += requirement.to_rdf(base_url, attributes)
+            graph += requirement.to_rdf(graph, base_url, attributes)
 
     return graph if graph else None
     # return requirements

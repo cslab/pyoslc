@@ -1,6 +1,8 @@
+import hashlib
 from datetime import date
 
-from rdflib import URIRef, DCTERMS, Literal, RDF, XSD, BNode
+from rdflib import URIRef, Literal, RDF, XSD, BNode
+from rdflib.namespace import DCTERMS
 from rdflib.resource import Resource
 
 from pyoslc.helpers import build_uri
@@ -59,6 +61,30 @@ class AbstractResource(object):
     def to_rdf(self, graph):
         if not self.about:
             raise Exception("The about property is missing")
+
+    def digestion(self):
+        state = self.__about
+        for attr in self.__dict__.keys():
+            value = getattr(self, attr)
+            if value:
+                print(value)
+                if isinstance(value, set):
+                    if len(value) > 0:
+                        for v in value:
+                            if v != '':
+                                state += v
+                elif isinstance(value, dict):
+                    for k in value:
+                        state += value[k]
+                elif isinstance(value, list):
+                    for k in value:
+                        state += k
+                else:
+                    state += value
+
+        dig = hashlib.sha256()
+        dig.update(state)
+        return str(dig.hexdigest())
 
 
 class BaseResource(AbstractResource):

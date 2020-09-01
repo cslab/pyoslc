@@ -8,19 +8,26 @@ from pyoslc.resources.domains.rm import Requirement
 class CsvRequirementRepository(Repository):
 
     specification_map = {
-        'Specification_id': {'attribute': '_Resource___identifier', 'oslc_property': 'DCTERMS.identifier'},
-        'Product': {'attribute': '_Resource___short_title', 'oslc_property': 'DCTERMS.shortTitle'},
-        'Project': {'attribute': '_Resource___subject', 'oslc_property': 'DCTERMS.subject'},
-        'Title': {'attribute': '_Resource___title', 'oslc_property': 'DCTERMS.title'},
-        'Description': {'attribute': '_Resource___description', 'oslc_property': 'DCTERMS.description'},
+        # RDF and OSLC attributes
+        'Specification_id': {'attribute': '_BaseResource__identifier', 'oslc_property': 'DCTERMS.identifier'},
+        'Title': {'attribute': '_BaseResource__title', 'oslc_property': 'DCTERMS.title'},
+        'Description': {'attribute': '_BaseResource__description', 'oslc_property': 'DCTERMS.description'},
+        'Author': {'attribute': '_BaseResource__creator', 'oslc_property': 'DCTERMS.creator'},
+
+        # RM and Custom attributes
+        'Product': {'attribute': '_BaseResource__short_title', 'oslc_property': 'DCTERMS.shortTitle'},
+        'Subject': {'attribute': '_BaseResource__subject', 'oslc_property': 'DCTERMS.subject'},
         'Source': {'attribute': '_Requirement__elaborated_by', 'oslc_property': 'OSLC_RM.elaboratedBy'},
-        'Author': {'attribute': '_Resource___creator', 'oslc_property': 'DCTERMS.creator'},
         'Category': {'attribute': '_Requirement__constrained_by', 'oslc_property': 'OSLC_RM.constrainedBy'},
         'Discipline': {'attribute': '_Requirement__satisfied_by', 'oslc_property': 'OSLC_RM.satisfiedBy'},
         'Revision': {'attribute': '_Requirement__tracked_by', 'oslc_property': 'OSLC_RM.trackedBy'},
         'Target_Value': {'attribute': '_Requirement__validated_by', 'oslc_property': 'OSLC_RM.validatedBy'},
         'Degree_of_fulfillment': {'attribute': '_Requirement__affected_by', 'oslc_property': 'OSLC_RM.affectedBy'},
-        'Status': {'attribute': '_Requirement__decomposed_by', 'oslc_property': 'OSLC_RM.decomposedBy'}
+        'Status': {'attribute': '_Requirement__decomposed_by', 'oslc_property': 'OSLC_RM.decomposedBy'},
+
+        # CUSTOM attributes
+        'PUID': {'attribute': '_Requirement__puid', 'oslc_property': 'OSLC_RM.puid'},
+        'Project': {'attribute': '_BaseResource__subject', 'oslc_property': 'DCTERMS.subject'},
     }
 
     def __init__(self, title):
@@ -28,6 +35,16 @@ class CsvRequirementRepository(Repository):
         super(CsvRequirementRepository, self).__init__(title)
         self.csv_file_path = os.path.join(
             os.path.abspath(''), 'examples', 'specifications.csv')
+
+    def find(self, requirement_id):
+        with open(self.csv_file_path, 'r') as f:
+            reader = csv.DictReader(f, delimiter=';')
+            for row in reader:
+                if row['Specification_id'] == requirement_id:
+                    requirement = Requirement()
+                    requirement.update(row, attributes=self.specification_map)
+                    break
+        return requirement
 
     def create(self, requirement):
         with open(self.csv_file_path, 'a') as f:

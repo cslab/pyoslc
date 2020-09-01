@@ -2,7 +2,6 @@ import logging
 
 from flask import Blueprint, request
 from flask_restx import Api
-from werkzeug.exceptions import BadRequest
 
 bp = Blueprint('oslc', __name__, url_prefix='/services', static_folder='static')
 
@@ -11,7 +10,6 @@ api = Api(
     version='1.0.0',
     title='Python OSLC API',
     description='Implementation for the OSLC specification for python application',
-    default_mediatype='application/rdf+xml',
     contact='Contact Software & Koneksys',
     contact_url='https://www.contact-software.com/en/',
     contact_email="mario.carrasco@koneksys.com",
@@ -30,15 +28,6 @@ def before_request_func():
     logger = logging.getLogger('flask.app')
     logger.debug('Requesting BEFORE_REQUEST from: {} {} to {}'.format(request.access_route, request.user_agent, request.base_url))
     logger.debug('Request Referrer {}'.format(request.referrer))
-
-
-@api.errorhandler(BadRequest)
-def handle_root_exception(error):
-    """
-    Return a custom message and 400 status code
-    for bad requests from the html section
-    """
-    return {'message': error}, 400
 
 
 @api.errorhandler
