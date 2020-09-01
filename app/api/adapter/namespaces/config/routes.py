@@ -17,7 +17,7 @@ register(
 )
 
 
-@config_ns.route('/catalog')
+@config_ns.route('')
 class ConfigurationCatalog(OslcResource):
 
     def get(self):
@@ -28,7 +28,7 @@ class ConfigurationCatalog(OslcResource):
 
         catalog = ConfigurationManagementSingleton.get_catalog(catalog_url)
 
-        # catalog.to_rdf(self.graph)
+        catalog.to_rdf(self.graph)
 
         response = make_response(render_template('pyoslc_oauth/configuration.html',
                                                  about=catalog_url,
@@ -41,9 +41,9 @@ class ConfigurationCatalog(OslcResource):
         response.headers['Content-Type'] = 'application/rdf+xml;charset=UTF-8'
         response.headers['OSLC-Core-Version'] = "2.0"
 
-        return response
+        # return response
 
-        # return self.create_response(graph=self.graph, rdf_format="config-xml")
+        return self.create_response(graph=self.graph)  # , rdf_format="config-xml")
 
 
 @config_ns.route('/components/<string:component_id>')

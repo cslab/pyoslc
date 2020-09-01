@@ -1,5 +1,6 @@
-from rdflib import Graph, DCTERMS
+from rdflib import Graph, RDF, URIRef
 from rdflib.extras.describer import Describer
+from rdflib.namespace import DCTERMS
 
 from pyoslc.resources.models import BaseResource
 from pyoslc.vocabularies.rm import OSLC_RM
@@ -37,24 +38,21 @@ class Requirement(BaseResource):
         assert attributes is not None, 'The mapping for attributes is required'
         for k, v in data.items():
             if k in attributes:
-                attribute = attributes[k]['attribute']
-                if hasattr(self, attribute):
-                    attr = getattr(self, attribute, None)
-                    if isinstance(attr, set):
-                        attr.add(v if v is not '' else 'Empty')
+                attribute_name = attributes[k]['attribute']
+                if hasattr(self, attribute_name):
+                    attribute_value = getattr(self, attribute_name)
+                    if isinstance(attribute_value, set):
+                        attribute_value.clear()
+                        attribute_value.add(data[k])
                     else:
-                        setattr(self, attribute, v)
+                        setattr(self, attribute_name, data[k])
 
     @staticmethod
     def get_absolute_url(base_url, identifier):
         return base_url + "/" + identifier
 
-    def to_rdf(self, base_url, attributes):
+    def to_rdf(self, graph, base_url, attributes):
         assert attributes is not None, 'The mapping for attributes is required'
-
-        graph = Graph()
-        graph.bind('dcterms', DCTERMS)
-        graph.bind('oslc_rm', OSLC_RM)
 
         d = Describer(graph, base=base_url)
         if getattr(self, '_BaseResource__identifier') not in base_url.split('/'):
@@ -72,8 +70,6 @@ class Requirement(BaseResource):
                 if isinstance(attr, set):
                     if len(attr) > 0:
                         d.value(predicate, attr.pop())
-                    else:
-                        d.value(predicate, set())
                 else:
                     d.value(predicate, getattr(self, attribute_key))
 
@@ -92,6 +88,52 @@ class Requirement(BaseResource):
                         attribute_value.add(data[key])
                     else:
                         setattr(self, attribute_name, data[key])
+
+    def from_rdf(self, g, attributes):
+
+        # nss = [n for n in g.namespaces()]
+
+        for r in g.subjects(RDF.type, OSLC_RM.Requirement):
+
+            reviewed = list()
+
+            for k, v in attributes.iteritems():
+                reviewed.append(v['attribute'])
+                item = {v['attribute']: a for a in self.__dict__.keys() if a.lower() == v['attribute'].lower()}
+                if item:
+                    try:
+                        predicate = eval(v['oslc_property'])
+                    except AttributeError:
+                        pass
+                else:
+                    ns, ln = v['oslc_property'].split('.')
+                    predicate = eval(ns).uri + ln
+
+                for i in g.objects(r, predicate=predicate):
+                    attribute_name = v['attribute']
+                    if hasattr(self, attribute_name):
+                        attribute_value = getattr(self, attribute_name)
+                        if isinstance(attribute_value, set):
+                            attribute_value.clear()
+                            # attribute_value.add(data[key])
+                        else:
+                            setattr(self, attribute_name, i)
+
+            no_reviewed = [a for a in self.__dict__.keys() if a not in reviewed]
+
+            for attr in no_reviewed:
+                item = {attr: v for k, v in attributes.iteritems() if v['attribute'].lower() == attr.lower()}
+
+                if item:
+                    for i in g.objects(r, eval(item.get(attr)['oslc_property'])):
+                        attribute_name = item.get(attr)['attribute']
+                        if hasattr(self, attribute_name):
+                            attribute_value = getattr(self, attribute_name)
+                            if isinstance(attribute_value, set):
+                                attribute_value.clear()
+                                # attribute_value.add(data[key])
+                            else:
+                                setattr(self, attribute_name, i)
 
     def to_mapped_object(self, attributes):
         specification = dict()
