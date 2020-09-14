@@ -89,9 +89,11 @@ class AbstractResource(object):
 
 class BaseResource(AbstractResource):
 
-    def __init__(self, about=None, types=None, properties=None, description=None, identifier=None, short_title=None,
-                 title=None, contributor=None, creator=None, subject=None, created=None, modified=None, type=None,
-                 discussed_by=None, instance_shape=None, service_provider=None, relation=None):
+    def __init__(self, about=None, types=None, properties=None, description=None,
+                 identifier=None, short_title=None, title=None, contributor=None,
+                 creator=None, subject=None, created=None, modified=None, type=None,
+                 discussed_by=None, instance_shape=None, service_provider=None,
+                 relation=None):
         """
         Initialize the generic resource with the about property
         """
@@ -252,14 +254,18 @@ class BaseResource(AbstractResource):
 
 class ServiceProviderCatalog(BaseResource):
 
-    def __init__(self, about=None, types=None, properties=None, description=None, identifier=None, short_title=None,
-                 title=None, contributor=None, creator=None, subject=None, created=None, modified=None, type=None,
-                 discussed_by=None, instance_shape=None, service_provider=None, relation=None, uri=None, publisher=None,
-                 domain=None, service_provider_catalog=None, oauth_configuration=None):
+    def __init__(self, about=None, types=None, properties=None, description=None,
+                 identifier=None, short_title=None, title=None, contributor=None,
+                 creator=None, subject=None, created=None, modified=None, type=None,
+                 discussed_by=None, instance_shape=None, service_provider=None,
+                 relation=None, uri=None, publisher=None, domain=None,
+                 service_provider_catalog=None, oauth_configuration=None):
 
-        super(ServiceProviderCatalog, self).__init__(about, types, properties, description, identifier, short_title,
-                                                     title, contributor, creator, subject, created, modified, type,
-                                                     discussed_by, instance_shape, service_provider, relation)
+        super(ServiceProviderCatalog, self).__init__(about, types, properties, description,
+                                                     identifier, short_title, title, contributor,
+                                                     creator, subject, created, modified, type,
+                                                     discussed_by, instance_shape, service_provider,
+                                                     relation)
 
         self.__uri = uri if uri is not None else build_uri(default_uri, 'serviceProviderCatalog')
         self.__publisher = publisher
@@ -343,10 +349,12 @@ class ServiceProviderCatalog(BaseResource):
 
 class ServiceProvider(BaseResource):
 
-    def __init__(self, about=None, types=None, properties=None, description=None, identifier=None, short_title=None,
-                 title=None, contributor=None, creator=None, subject=None, created=None, modified=None, type=None,
-                 discussed_by=None, instance_shape=None, service_provider=None, relation=None, publisher=None,
-                 service=None, details=None, prefix_definition=None, oauth_configuration=None):
+    def __init__(self, about=None, types=None, properties=None, description=None,
+                 identifier=None, short_title=None, title=None, contributor=None,
+                 creator=None, subject=None, created=None, modified=None, type=None,
+                 discussed_by=None, instance_shape=None, service_provider=None,
+                 relation=None, publisher=None, service=None, details=None,
+                 prefix_definition=None, oauth_configuration=None):
         """
         Initialize ServiceProvider
         """
@@ -457,16 +465,20 @@ class ServiceProvider(BaseResource):
 
 class Service(BaseResource):
 
-    def __init__(self, about=None, types=None, properties=None, description=None, identifier=None, short_title=None,
-                 title=None, contributor=None, creator=None, subject=None, created=None, modified=None, type=None,
-                 discussed_by=None, instance_shape=None, service_provider=None, relation=None, domain=None,
-                 creation_factory=None, query_capability=None, selection_dialog=None, creation_dialog=None, usage=None):
+    def __init__(self, about=None, types=None, properties=None, description=None,
+                 identifier=None, short_title=None, title=None, contributor=None,
+                 creator=None, subject=None, created=None, modified=None, type=None,
+                 discussed_by=None, instance_shape=None, service_provider=None,
+                 relation=None, domain=None, creation_factory=None, query_capability=None,
+                 selection_dialog=None, creation_dialog=None, usage=None):
         """
         Initialize Service
         """
-        super(Service, self).__init__(about, types, properties, description, identifier, short_title, title,
-                                      contributor, creator, subject, created, modified, type, discussed_by,
-                                      instance_shape, service_provider, relation)
+        super(Service, self).__init__(about, types, properties, description,
+                                      identifier, short_title, title, contributor,
+                                      creator, subject, created, modified, type,
+                                      discussed_by, instance_shape, service_provider,
+                                      relation)
 
         self.__domain = domain if domain is not None else None
         self.__creation_factory = creation_factory if creation_factory is not None else list()
@@ -570,14 +582,18 @@ class Service(BaseResource):
 
 class QueryCapability(BaseResource):
 
-    def __init__(self, about=None, types=None, properties=None, description=None, identifier=None, short_title=None,
-                 title=None, contributor=None, creator=None, subject=None, created=None, modified=None, type=None,
-                 discussed_by=None, instance_shape=None, service_provider=None, relation=None, label=None,
-                 query_base=None, usage=None, resource_type=None, resource_shape=None):
+    def __init__(self, about=None, types=None, properties=None, description=None,
+                 identifier=None, short_title=None, title=None, contributor=None,
+                 creator=None, subject=None, created=None, modified=None, type=None,
+                 discussed_by=None, instance_shape=None, service_provider=None,
+                 relation=None, label=None, query_base=None, usage=None,
+                 resource_type=None, resource_shape=None):
 
-        super(QueryCapability, self).__init__(about, types, properties, description, identifier, short_title, title,
-                                              contributor, creator, subject, created, modified, type, discussed_by,
-                                              instance_shape, service_provider, relation)
+        super(QueryCapability, self).__init__(about, types, properties, description,
+                                              identifier, short_title, title, contributor,
+                                              creator, subject, created, modified, type,
+                                              discussed_by, instance_shape, service_provider,
+                                              relation)
 
         self.__label = label if label is not None else None
         self.__query_base = query_base if query_base is not None else None
@@ -667,17 +683,21 @@ class QueryCapability(BaseResource):
 
 class CreationFactory(BaseResource):
 
-    def __init__(self, about=None, types=None, properties=None, description=None, identifier=None, short_title=None,
-                 title=None, contributor=None, creator=None, subject=None, created=None, modified=None, type=None,
-                 discussed_by=None, instance_shape=None, service_provider=None, relation=None, label=None,
-                 creation=None, usage=None, resource_type=None, resource_shape=None):
+    def __init__(self, about=None, types=None, properties=None, description=None,
+                 identifier=None, short_title=None, title=None, contributor=None,
+                 creator=None, subject=None, created=None, modified=None, type=None,
+                 discussed_by=None, instance_shape=None, service_provider=None,
+                 relation=None, label=None, creation=None, usage=None,
+                 resource_type=None, resource_shape=None):
 
         """
         Creation Factory
         """
-        super(CreationFactory, self).__init__(about, types, properties, description, identifier, short_title, title,
-                                              contributor, creator, subject, created, modified, type, discussed_by,
-                                              instance_shape, service_provider, relation)
+        super(CreationFactory, self).__init__(about, types, properties, description,
+                                              identifier, short_title, title, contributor,
+                                              creator, subject, created, modified, type,
+                                              discussed_by, instance_shape, service_provider,
+                                              relation)
 
         self.__label = label if label is not None else None
         self.__creation = creation if creation is not None else None
@@ -766,14 +786,18 @@ class CreationFactory(BaseResource):
 
 class Dialog(BaseResource):
 
-    def __init__(self, about=None, types=None, properties=None, description=None, identifier=None, short_title=None,
-                 title=None, contributor=None, creator=None, subject=None, created=None, modified=None, type=None,
-                 discussed_by=None, instance_shape=None, service_provider=None, relation=None, dialog=None,
-                 hint_height=None, hint_width=None, label=None, usage=None, resource_type=None):
+    def __init__(self, about=None, types=None, properties=None, description=None,
+                 identifier=None, short_title=None, title=None, contributor=None,
+                 creator=None, subject=None, created=None, modified=None, type=None,
+                 discussed_by=None, instance_shape=None, service_provider=None,
+                 relation=None, dialog=None, hint_height=None, hint_width=None,
+                 label=None, usage=None, resource_type=None):
 
-        super(Dialog, self).__init__(about, types, properties, description, identifier, short_title, title, contributor,
-                                     creator, subject, created, modified, type, discussed_by, instance_shape,
-                                     service_provider, relation)
+        super(Dialog, self).__init__(about, types, properties, description,
+                                     identifier, short_title, title, contributor,
+                                     creator, subject, created, modified, type,
+                                     discussed_by, instance_shape, service_provider,
+                                     relation)
 
         self.__dialog = dialog if dialog is not None else None
         self.__hint_height = hint_height if hint_height is not None else None
@@ -870,14 +894,17 @@ class Dialog(BaseResource):
 
 class PrefixDefinition(BaseResource):
 
-    def __init__(self, about=None, types=None, properties=None, description=None, identifier=None, short_title=None,
-                 title=None, contributor=None, creator=None, subject=None, created=None, modified=None, type=None,
-                 discussed_by=None, instance_shape=None, service_provider=None, relation=None, prefix=None,
-                 prefix_base=None):
+    def __init__(self, about=None, types=None, properties=None, description=None,
+                 identifier=None, short_title=None, title=None, contributor=None,
+                 creator=None, subject=None, created=None, modified=None, type=None,
+                 discussed_by=None, instance_shape=None, service_provider=None,
+                 relation=None, prefix=None, prefix_base=None):
 
-        super(PrefixDefinition, self).__init__(about, types, properties, description, identifier, short_title, title,
-                                               contributor, creator, subject, created, modified, type, discussed_by,
-                                               instance_shape, service_provider, relation)
+        super(PrefixDefinition, self).__init__(about, types, properties, description,
+                                               identifier, short_title, title, contributor,
+                                               creator, subject, created, modified, type,
+                                               discussed_by, instance_shape, service_provider,
+                                               relation)
         self.__prefix = prefix if prefix is not None else None
         self.__prefix_base = prefix_base if prefix_base is not None else None
 
@@ -914,7 +941,8 @@ class PrefixDefinition(BaseResource):
 
 class Publisher(AbstractResource):
 
-    def __init__(self, about=None, types=None, properties=None, icon=None, identifier=None, label=None, title=None):
+    def __init__(self, about=None, types=None, properties=None,
+                 icon=None, identifier=None, label=None, title=None):
         """
         Resource for publisher
         """
@@ -989,19 +1017,23 @@ class Publisher(AbstractResource):
 
 class OAuthConfiguration(BaseResource):
 
-    def __init__(self, about, types=None, properties=None, description=None, identifier=None, short_title=None,
-                 title=None, contributor=None, creator=None, subject=None, created=None, modified=None, type=None,
-                 discussed_by=None, instance_shape=None, service_provider=None, relation=None, authorization_uri=None,
-                 oauth_access_token_uri=None, oauth_request_token_uri=None):
+    def __init__(self, about, types=None, properties=None, description=None,
+                 identifier=None, short_title=None, title=None, contributor=None,
+                 creator=None, subject=None, created=None, modified=None, type=None,
+                 discussed_by=None, instance_shape=None, service_provider=None,
+                 relation=None, authorization_uri=None, oauth_access_token_uri=None,
+                 oauth_request_token_uri=None):
         """
         private URI authorizationURI;
         private URI oauthAccessTokenURI;
         private URI oauthRequestTokenURI;
         """
 
-        super(OAuthConfiguration, self).__init__(about, types, properties, description, identifier, short_title, title,
-                                                 contributor, creator, subject, created, modified, type, discussed_by,
-                                                 instance_shape, service_provider, relation)
+        super(OAuthConfiguration, self).__init__(about, types, properties, description,
+                                                 identifier, short_title, title, contributor,
+                                                 creator, subject, created, modified, type,
+                                                 discussed_by, instance_shape, service_provider,
+                                                 relation)
         self.__authorization_uri = authorization_uri if authorization_uri is not None else None
         self.__oauth_access_token_uri = oauth_access_token_uri if oauth_access_token_uri is not None else None
         self.__oauth_request_token_uri = oauth_request_token_uri if oauth_access_token_uri is not None else None
@@ -1058,8 +1090,9 @@ class FilteredResource(AbstractResource):
 
 class ResponseInfo(FilteredResource):
 
-    def __init__(self, about=None, types=None, properties=None, resource=None,
-                 total_count=None, next_page=None, container=None):
+    def __init__(self, about=None, types=None, properties=None,
+                 resource=None, total_count=None, next_page=None,
+                 container=None):
         super(ResponseInfo, self).__init__(about, types, properties, resource)
         self.__total_count = total_count if total_count is not None else 0
         self.__next_page = next_page if next_page is not None else None
@@ -1076,8 +1109,9 @@ class ResponseInfo(FilteredResource):
 
 class Preview(AbstractResource):
 
-    def __init__(self, about=None, types=None, properties=None, document=None,
-                 hint_height=None, hint_width=None, initial_height=None):
+    def __init__(self, about=None, types=None, properties=None,
+                 document=None, hint_height=None, hint_width=None,
+                 initial_height=None):
         super(Preview, self).__init__(about, types, properties)
 
         self.__document = document if document is not None else None
