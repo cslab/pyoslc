@@ -16,3 +16,5 @@ Authlib
 Werkzeug==0.16.1
 requests
 pytest
+
+Sphinx==1.8.5
