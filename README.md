@@ -1,88 +1,126 @@
-# pyoslc
+# PyOSLC SDK
 
-Python SDK for OSLC. Development project with Koneksys.
+The `PyOSLC` project was developed as set of classes and libraries 
+packaged as a SDK which is aimed to build REST-based API’s that allows us 
+to implement `OSLC (Open Services for Lifecycle Collaboration) projects`
+that meet the specifications for creating REST services to enable 
+the interoperability of heterogeneous products and services.
 
+## Getting Started
 
-Installation on Windows:
-Install Virtual Environment in the root of the project:
+As part of the SDK project, there is an example that could be used to
+demonstrate how to use the `PyOSLC SDK`.
 
-```
-$ virtualenv venv
-```
+### Getting the code.
+To get the code of the `PyOSLC SDK` and the example project, it is necessary
+to clone the project.
 
+Using a git client this could be by executing.
 
-Activate the virtual environment using the activate batch script within the windows standard shell
-
-```.env
-$ .\venv\Scripts\activate.bat
-```
- 
-
-For first usage install dependent libraries to your virtual environment
-
-```
-$ pip install -r requirements.txt
+```bash
+$ git clone git@gitlab.contact.de:frank/pyoslc.git
 ```
 
-Set environment variables to configure and run the flask app
+This command should create a new folder named `pyoslc` which contains the 
+source code of the `PyOSLC SDK` project and the example.
 
-1. Configure the python script which creates the flask app (factory method)
-    ```
-    (venv) $ set FLASK_APP=ws-api
-    ```
+### Configuring the environment
+To execute the example it is necessary to install some dependencies,
+it is also recommendable to use a virtual environment for doing it.
 
-2. Configure the flask app mode (development with debugg information or production)
-    ```
-    (venv) $ set FLASK_ENV=development
-    ```
+As far as the example concerned it assume the usage of 
+[`virtualenvwrapper`](https://virtualenvwrapper.readthedocs.io/en/latest/)
 
-3. Run the flask app
-    ```.env
-    (venv) $ flask run
-    ```
+For the example, let's create a virtual environment with the same name of 
+the cloned folder: `pyoslc`
 
+```bash
+$ mkvirtualenv -python=`which python2.7` pyoslc
+(pyoslc) $
+```
 
+Notice that after creating the virtual environment, this is activated.
 
-Development of Flask Apps
+### Installing dependencies
+To install the dependencies required for the `PyOSLC SDK` and the example project
+it should be used the `requirements.txt` file, that contains the list of 
+dependencies.
 
-Creating flask apps consist of following configurations:
+```bash
+(pyoslc) $ pip install -r requirements.txt
+```
 
-1. Creating the app
-    ```.python
-    app = Flask(__name__, instance_relative_config=False)
-    ```
+### Executing the PyOSLC Demo.
+Having cloned the code and the virtual environment created it is time to execute
+the `PyOSLC Demo`.
 
-2. Configure by file or configuration map
-    ```.python
-    config = {
-        MAIL_SERVER=None,
-        LOG_TO_STDOUT=None,
-        SECRET_KEY='d3v3L0p',
-        BASE_URI='http://examples.org/'
-    }
-    ```
+One step before, let's meet the structure of the project.
 
-3. Register Blueprints to endpoints
-    
-    A blueprint is an object that records functions that will be called with the 
-    `:class:~flask.blueprints.BlueprintSetupState` later to register functions 
-    or other things on the main application
+```
+    ➜ tree pysolc
+    ├── .env
+    ├── .flaskenv
+    ├── LICENSE
+    ├── MANIFEST.in
+    ├── README.md
+    ├── app
+    ├── examples
+    ├── initialize.py
+    ├── pyoslc
+    ├── pyoslc_oauth
+    ├── requirements.txt
+    ├── setup.cfg
+    └── setup.py 
+```
 
-Within the Blueprint Namesspaces and Services be defined to declare endpoint behaviours
+| Folder          | Description                              |
+| --------------- | ---------------------------------------- |
+| `app`           | This folder contains the example project |
+| `pyoslc`        | This is the SDK project that contains the class for developing an OSLC API |
+| `pyoslc_oauth`  | An extension of the SDK project that contains the AuthN and AuthZ workflow |
+| `examples`      | A set of values used in the example project to expose using the OSLC ApI   |
 
-4. Configure logging mechanisms
+The `.env` and `.flaskenv` files are required to execute the example
+project.
 
+The content of the `.flaskenv` should be something like this:
 
-## Running Tests
+```properties
+FLASK_APP=app.wsgi.app
+FLASK_ENV=development
+FLASK_DEBUG=True
+``` 
 
-For running the tests for the OSCL API implemented.
+The `app.wsgi.app` is the module and app that should be execute when running
+the Flask application.
 
-1. Go to the root `pyoslc` folder
-    ```bash
-    $ cd pyoslc
-    ```
+The content of `.env` file should contain this line in case of running the
+example project in localhost.
 
-2. Run the tests
-    ```python
-    $ pytest
-    ```
+```properties
+AUTHLIB_INSECURE_TRANSPORT=True
+```
+
+This value is required to avoid some validation for the implementation of 
+the OAuth workflow, this line is only required if running in localhost or
+in a development stage.
+
+Once having the environment variables defined, it is time to execute the
+application.
+
+```shell script
+$ cd app
+$ flask run
+* Serving Flask app "app.wsgi:app" (lazy loading)
+* Environment: development
+* Debug mode: on
+* Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+* Restarting with stat
+* Debugger is active!
+* Debugger PIN: 234-758-391
+```
+
+Now it is possible to navigate to the [http://127.0.0.1:5000/oslc] 
+to see the `PyOSLC Demo` running.
+
+![PyOSLC Demo](docs/source/_static/02.png "PyOSLC Demo")
