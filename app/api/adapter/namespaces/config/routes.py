@@ -1,4 +1,4 @@
-from urlparse import urlparse
+from six.moves.urllib.parse import urlparse
 
 from flask import url_for, request, render_template, make_response
 from flask_restx import Namespace

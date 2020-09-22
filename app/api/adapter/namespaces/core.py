@@ -3,7 +3,7 @@ import os
 import shutil
 from datetime import datetime
 from tempfile import NamedTemporaryFile
-from urlparse import urlparse
+from six.moves.urllib.parse import urlparse
 from xml.sax import SAXParseException
 
 from flask import request, make_response, url_for, render_template
@@ -54,7 +54,7 @@ class OslcResource(Resource):
         self.graph.bind('dcterms', DCTERMS)
         self.graph.bind('j.0', JAZZ_PROCESS)
 
-    def get(self):
+    def get(self, *args, **kwargs):
         accept = request.headers.get('accept')
         if not (accept in ('application/rdf+xml', 'application/json', 'application/ld+json',
                            'application/xml', 'application/atom+xml', )):
@@ -596,13 +596,13 @@ class ConfigurationSelection(OslcResource):
             result = [
                 {
                     'oslc:label': 'PyOSLC Stream 1',
-                    'rdf:resource': 'http://192.168.1.66:5000/oslc/services/config/stream/1',
+                    'rdf:resource': 'http://192.168.1.162:5000/oslc/services/config/stream/1',
                     'rdf:type': 'http://open-services.net/ns/config#Stream'
 
                 },
                 {
                     'oslc:label': 'PyOSLC Stream 2',
-                    'rdf:resource': 'http://192.168.1.66:5000/oslc/services/config/stream/2',
+                    'rdf:resource': 'http://192.168.1.162:5000/oslc/services/config/stream/2',
                     'rdf:type': 'http://open-services.net/ns/config#Stream'
                 }
             ]

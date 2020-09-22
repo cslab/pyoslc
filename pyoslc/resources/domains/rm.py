@@ -1,9 +1,9 @@
-from rdflib import Graph, RDF, URIRef
+from rdflib import RDF
 from rdflib.extras.describer import Describer
-from rdflib.namespace import DCTERMS
 
 from pyoslc.resources.models import BaseResource
 from pyoslc.vocabularies.rm import OSLC_RM
+import six
 
 
 class Requirement(BaseResource):
@@ -62,10 +62,10 @@ class Requirement(BaseResource):
         d.rdftype(OSLC_RM.Requirement)
 
         for attribute_key in self.__dict__.keys():
-            item = {attribute_key: v.values() for k, v in attributes.iteritems() if v['attribute'] == attribute_key}
+            item = {attribute_key: list(v.values()) for k, v in six.iteritems(attributes) if v['attribute'] == attribute_key}
 
-            if item.values() and attribute_key in item.values()[0]:
-                predicate = eval(item.values()[0][1])
+            if list(item.values()) and attribute_key in list(item.values())[0]:
+                predicate = eval(list(item.values())[0][1])
                 attr = getattr(self, attribute_key)
                 if isinstance(attr, set):
                     if len(attr) > 0:
@@ -76,8 +76,8 @@ class Requirement(BaseResource):
         return graph
 
     def from_json(self, data, attributes):
-        for key in data.iterkeys():
-            item = {key: v.values() for k, v in attributes.iteritems() if k.lower() == key.lower()}
+        for key in six.iterkeys(data):
+            item = {key: list(v.values()) for k, v in six.iteritems(attributes) if k.lower() == key.lower()}
 
             if item:
                 attribute_name = item[key][0]
@@ -91,13 +91,11 @@ class Requirement(BaseResource):
 
     def from_rdf(self, g, attributes):
 
-        # nss = [n for n in g.namespaces()]
-
         for r in g.subjects(RDF.type, OSLC_RM.Requirement):
 
             reviewed = list()
 
-            for k, v in attributes.iteritems():
+            for k, v in six.iteritems(attributes):
                 reviewed.append(v['attribute'])
                 item = {v['attribute']: a for a in self.__dict__.keys() if a.lower() == v['attribute'].lower()}
                 if item:
@@ -122,7 +120,7 @@ class Requirement(BaseResource):
             no_reviewed = [a for a in self.__dict__.keys() if a not in reviewed]
 
             for attr in no_reviewed:
-                item = {attr: v for k, v in attributes.iteritems() if v['attribute'].lower() == attr.lower()}
+                item = {attr: v for k, v in six.iteritems(attributes) if v['attribute'].lower() == attr.lower()}
 
                 if item:
                     for i in g.objects(r, eval(item.get(attr)['oslc_property'])):

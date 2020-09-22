@@ -52,7 +52,7 @@ def create_app(app_config=None):
         app.logger.setLevel(logging.INFO)
         app.logger.info('---------- Initializing PyOSL WS-API ----------')
 
-    from web.routes import bp as website
+    from .web.routes import bp as website
     app.register_blueprint(website)
 
     from app.api.adapter import oslc

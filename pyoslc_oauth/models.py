@@ -1,7 +1,10 @@
 from authlib.integrations.sqla_oauth1 import OAuth1ClientMixin, OAuth1TokenCredentialMixin
 from flask import current_app, g
 from flask_login import UserMixin
-from werkzeug.contrib.cache import FileSystemCache
+try:
+    from werkzeug.contrib.cache import FileSystemCache
+except ImportError:
+    from cachelib import FileSystemCache
 from werkzeug.local import LocalProxy
 from werkzeug.security import generate_password_hash, check_password_hash
 

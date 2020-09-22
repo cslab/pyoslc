@@ -48,7 +48,7 @@ class CsvRequirementRepository(Repository):
 
     def create(self, requirement):
         with open(self.csv_file_path, 'a') as f:
-            fieldnames = CsvRequirementRepository.specification_map.keys()
+            fieldnames = list(CsvRequirementRepository.specification_map.keys())
             writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter=';')
             writer.writerow(
                 CsvRequirementRepository.requirement_to_dict(requirement))
@@ -62,7 +62,7 @@ class CsvRequirementRepository(Repository):
     def delete(self, requirement):
         temp_csv_file_path = 'temp_' + self.csv_file_path
         with open(self.csv_file_path, 'rb') as file, open(temp_csv_file_path, 'wb') as new_file:
-            fieldnames = CsvRequirementRepository.specification_map.keys()
+            fieldnames = list(CsvRequirementRepository.specification_map.keys())
             writer = csv.DictWriter(
                 new_file, fieldnames=fieldnames, delimiter=';')
             for row in csv.reader(file):
@@ -75,7 +75,7 @@ class CsvRequirementRepository(Repository):
     def update(self, requirement):
         temp_csv_file_path = 'temp_' + self.csv_file_path
         with open(self.csv_file_path, 'rb') as file, open(temp_csv_file_path, 'wb') as new_file:
-            fieldnames = CsvRequirementRepository.specification_map.keys()
+            fieldnames = list(CsvRequirementRepository.specification_map.keys())
             writer = csv.DictWriter(
                 new_file, fieldnames=fieldnames, delimiter=';')
             for row in csv.reader(file):
@@ -116,9 +116,3 @@ class CsvRequirementRepository(Repository):
                         attr.add(v if v is not '' else 'Empty')
                     else:
                         setattr(requirement, attribute, v)
-
-
-# repository = CsvRequirementRepository()
-
-# for req in repository.get():
-#     print req

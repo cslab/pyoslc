@@ -1,5 +1,5 @@
 import inspect
-from urlparse import urlparse
+from six.moves.urllib.parse import urlparse
 
 from pyoslc.resources.models import ServiceProvider, Service, QueryCapability, CreationFactory, Dialog
 from pyoslc.vocabularies.config import OSLC_CONFIG

@@ -48,7 +48,7 @@ class ConfigurationSerializer(PrettyXMLSerializer):
         elif self.base:
             writer.attribute(XMLBASE, self.base)
 
-        writer.namespaces(namespaces.items())
+        writer.namespaces(list(namespaces.items()))
 
         # Write out subjects that can not be inline
         for subject in store.subjects():

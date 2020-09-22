@@ -238,7 +238,7 @@ class FileSystemConsumerStore(object):
 
     @property
     def consumer_values(self):
-        return self._consumers.values()
+        return list(self._consumers.values())
 
     def __from_resource(self, resource):
         oslc_auth_consumer = OSLCOAuthConsumer()

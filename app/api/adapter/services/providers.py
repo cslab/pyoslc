@@ -57,7 +57,7 @@ class ServiceProviderCatalogSingleton(object):
 
         for sp in service_providers:
             identifier = sp.get('id')
-            if identifier not in cls.providers.keys():
+            if identifier not in list(cls.providers.keys()):
                 name = sp.get('name')
                 title = '{}'.format(name)
                 description = 'Service Provider for the Contact Software platform service (id: {}; kind: {})'.format(
@@ -188,7 +188,7 @@ class ConfigurationManagementSingleton(object):
 
         for component in components:
             identifier = component.get('id')
-            if identifier not in cls.components.keys():
+            if identifier not in list(cls.components.keys()):
                 name = component.get('name')
                 description = 'Configuration Service for: {}'.format(name)
                 publisher = PublisherSingleton.get_publisher(catalog_url)
