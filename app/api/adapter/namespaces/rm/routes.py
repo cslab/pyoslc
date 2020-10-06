@@ -10,6 +10,7 @@ from rdflib.plugin import PluginException
 
 from app.api.adapter import api
 from app.api.adapter.mappings.specification import specification_map
+from app.api.adapter.namespaces.business import get_requirement, get_requirement_list
 from app.api.adapter.namespaces.rm.models import specification
 from app.api.adapter.namespaces.rm.parsers import specification_parser, csv_file_upload
 from pyoslc.resources.domains.rm import Requirement
@@ -41,19 +42,9 @@ class RequirementList(Resource):
                 # we will use the json-ld format for the response.
                 content_type = 'json-ld'
 
-            # Instantiating the graph where we will store
-            # all the requirements from the source (csv file)
-            graph = Graph()
-
             # Loading information from the specification.csv file
             # located on the examples folder of the pyoslc project.
-            path = os.path.join(os.path.abspath(''), 'examples', 'specifications.csv')
-            with open(path, 'rb') as f:
-                reader = csv.DictReader(f, delimiter=';')
-                for row in reader:
-                    req = Requirement()      # instantiating the Requirement object
-                    req.update(row, attributes)          # Parsing the specification to requirement
-                    graph += req.to_rdf(request.base_url, attributes)    # Accumulating the triples on the graph
+            graph = get_requirement_list(request.base_url, '', '')
 
             if 'text/html' in content_type:
                 # Validating whether the request comes from
@@ -203,14 +194,8 @@ class RequirementItem(Resource):
 
             # Loading information from the specification.csv file
             # located on the examples folder of the pyoslc project.
-            path = os.path.join(os.path.abspath(''), 'examples', 'specifications.csv')
-            with open(path, 'rb') as f:
-                reader = csv.DictReader(f, delimiter=';')
-                for row in reader:
-                    if row['Specification_id'] == id:
-                        rq = Requirement()               # instantiating the Requirement object
-                        rq.update(row, attributes)          # Parsing the specification to requirement
-                        graph += rq.to_rdf(request.base_url, attributes)    # Accumulating the triples on the graph
+            r = get_requirement(request.base_url, id)
+            graph = r.to_rdf(graph, request.base_url, attributes)
 
             if 'text/html' in content_type:
                 # Passing the graph as a parameter to the template
@@ -238,7 +223,7 @@ class RequirementItem(Resource):
         except Exception as e:
             response_object = {
                 'status': 'fail',
-                'message': 'An exception has ocurred: {}'.format(e.message)
+                'message': 'An exception has ocurred: {}'.format(e)
             }
             return response_object, 500
 

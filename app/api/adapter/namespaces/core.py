@@ -12,7 +12,7 @@ from rdflib import Graph, RDF, RDFS, BNode
 from rdflib.namespace import DCTERMS
 from rdflib.plugin import register
 from rdflib.serializer import Serializer
-from werkzeug.exceptions import UnsupportedMediaType, NotAcceptable, PreconditionFailed, NotFound, Conflict, BadRequest
+from werkzeug.exceptions import UnsupportedMediaType, NotAcceptable, PreconditionFailed, NotFound, BadRequest
 from werkzeug.http import http_date
 
 from app.api.adapter.exceptions import NotModified
@@ -60,24 +60,12 @@ class OslcResource(Resource):
                            'application/xml', 'application/atom+xml', )):
             raise UnsupportedMediaType
 
-    # def post(self):
-    #     accept = request.headers.get('accept')
-    #     if not (accept in ('application/rdf+xml', 'application/json', 'application/ld+json',
-    #                        'application/xml', 'application/atom+xml')):
-    #         raise UnsupportedMediaType
-
     @staticmethod
     def create_response(graph, accept=None, content=None, rdf_format=None, etag=False):
 
         # Getting the content-type for checking the
         # response we will use to serialize the RDF response.
-        # content_type2 = request.headers['accept'] if rdf_format is None else unicode(rdf_format)
-        # print('{} - {} - {}'.format(request.base_url, content_type2, rdf_format))
-
         accept = accept if accept is not None else request.headers.get('accept', 'application/rdf+xml')
-        if accept in ('application/xml', 'application/rdf+xml'):
-            accept = accept
-
         content = content if content is not None else request.headers.get('content-type', accept)
         if content.__contains__('x-www-form-urlencoded'):
             content = accept
@@ -103,10 +91,11 @@ class OslcResource(Resource):
         if rdf_format == 'application/atom+xml':
             rdf_format = 'pretty-xml'
 
-        print(rdf_format)
-        data = graph.serialize(format=rdf_format)
+        if rdf_format in ('application/xml, application/x-oslc-cm-service-description+xml'):
+            rdf_format = 'pretty-xml'
+            content = 'application/rdf+xml'
 
-        # print(data)
+        data = graph.serialize(format=rdf_format)
 
         # Sending the response to the client
         response = make_response(data.decode('utf-8'), 200)
@@ -468,7 +457,6 @@ class ResourcePreview(OslcResource):
 class ResourcePreviewSmallLarge(OslcResource):
 
     def get(self, service_provider_id, requirement_id, preview_type):
-        super(ResourcePreviewSmallLarge, self).get()
         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
                                service_provider_id=service_provider_id, requirement_id=requirement_id,
                                preview_type=preview_type)
@@ -596,13 +584,13 @@ class ConfigurationSelection(OslcResource):
             result = [
                 {
                     'oslc:label': 'PyOSLC Stream 1',
-                    'rdf:resource': 'http://192.168.1.162:5000/oslc/services/config/stream/1',
+                    'rdf:resource': url_for('oslc.adapter_configuration_stream', stream_id=1, _external=True),
                     'rdf:type': 'http://open-services.net/ns/config#Stream'
 
                 },
                 {
                     'oslc:label': 'PyOSLC Stream 2',
-                    'rdf:resource': 'http://192.168.1.162:5000/oslc/services/config/stream/2',
+                    'rdf:resource': url_for('oslc.adapter_configuration_stream', stream_id=2, _external=True),
                     'rdf:type': 'http://open-services.net/ns/config#Stream'
                 }
             ]
