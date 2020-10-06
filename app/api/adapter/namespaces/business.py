@@ -30,7 +30,6 @@ def get_requirement(base_url, specification_id):
 
 def get_requirement_list(base_url, select, where):
     path = os.path.join(os.path.abspath(''), 'examples', 'specifications.csv')
-    requirements = list()
     with open(path, 'rb') as f:
         reader = csv.DictReader(f, delimiter=';')
 
@@ -42,11 +41,9 @@ def get_requirement_list(base_url, select, where):
         for row in reader:
             requirement = Requirement()
             requirement.update(row, attributes=attributes)
-
             graph += requirement.to_rdf(graph, base_url, attributes)
 
     return graph if graph else None
-    # return requirements
 
 
 def get_requirements(base_url):

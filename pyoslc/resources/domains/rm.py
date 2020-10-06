@@ -1,5 +1,6 @@
-from rdflib import RDF
+from rdflib import Graph, RDF, URIRef
 from rdflib.extras.describer import Describer
+from rdflib.namespace import DCTERMS
 
 from pyoslc.resources.models import BaseResource
 from pyoslc.vocabularies.rm import OSLC_RM

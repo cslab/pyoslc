@@ -4,7 +4,7 @@ from app import create_app
 from app.config import Config
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def app():
 
     app = create_app(Config)
