@@ -1,4 +1,6 @@
 global-exclude *.pyc
 
-graft pyoslc/app/api/static
-graft pyoslc/app/api/templates
+graft pyoslc/app/api/adapter/static
+graft pyoslc/app/api/adapter/dialogs/static
+graft pyoslc/app/api/adapter/dialogs/templates
+graft pyoslc/app/web/templates
