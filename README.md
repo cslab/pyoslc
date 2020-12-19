@@ -18,7 +18,7 @@ to clone the project.
 Using a git client this could be by executing.
 
 ```bash
-$ git clone git@gitlab.contact.de:frank/pyoslc.git
+$ git clone git@github.com:cslab/pyoslc.git
 ```
 
 This command should create a new folder named `pyoslc` which contains the 
