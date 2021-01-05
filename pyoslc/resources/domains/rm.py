@@ -1,6 +1,7 @@
-from rdflib import Graph, RDF, URIRef
+# from rdflib import Graph, RDF, URIRef
+from rdflib import RDF
 from rdflib.extras.describer import Describer
-from rdflib.namespace import DCTERMS
+# from rdflib.namespace import DCTERMS
 
 from pyoslc.resources.models import BaseResource
 from pyoslc.vocabularies.rm import OSLC_RM
@@ -63,7 +64,8 @@ class Requirement(BaseResource):
         d.rdftype(OSLC_RM.Requirement)
 
         for attribute_key in self.__dict__.keys():
-            item = {attribute_key: list(v.values()) for k, v in six.iteritems(attributes) if v['attribute'] == attribute_key}
+            item = {attribute_key: list(v.values()) for k, v in six.iteritems(attributes) if
+                    v['attribute'] == attribute_key}
 
             if list(item.values()) and attribute_key in list(item.values())[0]:
                 predicate = eval(list(item.values())[0][1])

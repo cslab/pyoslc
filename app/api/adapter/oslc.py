@@ -11,5 +11,3 @@ def init_app(app):
     api.add_namespace(rm_ns)
     api.add_namespace(config_ns)
     app.register_blueprint(dialog_bp, url_prefix='/oslc/services')
-
-

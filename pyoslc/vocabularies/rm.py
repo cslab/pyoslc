@@ -15,7 +15,6 @@ OSLC_RM = ClosedNamespace(
 
         # for RequirementCollection
         "uses",
-        
         # General
         "elaborates", "specifies", "satisfies",
         "decomposedBy", "decomposes",

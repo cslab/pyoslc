@@ -26,7 +26,9 @@ def internal_error(error):
 @bp.before_request
 def before_request_func():
     logger = logging.getLogger('flask.app')
-    logger.debug('Requesting BEFORE_REQUEST from: {} {} to {}'.format(request.access_route, request.user_agent, request.base_url))
+    logger.debug('Requesting BEFORE_REQUEST from: {} {} to {}'.format(request.access_route,
+                                                                      request.user_agent,
+                                                                      request.base_url))
     logger.debug('Request Referrer {}'.format(request.referrer))
 
 
