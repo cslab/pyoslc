@@ -113,6 +113,6 @@ class CsvRequirementRepository(Repository):
                 if hasattr(requirement, attribute):
                     attr = getattr(requirement, attribute, None)
                     if isinstance(attr, set):
-                        attr.add(v if v is not '' else 'Empty')
+                        attr.add(v if v != '' else 'Empty')
                     else:
                         setattr(requirement, attribute, v)

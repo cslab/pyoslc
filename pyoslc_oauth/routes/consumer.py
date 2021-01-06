@@ -1,9 +1,12 @@
-from flask import Blueprint, current_app, request, url_for, jsonify, abort, render_template, redirect
+from flask import (Blueprint, current_app, request, url_for,
+                   jsonify, abort, render_template, redirect)
 from flask_login import login_required
+from sqlalchemy.exc import OperationalError
 from werkzeug.security import gen_salt
 
 from pyoslc_oauth import OAuthConfiguration, OSLCOAuthConsumer
 from pyoslc_oauth.database import db
+from pyoslc_oauth.forms import AdminLogin
 from pyoslc_oauth.models import Client
 
 consumer_bp = Blueprint('consumer', __name__)
@@ -41,7 +44,8 @@ def register():
     consumer_name = data['name'].encode('utf-8')
     consumer_trusted = data['trusted']
 
-    consumer = OSLCOAuthConsumer(consumer_key=consumer_key, consumer_secret=consumer_secret)
+    consumer = OSLCOAuthConsumer(consumer_key=consumer_key,
+                                 consumer_secret=consumer_secret)
     consumer.name = consumer_name
     consumer.provisional = True
     consumer.trusted = bool(consumer_trusted)
@@ -57,8 +61,12 @@ def register():
         client_secret=consumer.secret,
         default_redirect_uri=callback_uri,
     )
-    db.session.add(client)
-    db.session.commit()
+
+    try:
+        db.session.add(client)
+        db.session.commit()
+    except OperationalError:
+        pass
 
     rsp = {'key': consumer_key}
     current_app.logger.debug('Consumer registered')
@@ -80,9 +88,12 @@ def approve():
     consumers = consumer_store.consumers
     consumer = consumers[consumer_key]
 
-    callback_uri = url_for('oauth.authorize', _external=True)
-    authorize_uri = url_for('oauth.initiate_temporary_credential', _external=True)
-    access_token_url = url_for('oauth.issue_token', _external=True)
+    callback_uri = url_for('oauth.authorize',
+                           _external=True)
+    authorize_uri = url_for('oauth.initiate_temporary_credential',
+                            _external=True)
+    access_token_url = url_for('oauth.issue_token',
+                               _external=True)
 
     consumer.init_app(current_app)
     consumer.register(
@@ -131,7 +142,8 @@ def show_consumer_key_management():
 
     consumers = get_consumers()
 
-    return render_template('pyoslc_oauth/manage_consumer.html', consumers=consumers)
+    return render_template('pyoslc_oauth/manage_consumer.html',
+                           consumers=consumers)
 
 
 def show_admin_login(oauth_app, form=None):
@@ -159,8 +171,5 @@ def show_admin_login(oauth_app, form=None):
 
 @consumer_bp.route('/adminLogin', methods=['POST'])
 def admin_login():
-    data = request.get_data()
-
     url = url_for('oauth.approve_key')
-
     return redirect(url)

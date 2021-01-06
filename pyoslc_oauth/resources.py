@@ -202,7 +202,7 @@ class FileSystemConsumerStore(object):
     def __create_graph(self):
         try:
             self._graph = Graph().parse(self.__oauth_store_path, format="turtle")
-        except IOError as e:
+        except IOError:
             self._graph = Graph()
             self._graph.bind('oslc_oauth', OAUTH)
 
@@ -223,7 +223,7 @@ class FileSystemConsumerStore(object):
             raise Exception('Consumer store not initialized')
 
         self.__remove_consumer(consumer.key)
-        resource = self.__to_resource(consumer)
+        # resource = self.__to_resource(consumer)
         self._consumers[consumer.key] = consumer
         self.__save_graph()
 
@@ -266,13 +266,16 @@ class FileSystemConsumerStore(object):
         resource.add(OAUTH.consumerName, Literal(consumer.name))
         resource.add(OAUTH.consumerKey, Literal(consumer.key))
         resource.add(OAUTH.consumerSecret, Literal(consumer.secret))
-        resource.add(OAUTH.provisional, Literal(consumer.provisional, datatype=XSD.boolean))
-        resource.add(OAUTH.trusted, Literal(consumer.trusted, datatype=XSD.boolean))
+        resource.add(OAUTH.provisional, Literal(consumer.provisional,
+                                                datatype=XSD.boolean))
+        resource.add(OAUTH.trusted, Literal(consumer.trusted,
+                                            datatype=XSD.boolean))
 
         return resource
 
     def __save_graph(self):
-        self._graph.serialize(destination=self.__oauth_store_path, format='turtle')
+        self._graph.serialize(destination=self.__oauth_store_path,
+                              format='turtle')
 
 
 class OAuthApplication(object):

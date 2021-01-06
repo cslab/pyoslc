@@ -89,13 +89,13 @@ class ConfigurationSerializer(PrettyXMLSerializer):
             writer.pop(RDF.Description)
             self.forceRDFAbout.remove(subject)
 
-        elif not subject in self.__serialized:
+        elif subject not in self.__serialized:
             self.__serialized[subject] = 1
             type = first(store.objects(subject, RDF.type))
 
             try:
                 self.nm.qname(type)
-            except:
+            except TypeError:
                 type = None
 
             element = type or RDF.Description
@@ -137,8 +137,7 @@ class ConfigurationSerializer(PrettyXMLSerializer):
             if object.language:
                 writer.attribute(XMLLANG, object.language)
 
-            if (object.datatype == RDF.XMLLiteral
-                    and isinstance(object.value, xml.dom.minidom.Document)):
+            if (object.datatype == RDF.XMLLiteral and isinstance(object.value, xml.dom.minidom.Document)):
                 writer.attribute(RDF.parseType, "Literal")
                 writer.text(u"")
                 writer.stream.write(object)
@@ -156,17 +155,16 @@ class ConfigurationSerializer(PrettyXMLSerializer):
                 writer.attribute(RDF.resource, self.relativize(object))
 
         else:
-            if first(store.objects(object, RDF.first)):  # may not have type
-                                                         # RDF.List
-
+            if first(store.objects(object, RDF.first)):  # may not have type RDF.List
                 self.__serialized[object] = 1
 
                 # Warn that any assertions on object other than
                 # RDF.first and RDF.rest are ignored... including RDF.List
                 import warnings
                 warnings.warn(
-                    "Assertions on %s other than RDF.first " % repr(object) +
-                    "and RDF.rest are ignored ... including RDF.List",
+                    "Assertions on {} other than RDF.first and "
+                    "RDF.rest are ignored ... including RDF.List".format(
+                        repr(object)),
                     UserWarning, stacklevel=2)
                 writer.attribute(RDF.parseType, "Collection")
 
@@ -191,7 +189,7 @@ class ConfigurationSerializer(PrettyXMLSerializer):
 
                 elif isinstance(object, BNode):
 
-                    if not object in self.__serialized \
+                    if object not in self.__serialized \
                             and (object, None, None) in store \
                             and len(list(store.subjects(object=object))) == 1:
                         # inline blank nodes if they haven't been serialized yet

@@ -47,3 +47,7 @@ class LoginConfirmForm(ConfirmForm):
             session['sid'] = user.id
             session.permanent = False
             g.current_user = user
+
+
+class AdminLogin(BaseForm):
+    pass

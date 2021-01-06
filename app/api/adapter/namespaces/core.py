@@ -162,7 +162,7 @@ class ResourceOperation(OslcResource):
         response_info = ResponseInfo()
         response_info.total_count = len(data)
 
-        graph = response_info.to_rdf(self.graph)
+        # graph = response_info.to_rdf(self.graph)
 
         return self.create_response(graph=data)
 
@@ -622,10 +622,10 @@ class ConfigurationStream(OslcResource):
         catalog_url = url_for('oslc.adapter_service_provider_catalog', _external=True)
         service_provider_url = url_for('oslc.adapter_service_provider', service_provider_id='Project-1', _external=True)
 
-
         response = make_response(render_template('pyoslc_oauth/stream.html',
                                                  stream_url=stream_url,
-                                                 selection_url=url_for('oslc.adapter_configuration_selection', _external=True),
+                                                 selection_url=url_for('oslc.adapter_configuration_selection',
+                                                                       _external=True),
                                                  stream_id=stream_id,
                                                  project_area=catalog_url,
                                                  service_provider_url=service_provider_url,

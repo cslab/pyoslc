@@ -17,7 +17,8 @@ specification_parser.add_argument('category', type=str, required=True, help='Cat
 specification_parser.add_argument('discipline', type=str, required=True, help='Discipline of th specification')
 specification_parser.add_argument('revision', type=str, required=True, help='Revision')
 specification_parser.add_argument('target_value', type=str, required=True, help='Target value of the specification')
-specification_parser.add_argument('degree_of_fulfillment', type=str, required=True, help='Degree of fulfillment of the specification')
+specification_parser.add_argument('degree_of_fulfillment', type=str, required=True,
+                                  help='Degree of fulfillment of the specification')
 specification_parser.add_argument('status', type=str, required=True, help='Status of the specification')
 
 specification_id_parser = reqparse.RequestParser()

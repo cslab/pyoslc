@@ -95,18 +95,18 @@ class JazzRootServiceSerializer(PrettyXMLSerializer):
         store = self.store
         writer = self.writer
 
-        if not subject in self.__serialized:
+        if subject not in self.__serialized:
             self.__serialized[subject] = 1
             type = first(store.objects(subject, RDF.type))
 
             try:
                 self.nm.qname(type)
-            except:
+            except TypeError:
                 type = None
 
             element = type or RDF.Description
 
-            if not subject in self.__root_serialized:
+            if subject not in self.__root_serialized:
                 writer.push(element)
 
             if isinstance(subject, BNode):
@@ -121,7 +121,7 @@ class JazzRootServiceSerializer(PrettyXMLSerializer):
                     writer.attribute(RDF.nodeID, fix(subject))
 
             else:
-                if not subject in self.__root_serialized:
+                if subject not in self.__root_serialized:
                     writer.attribute(RDF.about, self.relativize(subject))
 
             if (subject, None, None) in store:
@@ -129,7 +129,7 @@ class JazzRootServiceSerializer(PrettyXMLSerializer):
                     if not (predicate == RDF.type and object == type):
                         self.predicate(predicate, object, depth + 1)
 
-            if not subject in self.__root_serialized:
+            if subject not in self.__root_serialized:
                 writer.pop(element)
 
     def predicate(self, predicate, object, depth=1):
@@ -141,8 +141,7 @@ class JazzRootServiceSerializer(PrettyXMLSerializer):
             if object.language:
                 writer.attribute(XMLLANG, object.language)
 
-            if (object.datatype == RDF.XMLLiteral
-                    and isinstance(object.value, xml.dom.minidom.Document)):
+            if object.datatype == RDF.XMLLiteral and isinstance(object.value, xml.dom.minidom.Document):
                 writer.attribute(RDF.parseType, "Literal")
                 writer.text(u"")
                 writer.stream.write(object)
@@ -160,18 +159,16 @@ class JazzRootServiceSerializer(PrettyXMLSerializer):
                 writer.attribute(RDF.resource, self.relativize(object))
 
         else:
-            if first(store.objects(object, RDF.first)):  # may not have type
-                                                         # RDF.List
-
+            if first(store.objects(object, RDF.first)):  # may not have type RDF.List
                 self.__serialized[object] = 1
 
                 # Warn that any assertions on object other than
                 # RDF.first and RDF.rest are ignored... including RDF.List
                 import warnings
-                warnings.warn(
-                    "Assertions on %s other than RDF.first " % repr(object) +
-                    "and RDF.rest are ignored ... including RDF.List",
-                    UserWarning, stacklevel=2)
+
+                warnings.warn("Assertions on %s other than RDF.first " % repr(
+                    object) + "and RDF.rest are ignored ... including RDF.List",
+                              UserWarning, stacklevel=2)
                 writer.attribute(RDF.parseType, "Collection")
 
                 col = Collection(store, object)
@@ -195,9 +192,8 @@ class JazzRootServiceSerializer(PrettyXMLSerializer):
 
                 elif isinstance(object, BNode):
 
-                    if not object in self.__serialized \
-                            and (object, None, None) in store \
-                            and len(list(store.subjects(object=object))) == 1:
+                    if object not in self.__serialized and (object, None, None) in store and len(
+                            list(store.subjects(object=object))) == 1:
                         # inline blank nodes if they haven't been serialized yet
                         # and are only referenced once (regardless of depth)
                         self.subject(object, depth + 1)

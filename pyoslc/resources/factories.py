@@ -42,23 +42,23 @@ class ServiceProviderFactory(object):
         for item in inspect.classify_class_attrs(klass):
             if item.kind.__contains__('method') and item.defining_class == klass:
 
-                resource_shape = None
+                # resource_shape = None
                 resource_attributes = item.object.__func__()
-                if item.name is 'query_capability':
+                if item.name == 'query_capability':
                     query_capability = cls.create_query_capability(base_uri, resource_attributes, parameters)
                     service.add_query_capability(query_capability)
-                    resource_shape = query_capability.resource_shape
+                    # resource_shape = query_capability.resource_shape
 
-                if item.name is 'creation_factory':
+                if item.name == 'creation_factory':
                     creation_factory = cls.create_creation_factory(base_uri, resource_attributes, parameters)
                     service.add_creation_factory(creation_factory)
-                    resource_shape = creation_factory.resource_shape
+                    # resource_shape = creation_factory.resource_shape
 
-                if item.name is 'selection_dialog':
+                if item.name == 'selection_dialog':
                     dialog = cls.create_selection_dialog(base_uri, resource_attributes, parameters)
                     service.add_selection_dialog(dialog)
 
-                if item.name is 'creation_dialog':
+                if item.name == 'creation_dialog':
                     dialog = cls.create_creation_dialog(base_uri, resource_attributes, parameters)
                     service.add_creation_dialog(dialog)
 

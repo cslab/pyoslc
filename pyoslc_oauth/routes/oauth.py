@@ -8,7 +8,9 @@ from pyoslc_oauth.models import User, Client
 from pyoslc_oauth.resources import OAuthConfiguration
 from pyoslc_oauth.server import auth_server
 
-oauth_bp = Blueprint('oauth', __name__, template_folder='../templates', static_folder='../static')
+oauth_bp = Blueprint('oauth', __name__,
+                     template_folder='../templates',
+                     static_folder='../static')
 
 
 @login.user_loader
@@ -66,4 +68,3 @@ def authorize():
 @oauth_bp.route('/token', methods=['POST'])
 def issue_token():
     return auth_server.create_token_response()
-

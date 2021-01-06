@@ -26,4 +26,3 @@ def init_app(app, oslc_oauth_app=None):
     app.register_blueprint(consumer_bp)
     Bootstrap(app)
     server.init_app(app)
-

@@ -248,4 +248,3 @@ class Component(ConfigurationResource):
     @is_version_of.setter
     def is_version_of(self, is_version_of):
         self.__is_version_of = is_version_of
-

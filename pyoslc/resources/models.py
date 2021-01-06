@@ -422,7 +422,8 @@ class ServiceProvider(BaseResource):
     def to_rdf(self, graph):
         super(ServiceProvider, self).to_rdf(graph)
 
-        uri = self.about if self.about.__contains__(self.identifier) else self.about + '/{}'.format(self.identifier) if self.identifier else ''
+        uri = self.about if self.about.__contains__(self.identifier) \
+            else self.about + '/{}'.format(self.identifier) if self.identifier else ''
 
         sp = Resource(graph, URIRef(uri))
         sp.add(RDF.type, OSLC.ServiceProvider)
@@ -542,8 +543,8 @@ class Service(BaseResource):
     def to_rdf(self, graph):
         super(Service, self).to_rdf(graph)
 
-        uri = self.about if self.about.__contains__(self.identifier) else self.about + '/{}'.format(
-            self.identifier) if self.identifier else ''
+        # uri = self.about if self.about.__contains__(self.identifier) else self.about + '/{}'.format(
+        #     self.identifier) if self.identifier else ''
 
         s = Resource(graph, BNode())
         s.add(RDF.type, OSLC.Service)
@@ -1239,7 +1240,7 @@ class Compact(AbstractResource):
             d.add(DCTERMS.shortTitle, Literal(self.short_title, datatype=XSD.string))
 
         if self.title:
-            d.add(DCTERMS.title, Literal(self.title, datatype=XSD.string ))
+            d.add(DCTERMS.title, Literal(self.title, datatype=XSD.string))
 
         if self.small_preview:
             sp = self.small_preview.to_rdf(graph)
@@ -1301,4 +1302,3 @@ class ResourceShape(BaseResource):
 
 
 """
-
