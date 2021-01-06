@@ -45,12 +45,12 @@ jobs:
 
       - name: Install Tox and any other packages
         run: |
-          run: pip install tox
+          pip install tox
 
       - name: Run Tox
         # Run tox using the version of Python in `PATH`
-        run: tox -e py
-
+        run: |
+          tox -e py
 
 #  deploy:
 #
