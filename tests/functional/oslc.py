@@ -12,3 +12,9 @@ class PyOSLC:
             '/oslc/services/catalog',
             headers=self.headers
         )
+
+    def get_service_provider(self, service_provider):
+        return self._client.get(
+            '/oslc/services/provider/{}'.format(service_provider),
+            headers=self.headers
+        )

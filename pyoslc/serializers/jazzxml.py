@@ -101,7 +101,7 @@ class JazzRootServiceSerializer(PrettyXMLSerializer):
 
             try:
                 self.nm.qname(type)
-            except ValueError:
+            except TypeError:
                 type = None
 
             element = type or RDF.Description

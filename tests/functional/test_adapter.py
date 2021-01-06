@@ -3,7 +3,7 @@ from rdflib import Graph, RDF
 from pyoslc.vocabularies.core import OSLC
 
 
-def test_catalog(pyoslc):
+def test_service_provider_catalog(pyoslc):
     response = pyoslc.get_catalog()
     assert response is not None
     assert response.status_code == 200
@@ -18,3 +18,10 @@ def test_catalog(pyoslc):
 
     assert spc is not None
     assert sp is not None
+
+
+def test_service_provider(pyoslc):
+    response = pyoslc.get_service_provider('Project-1')
+
+    assert response is not None
+    assert response.status_code == 200

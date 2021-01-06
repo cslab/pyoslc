@@ -1,6 +1,7 @@
 from flask import (Blueprint, current_app, request, url_for,
                    jsonify, abort, render_template, redirect)
 from flask_login import login_required
+from sqlalchemy.exc import OperationalError
 from werkzeug.security import gen_salt
 
 from pyoslc_oauth import OAuthConfiguration, OSLCOAuthConsumer
@@ -60,8 +61,12 @@ def register():
         client_secret=consumer.secret,
         default_redirect_uri=callback_uri,
     )
-    db.session.add(client)
-    db.session.commit()
+
+    try:
+        db.session.add(client)
+        db.session.commit()
+    except OperationalError:
+        pass
 
     rsp = {'key': consumer_key}
     current_app.logger.debug('Consumer registered')
