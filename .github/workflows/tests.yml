@@ -3,13 +3,7 @@
 
 name: Testing the Adapter
 
-on:
-  push:
-    branches:
-      - master
-      - adding-tox
-  pull_request:
-    branches: [ master ]
+on: [push]
 
 jobs:
   tests:
