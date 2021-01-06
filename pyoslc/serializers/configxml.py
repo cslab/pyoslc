@@ -162,8 +162,9 @@ class ConfigurationSerializer(PrettyXMLSerializer):
                 # RDF.first and RDF.rest are ignored... including RDF.List
                 import warnings
                 warnings.warn(
-                    "Assertions on %s other than RDF.first " % repr(object) +
-                    "and RDF.rest are ignored ... including RDF.List",
+                    "Assertions on {} other than RDF.first and "
+                    "RDF.rest are ignored ... including RDF.List".format(
+                        repr(object)),
                     UserWarning, stacklevel=2)
                 writer.attribute(RDF.parseType, "Collection")
 
