@@ -1,8 +1,9 @@
 import hashlib
+import re
 from datetime import date
 
 from rdflib import URIRef, Literal, RDF, XSD, BNode
-from rdflib.namespace import DCTERMS
+from rdflib.namespace import DCTERMS, RDFS
 from rdflib.resource import Resource
 
 from pyoslc.helpers import build_uri
@@ -1091,19 +1092,52 @@ class FilteredResource(AbstractResource):
 
 class ResponseInfo(FilteredResource):
 
-    def __init__(self, about=None, types=None, properties=None,
+    def __init__(self, about=None, title=None,
+                 types=None, properties=None,
                  resource=None, total_count=None, next_page=None,
                  container=None):
         super(ResponseInfo, self).__init__(about, types, properties, resource)
         self.__total_count = total_count if total_count is not None else 0
         self.__next_page = next_page if next_page is not None else None
         self.__container = container if container is not None else None
+        self.__members = list()
+
+        self.__title = title if title is not None else ''
+
+    @property
+    def title(self):
+        return self.__title
+
+    @title.setter
+    def title(self, title):
+        if isinstance(title, str):
+            self.__title = title
+        else:
+            raise ValueError('The title must be an instance of str')
+
+    @property
+    def members(self):
+        return self.__members
+
+    @members.setter
+    def members(self, members):
+        self.__members = members
 
     def to_rdf(self, graph):
         super(ResponseInfo, self).to_rdf(graph)
 
-        ri = Resource(graph, BNode())
+        uri = self.about
+        ri = Resource(graph, URIRef(uri))
         ri.add(RDF.type, OSLC.ResponseInfo)
+
+        if self.title:
+            ri.add(DCTERMS.title, Literal(self.title, datatype=XSD.Literal))
+
+        if self.members:
+            for item in self.members:
+                item_url = uri + '/' + item.identifier
+                member = Resource(graph, URIRef(item_url))
+                ri.add(RDFS.member, member)
 
         return ri
 

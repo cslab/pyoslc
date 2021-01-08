@@ -17,7 +17,7 @@ from werkzeug.http import http_date
 
 from app.api.adapter.exceptions import NotModified
 from app.api.adapter.mappings.specification import specification_map
-from app.api.adapter.namespaces.business import get_requirement_list, get_requirement
+from app.api.adapter.namespaces.business import get_requirement_list, get_requirement, attributes
 from app.api.adapter.namespaces.rm.csv_requirement_repository import CsvRequirementRepository
 from app.api.adapter.namespaces.rm.models import specification
 from app.api.adapter.namespaces.rm.parsers import specification_parser
@@ -159,12 +159,14 @@ class ResourceOperation(OslcResource):
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
 
         data = get_requirement_list(base_url, select, where)
-        response_info = ResponseInfo()
+        response_info = ResponseInfo(base_url)
         response_info.total_count = len(data)
+        response_info.title = 'Query Results for Requirements'
 
-        # graph = response_info.to_rdf(self.graph)
+        response_info.members = data
+        response_info.to_rdf(self.graph)
 
-        return self.create_response(graph=data)
+        return self.create_response(graph=self.graph)
 
     # @adapter_ns.expect(specification)
     def post(self, service_provider_id):
@@ -249,8 +251,9 @@ class ResourcePreview(OslcResource):
         requirement = get_requirement(base_url, requirement_id)
         if requirement:
             requirement.about = base_url
+            requirement.to_rdf(self.graph, base_url, attributes)
 
-        if accept.find('application/x-oslc-compact+xml') or accept.find(', application/x-jazz-compact-rendering'):
+        if 'application/x-oslc-compact+xml' in accept or ', application/x-jazz-compact-rendering' in accept:
             compact = Compact(about=base_url)
             compact.title = requirement.identifier if requirement else 'REQ Not Found'
             compact.icon = url_for('oslc.static', filename='pyicon24.ico', _external=True)

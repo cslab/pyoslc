@@ -18,3 +18,9 @@ class PyOSLC:
             '/oslc/services/provider/{}'.format(service_provider),
             headers=self.headers
         )
+
+    def get_query_capability(self, service_provider):
+        return self._client.get(
+            '/oslc/services/provider/{}/resources/requirement'.format(service_provider),
+            headers=self.headers
+        )
