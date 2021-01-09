@@ -1,5 +1,4 @@
 import hashlib
-import re
 from datetime import date
 
 from rdflib import URIRef, Literal, RDF, XSD, BNode
