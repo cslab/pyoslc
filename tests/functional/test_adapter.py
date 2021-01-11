@@ -42,7 +42,9 @@ def test_service_provider(pyoslc):
     THEN
         validating the status code of the response
         parsing the response content into a graph in the application/rdf+xml format
-        validating whether the ServiceProviderCatalog statement is within the graph
+        validating whether the ServiceProviderCatalog statement is not within the graph
+        validating that the ServiceProvider is within the graph
+        validating the attributes for the integration with a global configuration project
     """
 
     response = pyoslc.get_service_provider('Project-1')
@@ -78,7 +80,9 @@ def test_query_capability(pyoslc):
     THEN
         validating the status code of the response
         parsing the response content into a graph in the application/rdf+xml format
-        validating whether the ServiceProviderCatalog statement is within the graph
+        validating whether the ResponseInfo statement is within the graph
+        validating that the member attribute is present on the graph
+        validating that at least the first three records from the csv file are present
     """
 
     response = pyoslc.get_query_capability('Project-1')
@@ -97,4 +101,13 @@ def test_query_capability(pyoslc):
     assert (ri, RDFS.member, None) in g, 'The response does not contain a member'
     assert (ri, DCTERMS.title, None) in g, 'The ResponseInfo should have a title'
 
-    assert [t for t in g.objects(ri, RDFS.member)] is not None, 'The ResponseInfo should have members'
+    members = [m for m in g.objects(ri, RDFS.member)]
+    assert members is not None, 'The ResponseInfo should have members'
+
+    m1 = URIRef(ri + '/X1C2V3B1')
+    m2 = URIRef(ri + '/X1C2V3B2')
+    m3 = URIRef(ri + '/X1C2V3B3')
+
+    assert m1 in members, 'The ResponseInfo does not contain the member X1C2V3B1'
+    assert m2 in members, 'The ResponseInfo does not contain the member X1C2V3B1'
+    assert m3 in members, 'The ResponseInfo does not contain the member X1C2V3B1'
