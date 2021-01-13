@@ -111,3 +111,47 @@ def test_query_capability(pyoslc):
     assert m1 in members, 'The ResponseInfo does not contain the member X1C2V3B1'
     assert m2 in members, 'The ResponseInfo does not contain the member X1C2V3B1'
     assert m3 in members, 'The ResponseInfo does not contain the member X1C2V3B1'
+
+
+def test_creation_factory(pyoslc):
+    """
+    GIVEN the PyOSLC API
+    WHEN requesting the creation factory endpoint to create a new
+         resource on the graph within a specific project id
+    THEN
+        validating the status code of the response
+        parsing the response content into a graph in the application/rdf+xml format
+        validating whether the ResponseInfo statement is within the graph
+        validating that the member attribute is present on the graph
+        validating that at least the first three records from the csv file are present
+    """
+
+    payload = """
+    <rdf:RDF 
+        xmlns:oslc_rm="http://open-services.net/ns/rm#"
+        xmlns:dcterms="http://purl.org/dc/terms/"
+        xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+        
+        <oslc_rm:Requirement rdf:about="http://localhost/oslc/services/provider/Project-1/resources/requirement/X1C2V3B3">
+            <oslc_rm:satisfiedBy>Software Development</oslc_rm:satisfiedBy>
+            <dcterms:description>The OSLC RM Specification needs to be awesome 3</dcterms:description>
+            <oslc_rm:constrainedBy>Customer Requirement</oslc_rm:constrainedBy>
+            <oslc_rm:trackedBy>0</oslc_rm:trackedBy>
+            <oslc_rm:validatedBy>1</oslc_rm:validatedBy>
+            <dcterms:title>The SAFER FTA should not limit EVA crewmember mobility</dcterms:title>
+            <oslc_rm:affectedBy>0</oslc_rm:affectedBy>
+            <dcterms:shortTitle>SDK-Dev</dcterms:shortTitle>
+            <dcterms:creator>Mario</dcterms:creator>
+            <dcterms:subject>Project-1</dcterms:subject>
+            <oslc_rm:elaboratedBy>Ian Altman</oslc_rm:elaboratedBy>
+            <dcterms:identifier>X1C2V3B3</dcterms:identifier>
+            <oslc_rm:decomposedBy>Draft</oslc_rm:decomposedBy>
+        </oslc_rm:Requirement>
+    </rdf:RDF>
+    """
+
+    response = pyoslc.post_creation_factory('Project-1', payload)
+    assert response is not None
+    assert response.status_code == 201
+
+    assert response.headers.get('etag') is not None

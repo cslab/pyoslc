@@ -1,3 +1,5 @@
+import logging
+
 from rdflib import RDF
 from rdflib.extras.describer import Describer
 from rdflib.namespace import DCTERMS
@@ -5,6 +7,8 @@ from rdflib.namespace import DCTERMS
 from pyoslc.resources.models import BaseResource
 from pyoslc.vocabularies.rm import OSLC_RM
 import six
+
+logger = logging.getLogger(__name__)
 
 
 class Requirement(BaseResource):
@@ -52,7 +56,7 @@ class Requirement(BaseResource):
     def get_absolute_url(base_url, identifier):
         return base_url + "/" + identifier
 
-    def to_rdf(self, graph, base_url, attributes):
+    def to_rdf(self, graph, base_url=None, attributes=None):
         assert attributes is not None, 'The mapping for attributes is required'
 
         d = Describer(graph, base=base_url)
@@ -72,6 +76,10 @@ class Requirement(BaseResource):
                 if isinstance(attr, set):
                     if len(attr) > 0:
                         d.value(predicate, attr.pop())
+                    else:
+                        attr = getattr(self, attribute_key)
+                        val = attr.pop()
+                        d.value(predicate, val)
                 else:
                     d.value(predicate, getattr(self, attribute_key))
 
@@ -86,8 +94,8 @@ class Requirement(BaseResource):
                 if hasattr(self, attribute_name):
                     attribute_value = getattr(self, attribute_name)
                     if isinstance(attribute_value, set):
-                        attribute_value.clear()
-                        attribute_value.add(data[key])
+                        attr = getattr(self, attribute_name)
+                        attr.add(data[key])
                     else:
                         setattr(self, attribute_name, data[key])
 
@@ -100,6 +108,7 @@ class Requirement(BaseResource):
             for k, v in six.iteritems(attributes):
                 reviewed.append(v['attribute'])
                 item = {v['attribute']: a for a in self.__dict__.keys() if a.lower() == v['attribute'].lower()}
+                predicate = None
                 if item:
                     try:
                         predicate = eval(v['oslc_property'])
@@ -114,8 +123,8 @@ class Requirement(BaseResource):
                     if hasattr(self, attribute_name):
                         attribute_value = getattr(self, attribute_name)
                         if isinstance(attribute_value, set):
-                            attribute_value.clear()
-                            # attribute_value.add(data[key])
+                            at = getattr(self, attribute_name)
+                            at.add(i)
                         else:
                             setattr(self, attribute_name, i)
 
@@ -145,7 +154,17 @@ class Requirement(BaseResource):
                 attribute_value = getattr(self, attribute_name)
                 if attribute_value:
                     if isinstance(attribute_value, set):
-                        specification[key] = attribute_value.pop()
+                        val = attribute_value.pop()
+                        if len(attribute_value) == 0:
+                            specification[key] = val
+                        else:
+                            try:
+                                attr = specification[key]
+                            except KeyError:
+                                specification[key] = set()
+                                attr = specification[key]
+                            attr.add(val)
+                        attribute_value.add(val)
                     else:
                         specification[key] = attribute_value
 

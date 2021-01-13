@@ -24,3 +24,10 @@ class PyOSLC:
             '/oslc/services/provider/{}/resources/requirement'.format(service_provider),
             headers=self.headers
         )
+
+    def post_creation_factory(self, service_provider, payload):
+        return self._client.post(
+            '/oslc/services/provider/{}/resources/requirement'.format(service_provider),
+            data=payload,
+            headers=self.headers
+        )

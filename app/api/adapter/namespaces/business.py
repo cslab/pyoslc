@@ -58,7 +58,7 @@ def create_requirement(data):
         requirement.from_json(data=data, attributes=attributes)
         specification = requirement.to_mapped_object(attributes)
 
-        path = os.path.join(os.path.abspath(''), 'examples', 'specifications.csv')
+        path = 'examples/specifications.csv'
         tempfile = NamedTemporaryFile(mode='w', delete=False)
 
         with open(path, 'rb') as f:
@@ -94,8 +94,8 @@ def update_requirement(id, data):
 
     if data:
         requirement = Requirement()
-        requirement.from_json(data=data)
-        specification = requirement.to_mapped_object()
+        requirement.from_json(data=data, attributes=attributes)
+        specification = requirement.to_mapped_object(attributes)
 
         path = os.path.join(os.path.abspath(''), 'examples', 'specifications.csv')
         field_names = get_field_names(path=path)

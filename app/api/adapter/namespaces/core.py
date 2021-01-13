@@ -16,7 +16,6 @@ from werkzeug.exceptions import UnsupportedMediaType, NotAcceptable, Preconditio
 from werkzeug.http import http_date
 
 from app.api.adapter.exceptions import NotModified
-from app.api.adapter.mappings.specification import specification_map
 from app.api.adapter.namespaces.business import get_requirement_list, get_requirement, attributes
 from app.api.adapter.namespaces.rm.csv_requirement_repository import CsvRequirementRepository
 from app.api.adapter.namespaces.rm.models import specification
@@ -179,16 +178,20 @@ class ResourceOperation(OslcResource):
                                service_provider_id=service_provider_id)
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
 
-        attributes = specification_map
-
-        g = Graph()
-        try:
-            g.parse(data=request.data, format='xml')
-        except SAXParseException:
-            raise BadRequest()
-
         req = Requirement()
-        req.from_rdf(g, attributes=attributes)
+
+        if accept == 'application/json':
+            data = specification_parser.parse_args()
+            req.from_json(data, attributes)
+        else:
+
+            g = Graph()
+            try:
+                g.parse(data=request.data, format='xml')
+            except SAXParseException:
+                raise BadRequest()
+
+            req.from_rdf(g, attributes=attributes)
 
         req.identifier = BNode().title()
         req.about = base_url + '/' + req.identifier
@@ -196,11 +199,11 @@ class ResourceOperation(OslcResource):
         data = req.to_mapped_object(attributes)
 
         if data:
-            path = os.path.join(os.path.abspath(''), 'examples', 'specifications.csv')
+            path = 'examples/specifications.csv'
 
             tempfile = NamedTemporaryFile(mode='w', delete=False)
 
-            with open(path, 'rb') as f:
+            with open(path, 'r') as f:
                 reader = csv.DictReader(f, delimiter=';')
                 field_names = reader.fieldnames
 
@@ -284,8 +287,6 @@ class ResourcePreview(OslcResource):
                                service_provider_id=service_provider_id)
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
 
-        attributes = specification_map
-
         data = specification_parser.parse_args()
 
         req = Requirement()
@@ -368,8 +369,6 @@ class ResourcePreview(OslcResource):
             if dig != etag.strip("\""):
                 raise PreconditionFailed()
 
-        attributes = specification_map
-
         g = Graph()
         try:
             g.parse(data=request.data, format='xml')
@@ -448,7 +447,7 @@ class ResourcePreview(OslcResource):
             if not modified:
                 raise NotModified()
 
-            r.to_rdf(self.graph, base_url, attributes=specification_map)
+            r.to_rdf(self.graph, base_url, attributes=attributes)
 
             return self.create_response(self.graph)
 

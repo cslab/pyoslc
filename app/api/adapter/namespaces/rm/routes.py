@@ -122,11 +122,11 @@ class RequirementList(Resource):
         data = req.to_mapped_object(attributes)
 
         if data:
-            path = os.path.join(os.path.abspath(''), 'examples', 'specifications.csv')
+            path = 'examples/specifications.csv'
 
             tempfile = NamedTemporaryFile(mode='w', delete=False)
 
-            with open(path, 'rb') as f:
+            with open(path, 'r') as f:
                 reader = csv.DictReader(f, delimiter=';')
                 field_names = reader.fieldnames
 

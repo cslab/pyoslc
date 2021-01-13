@@ -1,6 +1,7 @@
 import hashlib
 from datetime import date
 
+import six
 from rdflib import URIRef, Literal, RDF, XSD, BNode
 from rdflib.namespace import DCTERMS, RDFS
 from rdflib.resource import Resource
@@ -83,7 +84,12 @@ class AbstractResource(object):
                     state += value
 
         dig = hashlib.sha256()
-        dig.update(state)
+        if six.PY2:
+            dig.update(state)
+        if six.PY3:
+            sb = bytes(state, 'utf-8')
+            dig.update(sb)
+
         return str(dig.hexdigest())
 
 
