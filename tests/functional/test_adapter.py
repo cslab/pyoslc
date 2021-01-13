@@ -132,7 +132,8 @@ def test_creation_factory(pyoslc):
         xmlns:dcterms="http://purl.org/dc/terms/"
         xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
         
-        <oslc_rm:Requirement rdf:about="http://localhost/oslc/services/provider/Project-1/resources/requirement/X1C2V3B3">
+        <oslc_rm:Requirement 
+            rdf:about="http://localhost/oslc/services/provider/Project-1/resources/requirement/X1C2V3B3">
             <oslc_rm:satisfiedBy>Software Development</oslc_rm:satisfiedBy>
             <dcterms:description>The OSLC RM Specification needs to be awesome 3</dcterms:description>
             <oslc_rm:constrainedBy>Customer Requirement</oslc_rm:constrainedBy>
