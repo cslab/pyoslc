@@ -51,7 +51,7 @@ def test_insert_requirement(client):
                            data=json.dumps(specification),
                            content_type='application/json')
     assert response.status_code == 201
-    assert response.data == ''
+    assert response.data == b''
 
     response = client.delete('oslc/rm/requirement/X1C2V3B7',
                              content_type='application/json')
@@ -82,7 +82,7 @@ def test_update_requirement(client):
                           data=json.dumps(specification),
                           content_type='application/json')
     assert response.status_code == 304
-    assert response.data == ''
+    assert response.data == b''
 
 
 def test_update_not_modified_requirement(client):
@@ -108,7 +108,7 @@ def test_update_not_modified_requirement(client):
                           data=json.dumps(specification),
                           content_type='application/json')
     assert response.status_code == 304
-    assert response.data == ''
+    assert response.data == b''
 
 
 def test_delete_requirement(client):
@@ -120,11 +120,11 @@ def test_delete_requirement(client):
     response = client.delete('oslc/rm/requirement/X1C2V3B7',
                              content_type='application/json')
     assert response.status_code == 304
-    assert response.data == ''
+    assert response.data == b''
 
 
 def test_delete_not_modified_requirement(client):
     response = client.delete('oslc/rm/requirement/X1C2V3B8',
                              content_type='application/json')
     assert response.status_code == 304
-    assert response.data == ''
+    assert response.data == b''

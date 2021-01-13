@@ -67,11 +67,11 @@ class Requirement(BaseResource):
         d.rdftype(OSLC_RM.Requirement)
 
         for attribute_key in self.__dict__.keys():
-            item = {attribute_key: list(v.values()) for k, v in six.iteritems(attributes) if
-                    v['attribute'] == attribute_key}
+            item = {v['attribute']: v['oslc_property'] for k, v in six.iteritems(attributes) if
+                    attribute_key == v['attribute']}
 
-            if list(item.values()) and attribute_key in list(item.values())[0]:
-                predicate = eval(list(item.values())[0][1])
+            if item and attribute_key in item.keys():
+                predicate = eval(item.get(attribute_key))
                 attr = getattr(self, attribute_key)
                 if isinstance(attr, set):
                     if len(attr) > 0:

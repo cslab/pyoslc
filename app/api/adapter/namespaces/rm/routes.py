@@ -5,15 +5,17 @@ from tempfile import NamedTemporaryFile
 
 from flask import request, render_template, make_response, current_app
 from flask_restx import Resource
-from rdflib import Graph, RDF
+from rdflib import Graph, RDF, DCTERMS
 from rdflib.plugin import PluginException
 
 from app.api.adapter import api
+from app.api.adapter.exceptions import NotModified
 from app.api.adapter.mappings.specification import specification_map
 from app.api.adapter.namespaces.business import get_requirement, get_requirement_list
 from app.api.adapter.namespaces.rm.models import specification
 from app.api.adapter.namespaces.rm.parsers import specification_parser, csv_file_upload
 from pyoslc.resources.domains.rm import Requirement
+from pyoslc.vocabularies.core import OSLC
 from pyoslc.vocabularies.rm import OSLC_RM
 
 attributes = specification_map
@@ -44,7 +46,15 @@ class RequirementList(Resource):
 
             # Loading information from the specification.csv file
             # located on the examples folder of the pyoslc project.
-            graph = get_requirement_list(request.base_url, '', '')
+            requirements = get_requirement_list(request.base_url, '', '')
+
+            graph = Graph()
+            graph.bind('oslc', OSLC, override=False)
+            graph.bind('dcterms', DCTERMS, override=False)
+            graph.bind('oslc_rm', OSLC_RM, override=False)
+
+            for requirement in requirements:
+                graph += requirement.to_rdf(graph, request.base_url, attributes)
 
             if 'text/html' in content_type:
                 # Validating whether the request comes from
@@ -71,14 +81,14 @@ class RequirementList(Resource):
         except PluginException as pe:
             response_object = {
                 'status': 'fail',
-                'message': 'Content-Type Incompatible: {}'.format(pe.message)
+                'message': 'Content-Type Incompatible: {}'.format(pe)
             }
             return response_object, 400
 
         except Exception as e:
             response_object = {
                 'status': 'fail',
-                'message': 'An exception has ocurred: {}'.format(e.message)
+                'message': 'An exception has occurred: {}'.format(e)
             }
             return response_object, 500
 
@@ -216,7 +226,7 @@ class RequirementItem(Resource):
         except PluginException as pe:
             response_object = {
                 'status': 'fail',
-                'message': 'Content-Type Incompatible: {}'.format(pe.message)
+                'message': 'Content-Type Incompatible: {}'.format(pe)
             }
             return response_object, 400
 
@@ -237,11 +247,11 @@ class RequirementItem(Resource):
         data = specification_parser.parse_args()
 
         if data:
-            path = os.path.join(os.path.abspath(''), 'examples', 'specifications.csv')
+            path = 'examples/specifications.csv'
 
             tempfile = NamedTemporaryFile(mode='w', delete=False)
 
-            with open(path, 'rb') as f:
+            with open(path, 'r') as f:
                 reader = csv.DictReader(f, delimiter=';')
                 field_names = reader.fieldnames
 
@@ -252,8 +262,8 @@ class RequirementItem(Resource):
                 for row in reader:
                     if row['Specification_id'] == str(id):
                         rq = Requirement()
-                        rq.from_json(data)
-                        row = rq.to_mapped_object()
+                        rq.from_json(data, attributes)
+                        row = rq.to_mapped_object(attributes)
                         row['Specification_id'] = id
                         modified = True
                     writer.writerow(row)
@@ -271,11 +281,11 @@ class RequirementItem(Resource):
         This method will remove a requirement from the store
         """
 
-        path = os.path.join(os.path.abspath(''), 'examples', 'specifications.csv')
+        path = 'examples/specifications.csv'
 
         tempfile = NamedTemporaryFile(mode='w', delete=False)
 
-        with open(path, 'rb') as f:
+        with open(path, 'r') as f:
             reader = csv.DictReader(f, delimiter=';')
             field_names = reader.fieldnames
 
@@ -292,7 +302,7 @@ class RequirementItem(Resource):
         shutil.move(tempfile.name, path)
 
         if not modified:
-            return make_response('{Not Modified}', 304)
+            raise NotModified  # make_response('{Not Modified}', 304)
 
         return make_response('{}', 200)
 
