@@ -1,16 +1,27 @@
-
-def test_index(client):
+def test_index(pyoslc):
     """
-    Testing the information of the web page
-    retrieving the information for the root page
+    GIVEN The PyOSLC API
+    WHEN retrieving the root path
+    THEN it should return the home page with the links to
+         the swagger application with the /oslc path
     """
-    response = client.get('/')
+    response = pyoslc.get_swagger()
     assert b"PyOSLC" in response.data
     assert b"An OSLC adapter implemented on Python." in response.data
     assert b"For showing the REST API implementation for the OSLC adapter click the next button." in response.data
     assert b'href="/"' in response.data
     assert b'href="/oslc/"' in response.data
-    assert b'href="/oslc/rm/requirement"' in response.data
+
+
+def test_oslc(pyoslc):
+    """
+    GIVEN The PyOSLC API that includes the swagger library
+    WHEN requesting the oslc path
+    THEN the swagger.json elements should be validated
+    """
+    response = pyoslc.get_swagger('/oslc/')
+    assert response.status_code == 200
+    assert b'swagger.json' in response.data
 
 
 def test_list_requirement(client):

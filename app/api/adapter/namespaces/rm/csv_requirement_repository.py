@@ -37,6 +37,7 @@ class CsvRequirementRepository(Repository):
             os.path.abspath(''), 'examples', 'specifications.csv')
 
     def find(self, requirement_id):
+        requirement = None
         with open(self.csv_file_path, 'r') as f:
             reader = csv.DictReader(f, delimiter=';')
             for row in reader:

@@ -7,7 +7,17 @@ class PyOSLC:
             'Content-Type': 'application/rdf+xml'
         }
 
-    def get_catalog(self):
+    def get_swagger(self, path='/'):
+        return self._client.get(path)
+
+    def get_catalog(self, rdf_presentation=None):
+
+        if rdf_presentation:
+            self.headers = {
+                'accept': rdf_presentation,
+                'content-type': rdf_presentation
+            }
+
         return self._client.get(
             '/oslc/services/catalog',
             headers=self.headers
@@ -30,4 +40,116 @@ class PyOSLC:
             '/oslc/services/provider/{}/resources/requirement'.format(service_provider),
             data=payload,
             headers=self.headers
+        )
+
+    def get_query_resource(self, service_provider, resource):
+        return self._client.get(
+            '/oslc/services/provider/{}/resources/requirement/{}'.format(service_provider, resource),
+            headers=self.headers
+        )
+
+    def put_query_capability(self, service_provider, resource, payload, etag):
+        headers = {'If-Match': etag}
+        self.headers.update(headers)
+        return self._client.put(
+            '/oslc/services/provider/{}/resources/requirement/{}'.format(service_provider, resource),
+            data=payload,
+            headers=self.headers
+        )
+
+    def delete_query_capability(self, service_provider, resource):
+        return self._client.delete(
+            '/oslc/services/provider/{}/resources/requirement/{}'.format(service_provider, resource),
+            headers=self.headers
+        )
+
+    def create(self, project_id):
+        payload = """
+            <rdf:RDF
+                xmlns:oslc_rm="http://open-services.net/ns/rm#"
+                xmlns:dcterms="http://purl.org/dc/terms/"
+                xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+
+                <oslc_rm:Requirement
+                    rdf:about="http://localhost/oslc/services/provider/Project-1/resources/requirement/X1C2V3B6">
+                    <oslc_rm:satisfiedBy>Software Development</oslc_rm:satisfiedBy>
+                    <dcterms:description>The OSLC RM Specification needs to be awesome 3</dcterms:description>
+                    <oslc_rm:constrainedBy>Customer Requirement</oslc_rm:constrainedBy>
+                    <oslc_rm:trackedBy>0</oslc_rm:trackedBy>
+                    <oslc_rm:validatedBy>1</oslc_rm:validatedBy>
+                    <dcterms:title>The SAFER FTA should not limit EVA crewmember mobility</dcterms:title>
+                    <oslc_rm:affectedBy>0</oslc_rm:affectedBy>
+                    <dcterms:shortTitle>SDK-Dev</dcterms:shortTitle>
+                    <dcterms:creator>Mario</dcterms:creator>
+                    <dcterms:subject>Project-1</dcterms:subject>
+                    <oslc_rm:elaboratedBy>Ian Altman</oslc_rm:elaboratedBy>
+                    <dcterms:identifier>X1C2V3B6</dcterms:identifier>
+                    <oslc_rm:decomposedBy>Draft</oslc_rm:decomposedBy>
+                </oslc_rm:Requirement>
+            </rdf:RDF>
+            """
+
+        return self.post_creation_factory(project_id, payload)
+
+    def update(self, project_id, etag):
+        payload = """
+            <rdf:RDF
+                xmlns:oslc_rm="http://open-services.net/ns/rm#"
+                xmlns:dcterms="http://purl.org/dc/terms/"
+                xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+                <oslc_rm:Requirement
+                    rdf:about="http://localhost/oslc/services/provider/Project-1/resources/requirement/X1C2V3B6">
+                    <oslc_rm:satisfiedBy>[[UPDATED]] - Software Development</oslc_rm:satisfiedBy>
+                    <dcterms:description>[[UPDATED]] - The OSLC RM Specification needs to be awesome 3</dcterms:description>
+                    <oslc_rm:constrainedBy>[[UPDATED]] - Customer Requirement</oslc_rm:constrainedBy>
+                    <oslc_rm:trackedBy>0</oslc_rm:trackedBy>
+                    <oslc_rm:validatedBy>1</oslc_rm:validatedBy>
+                    <dcterms:title>[[UPDATED]] - The SAFER FTA should not limit EVA crewmember mobility</dcterms:title>
+                    <oslc_rm:affectedBy>0</oslc_rm:affectedBy>
+                    <dcterms:shortTitle>[[UPDATED]] - SDK-Dev</dcterms:shortTitle>
+                    <dcterms:creator>Mario</dcterms:creator>
+                    <dcterms:subject>Project-1</dcterms:subject>
+                    <oslc_rm:elaboratedBy>Ian Altman</oslc_rm:elaboratedBy>
+                    <dcterms:identifier>X1C2V3B6</dcterms:identifier>
+                    <oslc_rm:decomposedBy>Draft</oslc_rm:decomposedBy>
+                </oslc_rm:Requirement>
+            </rdf:RDF>
+            """
+
+        return self.put_query_capability(project_id, 'X1C2V3B6', payload, etag)
+
+    def delete(self, project_id, resource_id):
+        return self.delete_query_capability(project_id, resource_id)
+
+    def list(self):
+        """
+        Method for listing the requirements/specifications
+        taken from the synthetic data
+        """
+
+        headers = {
+            'Content-Type': 'application/json-ld',
+            'Accept': 'application/json-ld'
+        }
+
+        return self._client.get(
+            'oslc/rm/requirement',
+            headers=headers
+        )
+
+    def item(self, requirement_id):
+        """
+        Method for retrieving the information
+        for a specific requirement/specification
+        based on the id sent as parameter
+        """
+
+        headers = {
+            'Content-Type': 'application/json-ld',
+            'Accept': 'application/json-ld'
+        }
+
+        return self._client.get(
+            'oslc/rm/requirement/' + requirement_id,
+            headers=headers
         )

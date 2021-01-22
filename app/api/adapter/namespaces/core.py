@@ -1,24 +1,21 @@
-import csv
-import os
-import shutil
+import logging
 from datetime import datetime
-from tempfile import NamedTemporaryFile
 from six.moves.urllib.parse import urlparse
 from xml.sax import SAXParseException
 
 from flask import request, make_response, url_for, render_template
 from flask_restx import Namespace, Resource
-from rdflib import Graph, RDF, RDFS, BNode
+from rdflib import Graph, RDF, RDFS
 from rdflib.namespace import DCTERMS
-from rdflib.plugin import register
+from rdflib.plugin import register, PluginException
 from rdflib.serializer import Serializer
 from werkzeug.exceptions import UnsupportedMediaType, NotAcceptable, PreconditionFailed, NotFound, BadRequest
 from werkzeug.http import http_date
 
-from app.api.adapter.exceptions import NotModified
-from app.api.adapter.namespaces.business import get_requirement_list, get_requirement, attributes
+from app.api.adapter import api
+from app.api.adapter.namespaces.business import get_requirement_list, get_requirement, attributes, create_requirement, \
+    update_requirement, delete_requirement
 from app.api.adapter.namespaces.rm.csv_requirement_repository import CsvRequirementRepository
-from app.api.adapter.namespaces.rm.models import specification
 from app.api.adapter.namespaces.rm.parsers import specification_parser
 from app.api.adapter.resources.resource_service import config_service_resource
 from app.api.adapter.services.providers import ServiceProviderCatalogSingleton, RootServiceSingleton, PublisherSingleton
@@ -27,6 +24,8 @@ from pyoslc.resources.domains.rm import Requirement
 from pyoslc.resources.models import ResponseInfo, Compact, Preview
 from pyoslc.vocabularies.core import OSLC
 from pyoslc.vocabularies.jazz import JAZZ_PROCESS
+
+logger = logging.getLogger(__name__)
 
 adapter_ns = Namespace(name='adapter', description='Python OSLC Adapter', path='/services',)
 
@@ -55,8 +54,10 @@ class OslcResource(Resource):
 
     def get(self, *args, **kwargs):
         accept = request.headers.get('accept')
-        if not (accept in ('application/rdf+xml', 'application/json', 'application/ld+json',
-                           'application/xml', 'application/atom+xml', )):
+        if not (accept in ('application/rdf+xml', 'application/json',
+                           'application/ld+json', 'application/json-ld',
+                           'application/xml', 'application/atom+xml',
+                           'text/turtle', )):
             raise UnsupportedMediaType
 
     @staticmethod
@@ -94,7 +95,15 @@ class OslcResource(Resource):
             rdf_format = 'pretty-xml'
             content = 'application/rdf+xml'
 
-        data = graph.serialize(format=rdf_format)
+        try:
+            logger.debug('Parsing the Graph into {}'.format(rdf_format))
+            data = graph.serialize(format=rdf_format)
+        except PluginException as pe:
+            response_object = {
+                'status': 'fail',
+                'message': 'Content-Type Incompatible: {}'.format(pe)
+            }
+            return response_object, 400
 
         # Sending the response to the client
         response = make_response(data.decode('utf-8'), 200)
@@ -109,12 +118,16 @@ class OslcResource(Resource):
 
 
 @adapter_ns.route('/catalog')
+@api.representation('application/rdf+xml')
+@api.representation('application/json-ld')
+@api.representation('text/turtle')
 class ServiceProviderCatalog(OslcResource):
 
     def __init__(self, *args, **kwargs):
         super(ServiceProviderCatalog, self).__init__(*args, **kwargs)
 
     def get(self):
+        super(ServiceProviderCatalog, self).get()
         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint))
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
 
@@ -127,12 +140,16 @@ class ServiceProviderCatalog(OslcResource):
 
 
 @adapter_ns.route('/provider/<service_provider_id>')
+@api.representation('application/rdf+xml')
+@api.representation('application/json-ld')
+@api.representation('text/turtle')
 class ServiceProvider(OslcResource):
 
     def __init__(self, *args, **kwargs):
         super(ServiceProvider, self).__init__(*args, **kwargs)
 
     def get(self, service_provider_id):
+        super(ServiceProvider, self).get()
         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
                                service_provider_id=service_provider_id)
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
@@ -140,11 +157,18 @@ class ServiceProvider(OslcResource):
         service_provider_url = urlparse(base_url).geturl()
 
         provider = ServiceProviderCatalogSingleton.get_provider(service_provider_url, service_provider_id)
+
+        if not provider:
+            return make_response('No resources with ID {}'.format(service_provider_id), 404)
+
         provider.to_rdf(self.graph)
         return self.create_response(graph=self.graph)
 
 
 @adapter_ns.route('/provider/<service_provider_id>/resources/requirement')
+@api.representation('application/rdf+xml')
+@api.representation('application/json-ld')
+@api.representation('text/turtle')
 class ResourceOperation(OslcResource):
 
     def get(self, service_provider_id):
@@ -158,6 +182,9 @@ class ResourceOperation(OslcResource):
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
 
         data = get_requirement_list(base_url, select, where)
+        if len(data) == 0:
+            return make_response('No resources form provider with ID {}'.format(service_provider_id), 404)
+
         response_info = ResponseInfo(base_url)
         response_info.total_count = len(data)
         response_info.title = 'Query Results for Requirements'
@@ -178,70 +205,36 @@ class ResourceOperation(OslcResource):
                                service_provider_id=service_provider_id)
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
 
-        req = Requirement()
-
         if accept == 'application/json':
             data = specification_parser.parse_args()
-            req.from_json(data, attributes)
         else:
-
-            g = Graph()
             try:
-                g.parse(data=request.data, format='xml')
+                data = Graph().parse(data=request.data, format='xml')
             except SAXParseException:
                 raise BadRequest()
 
-            req.from_rdf(g, attributes=attributes)
+        req = create_requirement(data)
+        if isinstance(req, Requirement):
+            req.to_rdf(self.graph, base_url=base_url, attributes=attributes)
+            data = self.graph.serialize(format='pretty-xml')
 
-        req.identifier = BNode().title()
-        req.about = base_url + '/' + req.identifier
+            # Sending the response to the client
+            response = make_response(data.decode('utf-8'), 201)
+            response.headers['Content-Type'] = 'application/rdf+xml; charset=UTF-8'
+            response.headers['OSLC-Core-Version'] = "2.0"
+            response.headers['Location'] = base_url + '/' + req.identifier
+            response.set_etag(req.digestion())
+            response.headers['Last-Modified'] = http_date(datetime.now())
 
-        data = req.to_mapped_object(attributes)
-
-        if data:
-            path = 'examples/specifications.csv'
-
-            tempfile = NamedTemporaryFile(mode='w', delete=False)
-
-            with open(path, 'r') as f:
-                reader = csv.DictReader(f, delimiter=';')
-                field_names = reader.fieldnames
-
-            with open(path, 'r') as csvfile, tempfile:
-                reader = csv.DictReader(csvfile, fieldnames=field_names, delimiter=';')
-                writer = csv.DictWriter(tempfile, fieldnames=field_names, delimiter=';')
-                exist = False
-                for row in reader:
-                    if row['Specification_id'] == data['Specification_id']:
-                        exist = True
-                    writer.writerow(row)
-
-                if not exist:
-                    writer.writerow(data)
-
-            shutil.move(tempfile.name, path)
-
-            if exist:
-                raise NotModified()
-
+            return response
         else:
-            raise NotFound()
-
-        req.to_rdf(self.graph, base_url=base_url, attributes=attributes)
-        data = self.graph.serialize(format='pretty-xml')
-
-        # Sending the response to the client
-        response = make_response(data.decode('utf-8'), 201)
-        response.headers['Content-Type'] = 'application/rdf+xml; charset=UTF-8'
-        response.headers['OSLC-Core-Version'] = "2.0"
-        response.headers['Location'] = base_url + '/' + req.identifier
-        response.set_etag(req.digestion())
-        response.headers['Last-Modified'] = http_date(datetime.now())
-
-        return response
+            return make_response(req.description, req.code)
 
 
 @adapter_ns.route('/provider/<service_provider_id>/resources/requirement/<requirement_id>')
+@api.representation('application/rdf+xml')
+@api.representation('application/json-ld')
+@api.representation('text/turtle')
 class ResourcePreview(OslcResource):
 
     def get(self, service_provider_id, requirement_id):
@@ -281,62 +274,6 @@ class ResourcePreview(OslcResource):
                                     rdf_format='pretty-xml',
                                     etag=True)
 
-    @adapter_ns.expect(specification)
-    def post(self, service_provider_id):
-        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
-                               service_provider_id=service_provider_id)
-        base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
-
-        data = specification_parser.parse_args()
-
-        req = Requirement()
-        req.from_json(data, attributes)
-        data = req.to_mapped_object(attributes)
-
-        if data:
-            path = os.path.join(os.path.abspath(''), 'examples', 'specifications.csv')
-
-            tempfile = NamedTemporaryFile(mode='w', delete=False)
-
-            with open(path, 'rb') as f:
-                reader = csv.DictReader(f, delimiter=';')
-                field_names = reader.fieldnames
-
-            with open(path, 'r') as csvfile, tempfile:
-                reader = csv.DictReader(csvfile, fieldnames=field_names, delimiter=';')
-                writer = csv.DictWriter(tempfile, fieldnames=field_names, delimiter=';')
-                exist = False
-                for row in reader:
-                    if row['Specification_id'] == data['Specification_id']:
-                        exist = True
-                    writer.writerow(row)
-
-                if not exist:
-                    writer.writerow(data)
-
-            shutil.move(tempfile.name, path)
-
-            if exist:
-                response_object = {
-                    'status': 'fail',
-                    'message': 'Not Modified'
-                }
-                return response_object, 304
-
-        else:
-            response_object = {
-                'status': 'fail',
-                'message': 'Not Found'
-            }
-            return response_object, 400
-
-        response = make_response('', 201)
-        response.headers['Content-Type'] = 'application/rdf+xml; charset=UTF-8'
-        response.headers['OSLC-Core-Version'] = "2.0"
-        response.headers['Location'] = base_url + '/' + req.identifier
-
-        return response
-
     def put(self, service_provider_id, requirement_id):
         accept = request.headers.get('accept')
         if not (accept in ('application/rdf+xml', 'application/json', 'application/ld+json',
@@ -371,88 +308,33 @@ class ResourcePreview(OslcResource):
 
         g = Graph()
         try:
-            g.parse(data=request.data, format='xml')
+            data = g.parse(data=request.data, format='xml')
         except SAXParseException:
             raise NotAcceptable()
 
-        req = Requirement()
-        req.from_rdf(g, attributes=attributes)
-        req.identifier = requirement_id
-        req.about = base_url
-
-        data = req.to_mapped_object(attributes)
-
-        if data:
-            path = os.path.join(os.path.abspath(''), 'examples', 'specifications.csv')
-
-            tempfile = NamedTemporaryFile(mode='w', delete=False)
-
-            with open(path, 'rb') as f:
-                reader = csv.DictReader(f, delimiter=';')
-                field_names = reader.fieldnames
-
-            modified = False
-            with open(path, 'r') as csvfile, tempfile:
-                reader = csv.DictReader(csvfile, fieldnames=field_names, delimiter=';')
-                writer = csv.DictWriter(tempfile, fieldnames=field_names, delimiter=';')
-                for row in reader:
-                    if row['Specification_id'] == str(requirement_id):
-                        rq = Requirement()
-                        rq.from_json(data, attributes=attributes)
-                        row = rq.to_mapped_object(attributes=attributes)
-                        row['Specification_id'] = requirement_id
-                        modified = True
-                    writer.writerow(row)
-
-            shutil.move(tempfile.name, path)
-
-            if not modified:
-                raise NotModified()
-
-        req.to_rdf(self.graph, base_url, attributes)
-
-        return self.create_response(self.graph)
+        req = update_requirement(requirement_id, data)
+        if isinstance(req, Requirement):
+            req.to_rdf(self.graph, base_url, attributes)
+            return self.create_response(self.graph)
+        else:
+            return make_response(req.description, req.code)
 
     def delete(self, service_provider_id, requirement_id):
-        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
-                               service_provider_id=service_provider_id, requirement_id=requirement_id)
-        base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
-
         rq = CsvRequirementRepository('specs')
         r = rq.find(requirement_id)
 
         if r:
-            r.about = base_url
-
-            path = os.path.join(os.path.abspath(''), 'examples', 'specifications.csv')
-
-            tempfile = NamedTemporaryFile(mode='w', delete=False)
-
-            with open(path, 'rb') as f:
-                reader = csv.DictReader(f, delimiter=';')
-                field_names = reader.fieldnames
-
-            modified = False
-            with open(path, 'r') as csvfile, tempfile:
-                reader = csv.DictReader(csvfile, fieldnames=field_names, delimiter=';')
-                writer = csv.DictWriter(tempfile, fieldnames=field_names, delimiter=';')
-                for row in reader:
-                    if row['Specification_id'] != str(requirement_id):
-                        writer.writerow(row)
-                    else:
-                        modified = True
-
-            shutil.move(tempfile.name, path)
-
-            if not modified:
-                raise NotModified()
-
-            r.to_rdf(self.graph, base_url, attributes=attributes)
-
-            return self.create_response(self.graph)
-
+            req = delete_requirement(requirement_id)
+            if req:
+                response = make_response('Resource deleted.', 200)
+                # response.headers['Accept'] = 'application/rdf+xml'
+                # response.headers['Content-Type'] = 'application/rdf+xml'
+                # response.headers['OSLC-Core-Version'] = "2.0"
+                return response
+            else:
+                return make_response(req.description, req.code)
         else:
-            raise NotFound()
+            return make_response('The resource was not found.', 404)
 
 
 @adapter_ns.route('/provider/<service_provider_id>/resources/requirement/<requirement_id>/<preview_type>')

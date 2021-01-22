@@ -25,3 +25,4 @@ pyoslc_oauth/OAuthStore.rdf
 docs/build
 
 .tox/
+test-reports/

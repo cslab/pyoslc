@@ -1,6 +1,6 @@
 import logging
 
-from rdflib import RDF
+from rdflib import RDF, Literal
 from rdflib.extras.describer import Describer
 from rdflib.namespace import DCTERMS
 
@@ -59,9 +59,14 @@ class Requirement(BaseResource):
     def to_rdf(self, graph, base_url=None, attributes=None):
         assert attributes is not None, 'The mapping for attributes is required'
 
+        graph.bind('oslc_rm', OSLC_RM)
+
         d = Describer(graph, base=base_url)
-        if getattr(self, '_BaseResource__identifier') not in base_url.split('/'):
-            base_url = self.get_absolute_url(base_url, getattr(self, '_BaseResource__identifier'))
+        identifier = getattr(self, '_BaseResource__identifier')
+        if isinstance(identifier, Literal):
+            identifier = identifier.value
+        if identifier not in base_url.split('/'):
+            base_url = self.get_absolute_url(base_url, identifier)
 
         d.about(base_url)
         d.rdftype(OSLC_RM.Requirement)
@@ -75,11 +80,19 @@ class Requirement(BaseResource):
                 attr = getattr(self, attribute_key)
                 if isinstance(attr, set):
                     if len(attr) > 0:
-                        d.value(predicate, attr.pop())
+                        val = attr.pop()
+                        if isinstance(val, Literal):
+                            d.value(predicate, val.value)
+                        else:
+                            d.value(predicate, val)
+                        attr.add(val)
                     else:
                         attr = getattr(self, attribute_key)
                         val = attr.pop()
                         d.value(predicate, val)
+                elif isinstance(attr, Literal):
+                    data = getattr(self, attribute_key)
+                    d.value(predicate, data.value)
                 else:
                     d.value(predicate, getattr(self, attribute_key))
 
@@ -103,6 +116,8 @@ class Requirement(BaseResource):
 
         for r in g.subjects(RDF.type, OSLC_RM.Requirement):
 
+            setattr(self, '_AbstractResource__about', str(r))
+
             reviewed = list()
 
             for k, v in six.iteritems(attributes):
@@ -124,9 +139,18 @@ class Requirement(BaseResource):
                         attribute_value = getattr(self, attribute_name)
                         if isinstance(attribute_value, set):
                             at = getattr(self, attribute_name)
+                            if isinstance(i, Literal):
+                                i = i.value
                             at.add(i)
-                        else:
+                        elif isinstance(attribute_value, str):
+                            if isinstance(i, Literal):
+                                i = i.value
                             setattr(self, attribute_name, i)
+                        else:
+                            if isinstance(i, Literal):
+                                setattr(self, attribute_name, i.value)
+                            else:
+                                setattr(self, attribute_name, i)
 
             no_reviewed = [a for a in self.__dict__.keys() if a not in reviewed]
 
@@ -148,7 +172,6 @@ class Requirement(BaseResource):
         specification = dict()
 
         for key in attributes:
-
             attribute_name = attributes[key]['attribute']
             if hasattr(self, attribute_name):
                 attribute_value = getattr(self, attribute_name)
@@ -166,7 +189,10 @@ class Requirement(BaseResource):
                             attr.add(val)
                         attribute_value.add(val)
                     else:
-                        specification[key] = attribute_value
+                        if isinstance(attribute_value, Literal):
+                            specification[key] = attribute_value.value
+                        else:
+                            specification[key] = attribute_value
 
         return specification
 

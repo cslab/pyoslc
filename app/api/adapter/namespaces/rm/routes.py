@@ -1,4 +1,5 @@
 import csv
+import logging
 import os
 import shutil
 from tempfile import NamedTemporaryFile
@@ -17,6 +18,8 @@ from app.api.adapter.namespaces.rm.parsers import specification_parser, csv_file
 from pyoslc.resources.domains.rm import Requirement
 from pyoslc.vocabularies.core import OSLC
 from pyoslc.vocabularies.rm import OSLC_RM
+
+logger = logging.getLogger(__name__)
 
 attributes = specification_map
 
@@ -171,6 +174,8 @@ class RequirementList(Resource):
         response = make_response('', 201)
         response.headers['Location'] = req.about
 
+        logger.debug('Adding the resource from the RM endpoint')
+
         return response
 
 
@@ -255,10 +260,11 @@ class RequirementItem(Resource):
                 reader = csv.DictReader(f, delimiter=';')
                 field_names = reader.fieldnames
 
-            modified = False
             with open(path, 'r') as csvfile, tempfile:
                 reader = csv.DictReader(csvfile, fieldnames=field_names, delimiter=';')
                 writer = csv.DictWriter(tempfile, fieldnames=field_names, delimiter=';')
+                modified = False
+
                 for row in reader:
                     if row['Specification_id'] == str(id):
                         rq = Requirement()

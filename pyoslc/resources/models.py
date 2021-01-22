@@ -1,4 +1,5 @@
 import hashlib
+import logging
 from datetime import date
 
 import six
@@ -10,6 +11,8 @@ from pyoslc.helpers import build_uri
 from pyoslc.vocabularies.core import OSLC
 from pyoslc.vocabularies.jazz import JAZZ_PROCESS
 from pyoslc.vocabularies.jfs import JFS
+
+logger = logging.getLogger(__name__)
 
 default_uri = 'http://examples.com/'
 
@@ -60,15 +63,16 @@ class AbstractResource(object):
             self.__extended_properties.append(extended_property)
 
     def to_rdf(self, graph):
+        logger.debug('Generating RDF for {}'.format(self.__class__.__name__))
+
         if not self.about:
             raise Exception("The about property is missing")
 
     def digestion(self):
-        state = self.__about
+        state = ''   # str(self.__about)
         for attr in self.__dict__.keys():
             value = getattr(self, attr)
             if value:
-                print(value)
                 if isinstance(value, set):
                     if len(value) > 0:
                         for v in value:
@@ -80,6 +84,8 @@ class AbstractResource(object):
                 elif isinstance(value, list):
                     for k in value:
                         state += k
+                elif isinstance(value, URIRef):
+                    state += value.toPython()
                 else:
                     state += value
 
@@ -1121,6 +1127,17 @@ class ResponseInfo(FilteredResource):
             raise ValueError('The title must be an instance of str')
 
     @property
+    def total_count(self):
+        return self.__total_count
+
+    @total_count.setter
+    def total_count(self, total_count):
+        if isinstance(total_count, int):
+            self.__total_count = total_count
+        else:
+            raise ValueError('The total_count must be an instance of int')
+
+    @property
     def members(self):
         return self.__members
 
@@ -1143,6 +1160,9 @@ class ResponseInfo(FilteredResource):
                 item_url = uri + '/' + item.identifier
                 member = Resource(graph, URIRef(item_url))
                 ri.add(RDFS.member, member)
+
+        if self.total_count and self.total_count > 0:
+            ri.add(OSLC.totalCount, Literal(self.total_count))
 
         return ri
 
