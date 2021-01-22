@@ -5,7 +5,7 @@ with open('README.md', 'r') as fh:
 
 setup(
     name='pyoslc',
-    version='1.0.0',
+    version='0.1.0',
     author='Contact Software',
     author_email='fp@contact.de',
     description='SDK for implementing OSLC API using Python.',

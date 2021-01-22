@@ -29,7 +29,7 @@ function search(baseUrl) {
     searchMessage.style.display = 'none';
     loadingMessage.style.display = 'block';
     xmlhttp.send();
-}ga
+}
 
 function create(baseUrl) {
     var form = document.getElementById("Create");

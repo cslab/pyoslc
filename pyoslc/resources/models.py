@@ -1,14 +1,18 @@
 import hashlib
+import logging
 from datetime import date
 
+import six
 from rdflib import URIRef, Literal, RDF, XSD, BNode
-from rdflib.namespace import DCTERMS
+from rdflib.namespace import DCTERMS, RDFS
 from rdflib.resource import Resource
 
 from pyoslc.helpers import build_uri
 from pyoslc.vocabularies.core import OSLC
 from pyoslc.vocabularies.jazz import JAZZ_PROCESS
 from pyoslc.vocabularies.jfs import JFS
+
+logger = logging.getLogger(__name__)
 
 default_uri = 'http://examples.com/'
 
@@ -59,15 +63,16 @@ class AbstractResource(object):
             self.__extended_properties.append(extended_property)
 
     def to_rdf(self, graph):
+        logger.debug('Generating RDF for {}'.format(self.__class__.__name__))
+
         if not self.about:
             raise Exception("The about property is missing")
 
     def digestion(self):
-        state = self.__about
+        state = ''   # str(self.__about)
         for attr in self.__dict__.keys():
             value = getattr(self, attr)
             if value:
-                print(value)
                 if isinstance(value, set):
                     if len(value) > 0:
                         for v in value:
@@ -79,11 +84,18 @@ class AbstractResource(object):
                 elif isinstance(value, list):
                     for k in value:
                         state += k
+                elif isinstance(value, URIRef):
+                    state += value.toPython()
                 else:
                     state += value
 
         dig = hashlib.sha256()
-        dig.update(state)
+        if six.PY2:
+            dig.update(state)
+        if six.PY3:
+            sb = bytes(state, 'utf-8')
+            dig.update(sb)
+
         return str(dig.hexdigest())
 
 
@@ -1091,19 +1103,66 @@ class FilteredResource(AbstractResource):
 
 class ResponseInfo(FilteredResource):
 
-    def __init__(self, about=None, types=None, properties=None,
+    def __init__(self, about=None, title=None,
+                 types=None, properties=None,
                  resource=None, total_count=None, next_page=None,
                  container=None):
         super(ResponseInfo, self).__init__(about, types, properties, resource)
         self.__total_count = total_count if total_count is not None else 0
         self.__next_page = next_page if next_page is not None else None
         self.__container = container if container is not None else None
+        self.__members = list()
+
+        self.__title = title if title is not None else ''
+
+    @property
+    def title(self):
+        return self.__title
+
+    @title.setter
+    def title(self, title):
+        if isinstance(title, str):
+            self.__title = title
+        else:
+            raise ValueError('The title must be an instance of str')
+
+    @property
+    def total_count(self):
+        return self.__total_count
+
+    @total_count.setter
+    def total_count(self, total_count):
+        if isinstance(total_count, int):
+            self.__total_count = total_count
+        else:
+            raise ValueError('The total_count must be an instance of int')
+
+    @property
+    def members(self):
+        return self.__members
+
+    @members.setter
+    def members(self, members):
+        self.__members = members
 
     def to_rdf(self, graph):
         super(ResponseInfo, self).to_rdf(graph)
 
-        ri = Resource(graph, BNode())
+        uri = self.about
+        ri = Resource(graph, URIRef(uri))
         ri.add(RDF.type, OSLC.ResponseInfo)
+
+        if self.title:
+            ri.add(DCTERMS.title, Literal(self.title, datatype=XSD.Literal))
+
+        if self.members:
+            for item in self.members:
+                item_url = uri + '/' + item.identifier
+                member = Resource(graph, URIRef(item_url))
+                ri.add(RDFS.member, member)
+
+        if self.total_count and self.total_count > 0:
+            ri.add(OSLC.totalCount, Literal(self.total_count))
 
         return ri
 

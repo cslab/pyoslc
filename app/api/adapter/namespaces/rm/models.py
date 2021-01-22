@@ -38,6 +38,7 @@ specification = api.model('Specification', {
     'specification_id': fields.String,
     'product': fields.String,
     'project': fields.String,
+    'subject': fields.String,
     'title': fields.String,
     'description': fields.String,
     'source': fields.String,

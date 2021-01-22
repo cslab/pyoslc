@@ -8,7 +8,7 @@ specification_map = {
 
     # RM and Custom attributes
     'Product': {'attribute': '_BaseResource__short_title', 'oslc_property': 'DCTERMS.shortTitle'},
-    'Subject': {'attribute': '_BaseResource__subject', 'oslc_property': 'DCTERMS.subject'},
+    # 'Subject': {'attribute': '_BaseResource__subject', 'oslc_property': 'DCTERMS.subject'},
     'Source': {'attribute': '_Requirement__elaborated_by', 'oslc_property': 'OSLC_RM.elaboratedBy'},
     'Category': {'attribute': '_Requirement__constrained_by', 'oslc_property': 'OSLC_RM.constrainedBy'},
     'Discipline': {'attribute': '_Requirement__satisfied_by', 'oslc_property': 'OSLC_RM.satisfiedBy'},
