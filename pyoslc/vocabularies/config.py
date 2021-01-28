@@ -5,6 +5,8 @@ OSLC_CONFIG = ClosedNamespace(
     uri=URIRef("http://open-services.net/ns/config#"),
     terms=[
         # RDFS Classes in this namespace
+        "Configuration",
+        "Stream",
 
         # RDF Properties in this namespace
         "cmServiceProviders",

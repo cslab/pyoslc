@@ -16,6 +16,6 @@ Authlib~=0.14.3
 
 Werkzeug==0.16.1
 requests
-pytest~=4.6.11
+pytest
 
 #Sphinx==1.8.5

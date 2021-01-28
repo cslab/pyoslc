@@ -1,3 +1,4 @@
+from pyoslc.vocabularies.jazz import JAZZ_CONFIG
 
 method_funcs = frozenset(['creation_factory',
                           'query_capability',
@@ -130,6 +131,6 @@ class Configuration(ServiceResource):
             'uri': 'config/selection',
             'hintWidth': '600px',
             'hintHeight': '500px',
-            'resource_type': ['http://jazz.net/ns/vvc#Configuration'],
-            'usages': ['http://jazz.net/ns/vvc#Configuration']
+            'resource_type': [JAZZ_CONFIG.Configuration],
+            'usages': [JAZZ_CONFIG.Configuration]
         }

@@ -22,3 +22,23 @@ JAZZ_PROCESS = ClosedNamespace(
         "supportOSLCSimpleQuery"
     ]
 )
+
+OSLC_RM_JAZZ = ClosedNamespace(
+    uri=URIRef("http://open-services.net/xmlns/rm/1.0/"),
+    terms=[
+        "rmServiceProviders"
+    ]
+)
+
+OSLC_CM_JAZZ = ClosedNamespace(
+    uri=URIRef("http://open-services.net/xmlns/cm/1.0/"),
+    terms=[
+    ]
+)
+
+JAZZ_CONFIG = ClosedNamespace(
+    uri=URIRef("http://jazz.net/ns/vvc#"),
+    terms=[
+        "Configuration"
+    ]
+)

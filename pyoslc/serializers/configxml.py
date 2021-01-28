@@ -7,6 +7,8 @@ from rdflib.plugins.serializers.xmlwriter import XMLWriter
 from rdflib.util import first, more_than
 from six import b
 
+from pyoslc.vocabularies.jazz import JAZZ_CONFIG
+
 
 class ConfigurationSerializer(PrettyXMLSerializer):
 
@@ -39,7 +41,7 @@ class ConfigurationSerializer(PrettyXMLSerializer):
             namespaces[prefix] = namespace
 
         namespaces["rdf"] = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-        namespaces["vvc"] = "http://jazz.net/ns/vvc#"
+        namespaces["vvc"] = JAZZ_CONFIG.uri
 
         writer.push(RDF.RDF)
 

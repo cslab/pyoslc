@@ -4,10 +4,9 @@ from six.moves.urllib.parse import urlparse
 from xml.sax import SAXParseException
 
 from flask import request, make_response, url_for, render_template
-from flask_restx import Namespace, Resource
-from rdflib import Graph, RDF, RDFS
-from rdflib.namespace import DCTERMS
-from rdflib.plugin import register, PluginException
+from flask_restx import Namespace
+from rdflib import Graph
+from rdflib.plugin import register
 from rdflib.serializer import Serializer
 from werkzeug.exceptions import UnsupportedMediaType, NotAcceptable, PreconditionFailed, NotFound, BadRequest
 from werkzeug.http import http_date
@@ -22,8 +21,7 @@ from app.api.adapter.services.providers import ServiceProviderCatalogSingleton, 
 from app.api.adapter.services.specification import ServiceResource
 from pyoslc.resources.domains.rm import Requirement
 from pyoslc.resources.models import ResponseInfo, Compact, Preview
-from pyoslc.vocabularies.core import OSLC
-from pyoslc.vocabularies.jazz import JAZZ_PROCESS
+from pyoslc.rest.resource import OslcResource
 
 logger = logging.getLogger(__name__)
 
@@ -38,83 +36,6 @@ config_service_resource(
     'specification', ServiceResource,
     'app.api.adapter.services.specification', 'Specification',
 )
-
-
-class OslcResource(Resource):
-
-    def __init__(self, *args, **kwargs):
-        super(OslcResource, self).__init__(*args, **kwargs)
-
-        self.graph = kwargs.get('graph', Graph())
-        self.graph.bind('oslc', OSLC)
-        self.graph.bind('rdf', RDF)
-        self.graph.bind('rdfs', RDFS)
-        self.graph.bind('dcterms', DCTERMS)
-        self.graph.bind('j.0', JAZZ_PROCESS)
-
-    def get(self, *args, **kwargs):
-        accept = request.headers.get('accept')
-        if not (accept in ('application/rdf+xml', 'application/json',
-                           'application/ld+json', 'application/json-ld',
-                           'application/xml', 'application/atom+xml',
-                           'text/turtle', )):
-            raise UnsupportedMediaType
-
-    @staticmethod
-    def create_response(graph, accept=None, content=None, rdf_format=None, etag=False):
-
-        # Getting the content-type for checking the
-        # response we will use to serialize the RDF response.
-        accept = accept if accept is not None else request.headers.get('accept', 'application/rdf+xml')
-        content = content if content is not None else request.headers.get('content-type', accept)
-        if content.__contains__('x-www-form-urlencoded'):
-            content = accept
-
-        rdf_format = accept if rdf_format is None else rdf_format
-
-        if accept in ('application/json-ld', 'application/ld+json', 'application/json', '*/*'):
-            # If the content-type is any kind of json,
-            # we will use the json-ld format for the response.
-            rdf_format = 'json-ld'
-
-        # if rdf_format in 'config-xml':
-        #     rdf_format = 'config-xml'
-        # else:
-        #     rdf_format = 'pretty-xml'
-
-        if rdf_format in ('application/xml', 'application/rdf+xml'):
-            rdf_format = 'pretty-xml'
-
-        if rdf_format.__contains__('rootservices-xml') and (not accept.__contains__('xml')):
-            rdf_format = accept
-
-        if rdf_format == 'application/atom+xml':
-            rdf_format = 'pretty-xml'
-
-        if rdf_format in ('application/xml, application/x-oslc-cm-service-description+xml'):
-            rdf_format = 'pretty-xml'
-            content = 'application/rdf+xml'
-
-        try:
-            logger.debug('Parsing the Graph into {}'.format(rdf_format))
-            data = graph.serialize(format=rdf_format)
-        except PluginException as pe:
-            response_object = {
-                'status': 'fail',
-                'message': 'Content-Type Incompatible: {}'.format(pe)
-            }
-            return response_object, 400
-
-        # Sending the response to the client
-        response = make_response(data.decode('utf-8'), 200)
-        response.headers['Accept'] = accept
-        response.headers['Content-Type'] = content
-        response.headers['OSLC-Core-Version'] = "2.0"
-
-        if etag:
-            response.add_etag()
-
-        return response
 
 
 @adapter_ns.route('/catalog')
@@ -238,6 +159,8 @@ class ResourceOperation(OslcResource):
 class ResourcePreview(OslcResource):
 
     def get(self, service_provider_id, requirement_id):
+        super(ResourcePreview, self).get()
+
         accept = request.headers['accept']
 
         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
@@ -372,6 +295,8 @@ class RootServices(OslcResource):
         Generate Rootservices response
         :return:
         """
+        super(RootServices, self).get()
+
         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint))
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
 
@@ -413,12 +338,14 @@ class ConfigurationCatalog(OslcResource):
 class ConfigurationComponent(OslcResource):
 
     def get(self):
+        super(ConfigurationComponent, self).get()
         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint))
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
 
         components_url = urlparse(base_url).geturl()
 
         response = make_response(render_template('pyoslc_oauth/components.html',
+                                                 about=components_url,
                                                  dialog=components_url.replace('components', 'selection')))
 
         response.headers['max-age'] = '0'
@@ -435,13 +362,13 @@ class ConfigurationComponent(OslcResource):
 class ConfigurationPublisher(OslcResource):
 
     def get(self):
+        super(ConfigurationPublisher, self).get()
         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint))
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
 
         components_url = urlparse(base_url).geturl()
 
-        response = make_response(render_template('pyoslc_oauth/publisher.html',
-                                                 about=components_url))
+        response = make_response(render_template('pyoslc_oauth/publisher.html', about=components_url))
 
         response.headers['max-age'] = '0'
         response.headers['pragma'] = 'no-cache'
@@ -479,7 +406,7 @@ class ConfigurationSelection(OslcResource):
                 }
             ]
 
-            return {"oslc:results": result}
+            return {"oslc:results": result}, 200
 
         response = make_response(render_template('pyoslc_oauth/selection.xhtml',
                                                  selection_uri=components_url.replace('components', 'selection')))
