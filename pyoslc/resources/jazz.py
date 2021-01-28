@@ -1,14 +1,15 @@
 from flask import url_for
-from rdflib import URIRef, Literal, Namespace, BNode, RDF
+from rdflib import URIRef, Literal, BNode, RDF
 from rdflib.namespace import DCTERMS
 from rdflib.resource import Resource
 
+from app.api.adapter.vocabulary import PYOSLC
 from pyoslc.resources.models import BaseResource
 from pyoslc.vocabularies.am import OSLC_AM
 from pyoslc.vocabularies.cm import OSLC_CM
 from pyoslc.vocabularies.config import OSLC_CONFIG
 from pyoslc.vocabularies.core import OSLC
-from pyoslc.vocabularies.jazz import JAZZ_DISCOVERY
+from pyoslc.vocabularies.jazz import JAZZ_DISCOVERY, OSLC_RM_JAZZ, OSLC_CM_JAZZ
 from pyoslc.vocabularies.jfs import JFS
 from pyoslc.vocabularies.rm import OSLC_RM
 from pyoslc.vocabularies.trs import OSLC_TRS
@@ -67,13 +68,8 @@ class RootService(BaseResource):
             rs.add(DCTERMS.description, Literal(self.description))
 
         if self.publisher:
-            # rs.add(DCTERMS.publisher, URIRef(self.publisher.about))
-            # rs.add(DCTERMS.publisher, URIRef(self.publisher.about))
             publisher_url = url_for('oslc.adapter_configuration_publisher', _external=True)
             rs.add(OSLC.publisher, URIRef(publisher_url))
-
-        OSLC_RM_JAZZ = Namespace("http://open-services.net/xmlns/rm/1.0/")
-        OSLC_CM_JAZZ = Namespace("http://open-services.net/xmlns/cm/1.0/")
 
         graph.bind('oslc_am', OSLC_AM)
         graph.bind('oslc_rm', OSLC_RM_JAZZ, override=True)
@@ -81,12 +77,13 @@ class RootService(BaseResource):
         graph.bind('oslc_config', OSLC_CONFIG)
         graph.bind('jfs', JFS)
         graph.bind('trs', OSLC_TRS)
+        graph.bind('pyoslc', PYOSLC)
 
-        test_url = url_for('oslc.adapter_service_provider_catalog', _external=True)
-        config_url = url_for('oslc.adapter_configuration_catalog', _external=True)
+        spc_url = url_for('oslc.adapter_service_provider_catalog', _external=True)
+        spc_config_url = url_for('oslc.adapter_configuration_catalog', _external=True)
 
-        rs.add(OSLC_RM_JAZZ.rmServiceProviders, URIRef(test_url))
-        rs.add(OSLC_CONFIG.cmServiceProviders, URIRef(config_url))
+        rs.add(OSLC_RM_JAZZ.rmServiceProviders, URIRef(spc_url))
+        rs.add(OSLC_CONFIG.cmServiceProviders, URIRef(spc_config_url))
 
         rs.add(JFS.oauthRealmName, Literal("PyOSLC"))
         rs.add(JFS.oauthDomain, Literal(url_for('oslc.doc', _external=True)))
@@ -96,11 +93,8 @@ class RootService(BaseResource):
         rs.add(JFS.oauthUserAuthorizationUrl, URIRef(url_for('oauth.issue_token', _external=True)))
         rs.add(JFS.oauthAccessTokenUrl, URIRef(url_for('oauth.issue_token', _external=True)))
 
-        pyoslc = Namespace('http://example.com/ns/pyoslc#')
-        graph.bind('pyoslc', pyoslc)
-
         trs = Resource(graph, BNode())
-        trs.add(RDF.type, pyoslc.TrackedResourceSetProvider)
+        trs.add(RDF.type, PYOSLC.TrackedResourceSetProvider)
 
         trs_url = URIRef(url_for('oslc.doc', _external=True))
 
@@ -118,6 +112,6 @@ class RootService(BaseResource):
         tr.add(OSLC.domain, OSLC_AM.uri)
 
         trs.add(OSLC_TRS.TrackedResourceSet, tr)
-        rs.add(pyoslc.TrackedResourceSetProvider, trs)
+        rs.add(PYOSLC.TrackedResourceSetProvider, trs)
 
         return rs

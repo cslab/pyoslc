@@ -153,3 +153,71 @@ class PyOSLC:
             'oslc/rm/requirement/' + requirement_id,
             headers=headers
         )
+
+    def get_rootservices(self, rdf_presentation=None):
+
+        if rdf_presentation:
+            self.headers = {
+                'accept': rdf_presentation,
+                'content-type': rdf_presentation
+            }
+
+        return self._client.get(
+            '/oslc/services/rootservices',
+            headers=self.headers
+        )
+
+    def get_publisher(self):
+        return self._client.get(
+            '/oslc/services/config/publisher',
+            headers=self.headers
+        )
+
+    def post_consumer_register(self, payload):
+        return self._client.post(
+            '/register',
+            json=payload,
+            headers={'content-type': 'application/json'}
+        )
+
+    def create_consumer(self):
+        payload = {
+            'name': 'pyoslc/rm',
+            'secret': 's3cret_',
+            'secretType': 'string',
+            'trusted': True,
+            'userId': None
+        }
+
+        return self.post_consumer_register(payload)
+
+    def get_configuration_catalog(self):
+        return self._client.get(
+            '/oslc/services/config',
+            headers=self.headers
+        )
+
+    def get_configuration_components(self):
+        return self._client.get(
+            '/oslc/services/config/components',
+            headers=self.headers
+        )
+
+    def get_configuration_selection(self):
+        return self._client.get(
+            '/oslc/services/config/selection',
+            headers=self.headers
+        )
+
+    def get_configuration_streams(self):
+        return self._client.get(
+            '/oslc/services/config/selection?stream=baselines'
+        )
+
+    def get_stream(self, stream_id):
+        return self._client.get(
+            '/oslc/services/config/stream/{}'.format(stream_id)
+        )
+
+    def get(self, url):
+        return self._client.get(url)

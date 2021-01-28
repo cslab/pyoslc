@@ -5,8 +5,8 @@ from flask_restx import Namespace
 from rdflib.plugin import register
 from rdflib.serializer import Serializer
 
-from app.api.adapter.namespaces.core import OslcResource
 from app.api.adapter.services.providers import ConfigurationManagementSingleton
+from pyoslc.rest.resource import OslcResource
 
 config_ns = Namespace(name='config', description='Configuration Management', path='/config')
 
@@ -21,6 +21,7 @@ register(
 class ConfigurationCatalog(OslcResource):
 
     def get(self):
+        super(ConfigurationCatalog, self).get()
         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint))
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
 

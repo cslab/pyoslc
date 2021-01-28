@@ -1,6 +1,7 @@
 from app.api.adapter.resources.resource_service import get_service_resources
 from app.api.adapter.services.specification import ServiceResource
 from pyoslc.resources.factories import ServiceProviderFactory, ConfigurationFactory
+from pyoslc.vocabularies.jazz import JAZZ_CONFIG
 
 
 class ContactServiceProviderFactory(object):
@@ -40,8 +41,8 @@ class ContactConfigurationFactory(object):
             'uri': 'selection',
             'hint_width': '600px',
             'hint_height': '500px',
-            'resource_type': ['http://jazz.net/ns/vvc#Configuration'],
-            'usages': ['http://jazz.net/ns/vvc#Configuration']
+            'resource_type': [JAZZ_CONFIG.Configuration],
+            'usages': [JAZZ_CONFIG.Configuration]
         }
 
         component = ConfigurationFactory.create_component(base_uri, title, description,

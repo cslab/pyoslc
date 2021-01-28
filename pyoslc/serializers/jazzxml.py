@@ -7,6 +7,10 @@ from rdflib.plugins.serializers.xmlwriter import XMLWriter
 from rdflib.util import first, more_than
 from six import b
 
+from pyoslc.vocabularies.jazz import JAZZ_DISCOVERY, JAZZ_PROCESS
+from pyoslc.vocabularies.jfs import JFS
+from pyoslc.vocabularies.trs import OSLC_TRS
+
 
 class JazzRootServiceSerializer(PrettyXMLSerializer):
 
@@ -40,12 +44,11 @@ class JazzRootServiceSerializer(PrettyXMLSerializer):
 
         namespaces["rdf"] = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
         namespaces["dc"] = "http://purl.org/dc/terms/"
-        namespaces["jd"] = "http://jazz.net/xmlns/prod/jazz/discovery/1.0/"
-
-        namespaces["jfs"] = "http://jazz.net/xmlns/prod/jazz/jfs/1.0/"
-        namespaces["trs"] = "http://open-services.net/ns/core/trs#"
+        namespaces["jd"] = JAZZ_DISCOVERY.uri
+        namespaces["jfs"] = JFS.uri
+        namespaces["trs"] = OSLC_TRS.uri
         namespaces["jp06"] = "http://jazz.net/xmlns/prod/jazz/process/0.6/"
-        namespaces["jp"] = "http://jazz.net/xmlns/prod/jazz/process/1.0/"
+        namespaces["jp"] = JAZZ_PROCESS.uri
 
         writer.push(RDF.Description)
         for subject in store.subjects():
