@@ -18,7 +18,7 @@ Let’s see the structure of the project:
 
 ::
 
-    ➜ tree pysolc
+    $ tree pysolc
     ├── .env
     ├── .flaskenv
     ├── LICENSE
