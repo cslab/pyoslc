@@ -85,7 +85,21 @@ def approve():
     oauth_config = OAuthConfiguration.get_instance()
 
     consumer_store = oauth_config.consumer_store
-    consumers = consumer_store.consumers
+    if consumer_store.consumers and len(consumer_store.consumers) > 0:
+        consumers = consumer_store.consumers
+    else:
+        consumers = dict()
+        consumers_db = Client.query.all()
+        for consumer in consumers_db:
+            oslc_consumer = OSLCOAuthConsumer()
+
+            oslc_consumer.name = consumer.name
+            oslc_consumer.key = consumer.client_id
+            oslc_consumer.secret = consumer.client_secret
+            oslc_consumer.provisional = True
+            oslc_consumer.trusted = False
+            consumers[consumer.client_id] = consumer
+
     consumer = consumers[consumer_key]
 
     callback_uri = url_for('oauth.authorize',
