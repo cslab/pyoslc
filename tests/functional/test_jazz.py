@@ -215,7 +215,7 @@ def test_link_target_selector(pyoslc):
 
     assert response is not None
     assert response.status_code == 200
-    assert b'Find a specific resource through a free-text search.' in response.data
+    assert b'Find a specific resource through a full-text search.' in response.data
 
 
 def test_show_preview(pyoslc):
