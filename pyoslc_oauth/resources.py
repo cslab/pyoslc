@@ -1,5 +1,6 @@
 from base64 import b64encode
 
+import six
 from authlib.integrations.flask_client import OAuth
 from enum import Enum
 from rdflib import Graph, RDF, URIRef, Literal, BNode, XSD
@@ -259,7 +260,11 @@ class FileSystemConsumerStore(object):
 
     def __to_resource(self, consumer):
 
-        consumer.secret = b64encode(consumer.secret.encode("utf-8"))
+        if six.PY2:
+            consumer.secret = b64encode(consumer.secret.encode("utf-8"))
+
+        if six.PY3:
+            consumer.secret = b64encode(consumer.secret)
 
         resource = Resource(self._graph, BNode())
         resource.add(RDF.type, OAUTH.Consumer)

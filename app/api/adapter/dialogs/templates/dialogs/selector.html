@@ -26,7 +26,7 @@
             <option value="specification">Specification</option>
         </select>
 
-        <p id="searchMessage">Find a specific resource through a free-text search.</p>
+        <p id="searchMessage">Find a specific resource through a full-text search.</p>
 
         <p id="loadingMessage" style="display: none;">Pondering your search. Please stand by ...</p>
 
@@ -49,5 +49,41 @@
         </div>
         <div style="clear: both;"></div>
     </div>
+
+    <script>
+        $(document).ready(function () {
+            var ie = window.navigator.userAgent.indexOf("MSIE");
+            list = document.getElementById("selectType");
+            list.options.length = 0;
+            var searchMessage = document.getElementById('searchMessage');
+            var loadingMessage = document.getElementById('loadingMessage');
+
+            xmlhttp = new XMLHttpRequest();
+            xmlhttp.onreadystatechange = function () {
+                if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                    // populate results
+                    txt = xmlhttp.responseText;
+                    resp = JSON.parse(txt);
+                    for (var i = 0; i < resp["oslc:results"].length; i = i + 1) {
+                        var item = document.createElement('option');
+                        item.text = resp["oslc:results"][i]["oslc:label"];
+                        item.value = resp["oslc:results"][i]["rdf:resource"];
+                        if (ie > 0) {
+                            list.add(item);
+                        } else {
+                            list.add(item, null);
+                        }
+                    }
+                    searchMessage.style.display = 'block';
+                    loadingMessage.style.display = 'none';
+                }
+            };
+            xmlhttp.open("GET", "{{ selection_type_url }}", true);
+            searchMessage.style.display = 'none';
+            loadingMessage.style.display = 'block';
+            xmlhttp.send();
+        })
+    </script>
+
 </body>
 </html>

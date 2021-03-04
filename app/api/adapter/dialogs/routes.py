@@ -9,6 +9,7 @@ dialog_bp = Blueprint('dialog', __name__, template_folder='templates', static_fo
 @dialog_bp.route('/provider/<service_provider_id>/resources/selector', methods=['GET', 'POST'])
 def index(service_provider_id):
     selection_url = request.base_url
+    selection_type_url = selection_url.replace('selector', 'types')
 
     form = SelectSpecificationForm()
     list_req = None
@@ -16,17 +17,26 @@ def index(service_provider_id):
     resource_type = request.args.get('type')
     if resource_type:
         requirements = get_requirements(selection_url)
+        terms = request.args.get('terms', None)
 
         results = list()
         for r in requirements:
-            results.append({
-                'oslc:label': r.identifier,
-                'rdf:resource': str(r.about)
-            })
+            if terms != '':
+                if r.identifier.__contains__(terms) or r.title.__contains__(terms) or r.description.__contains__(terms):
+                    results.append({
+                        'oslc:label': r.identifier + ' / ' + r.title,
+                        'rdf:resource': str(r.about)
+                    })
+            else:
+                results.append({
+                    'oslc:label': r.identifier + ' / ' + r.title,
+                    'rdf:resource': str(r.about)
+                })
 
         return jsonify({'oslc:results': results})
 
-    return render_template("dialogs/selector.html", selection_url=selection_url, form=form, list_req=list_req)
+    return render_template("dialogs/selector.html", selection_url=selection_url,
+                           selection_type_url=selection_type_url, form=form, list_req=list_req)
 
 
 @dialog_bp.route('/provider/<service_provider_id>/resources/creator', methods=['GET', 'POST'])
@@ -52,3 +62,14 @@ def create(service_provider_id):
         return response
 
     return render_template("dialogs/creator.html", creator_url=creator_url, form=form)
+
+
+@dialog_bp.route('/provider/<service_provider_id>/resources/types', methods=['GET'])
+def types(service_provider_id):
+    results = list()
+    results.append({
+        'oslc:label': 'Specification',
+        'rdf:resource': str('specification')
+    })
+
+    return jsonify({'oslc:results': results})
