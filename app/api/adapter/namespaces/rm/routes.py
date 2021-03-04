@@ -125,6 +125,7 @@ class RequirementList(Resource):
         ```
         """
         content_type = request.headers['content-type']
+        logger.debug('content-type: {}'.format(content_type))
         if content_type != 'application/rdf+xml':
             data = specification_parser.parse_args()
         else:

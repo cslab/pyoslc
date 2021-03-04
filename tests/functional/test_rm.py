@@ -1,4 +1,7 @@
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def test_get_list_requirement(pyoslc):
@@ -178,6 +181,7 @@ def test_delete_requirement(client):
     response = client.post('oslc/rm/requirement',
                            data=json.dumps(specification),
                            content_type='application/json')
+    logger.debug(response)
     assert response.status_code == 201
 
     response = client.delete('oslc/rm/requirement/X1C2V3B7',
