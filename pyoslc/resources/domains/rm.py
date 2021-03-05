@@ -100,10 +100,10 @@ class Requirement(BaseResource):
 
     def from_json(self, data, attributes):
         for key in six.iterkeys(data):
-            item = {key: list(v.values()) for k, v in six.iteritems(attributes) if k.lower() == key.lower()}
+            item = {key: b for a, b in six.iteritems(attributes) if a.lower() == key.lower()}
 
             if item:
-                attribute_name = item[key][0]
+                attribute_name = item[key]['attribute']
                 if hasattr(self, attribute_name):
                     attribute_value = getattr(self, attribute_name)
                     if isinstance(attribute_value, set):
