@@ -1,5 +1,24 @@
 # PyOSLC SDK
 
+> :warning: **Warning**
+> 
+> PyOSLC Announcement!
+> 
+> The PyOSLC SDK project is being improved!
+> 
+> The improvement will add some changes in the implementation of the SDK 
+> to convert it into an OSLC Web Framework, this will change the way 
+> to implement the API by adding better support for more data sources 
+> by defining a neutral interface between OSLC API code, and data 
+> source-specific access code. For adding a new data source, a developer 
+> will only need to implement some adapter methods which are OSLC-independent. 
+> This new behavior will allow us also to extend the domains in which 
+> the API could work.
+> 
+> This improvements could represent some changes in the current version 
+> that could affect your current implementation, our apologize in advance.
+
+
 The `PyOSLC` project was developed as set of classes and libraries 
 packaged as a SDK which is aimed to build REST-based API’s that allows us 
 to implement `OSLC (Open Services for Lifecycle Collaboration) projects`

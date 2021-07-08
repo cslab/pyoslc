@@ -45,7 +45,7 @@ class OslcResource(Resource):
         # response we will use to serialize the RDF response.
         accept = accept if accept is not None else request.headers.get('accept', 'application/rdf+xml')
         content = content if content is not None else request.headers.get('content-type', accept)
-        if content.__contains__('x-www-form-urlencoded'):
+        if content.__contains__('x-www-form-urlencoded') or content.__contains__('text/plain'):
             content = accept
 
         rdf_format = accept if rdf_format is None else rdf_format
