@@ -140,7 +140,7 @@ class ResourceOperation(OslcResource):
             data = self.graph.serialize(format='pretty-xml')
 
             # Sending the response to the client
-            response = make_response(data.decode('utf-8'), 201)
+            response = make_response(data.decode('utf-8') if not isinstance(data, str) else data, 201)
             response.headers['Content-Type'] = 'application/rdf+xml; charset=UTF-8'
             response.headers['OSLC-Core-Version'] = "2.0"
             response.headers['Location'] = base_url + '/' + req.identifier

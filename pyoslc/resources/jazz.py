@@ -107,9 +107,9 @@ class RootService(BaseResource):
         tr.add(DCTERMS.title, Literal('Title'))
         tr.add(DCTERMS.description, Literal('Description'))
 
-        tr.add(DCTERMS.type, OSLC_CM.uri)
-        tr.add(OSLC.domain, OSLC_RM.uri)
-        tr.add(OSLC.domain, OSLC_AM.uri)
+        tr.add(DCTERMS.type, URIRef(OSLC_CM.uri) if isinstance(OSLC_CM.uri, str) else OSLC_CM.uri)
+        tr.add(OSLC.domain, URIRef(OSLC_RM.uri) if isinstance(OSLC_RM.uri, str) else OSLC_RM.uri)
+        tr.add(OSLC.domain, URIRef(OSLC_AM.uri) if isinstance(OSLC_AM.uri, str) else OSLC_AM.uri)
 
         trs.add(OSLC_TRS.TrackedResourceSet, tr)
         rs.add(PYOSLC.TrackedResourceSetProvider, trs)

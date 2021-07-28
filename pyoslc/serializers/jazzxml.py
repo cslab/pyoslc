@@ -1,6 +1,6 @@
 import xml
 
-from rdflib import RDF, BNode, URIRef, RDFS, Literal
+from rdflib import BNode, URIRef, RDFS, Literal, Namespace
 from rdflib.collection import Collection
 from rdflib.plugins.serializers.rdfxml import PrettyXMLSerializer, XMLBASE, fix, OWL_NS, XMLLANG
 from rdflib.plugins.serializers.xmlwriter import XMLWriter
@@ -10,6 +10,8 @@ from six import b
 from pyoslc.vocabularies.jazz import JAZZ_DISCOVERY, JAZZ_PROCESS
 from pyoslc.vocabularies.jfs import JFS
 from pyoslc.vocabularies.trs import OSLC_TRS
+
+RDF = Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#")
 
 
 class JazzRootServiceSerializer(PrettyXMLSerializer):
