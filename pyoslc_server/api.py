@@ -7,7 +7,7 @@ from werkzeug.routing import Map
 
 from pyoslc.vocabularies.core import OSLC
 from pyoslc_server.context import Context
-from pyoslc_server.wrappers import Request, Response
+from pyoslc_server.wrappers import Response
 
 ResourceRoute = namedtuple("ResourceRoute", "resource urls kwargs")
 
@@ -56,7 +56,7 @@ class OSLCAPI:
         return response
 
     def make_response(self, response, request):
-        status = headers = None
+        # status = headers = None
 
         if not isinstance(response, Response):
             r = Resource(self.graph, URIRef(request.url_root))
