@@ -354,7 +354,7 @@ class ServiceProviderCatalog(BaseResource):
         if self.oauth_configuration:
             spc.add(OSLC.oauthConfiguration, URIRef(self.oauth_configuration.about))
 
-        spc.add(OSLC.domain, JAZZ_PROCESS.uri)
+        spc.add(OSLC.domain, URIRef(JAZZ_PROCESS.uri) if isinstance(JAZZ_PROCESS.uri, str) else JAZZ_PROCESS.uri)
 
         return spc
 
@@ -444,7 +444,7 @@ class ServiceProvider(BaseResource):
             sp.add(DCTERMS.identifier, Literal(self.identifier, datatype=XSD.string))
 
         if self.title:
-            sp.add(DCTERMS.title, Literal(self.title, datatype=XSD.Literal))
+            sp.add(DCTERMS.title, Literal(self.title, datatype=RDF.XMLLiteral))
 
         if self.description:
             sp.add(DCTERMS.description, Literal(self.description))
@@ -471,7 +471,7 @@ class ServiceProvider(BaseResource):
         sp.add(JAZZ_PROCESS.supportContributionsToLinkIndexProvider, Literal(True, datatype=XSD.boolean))
         sp.add(JAZZ_PROCESS.supportLinkDiscoveryViaLinkIndexProvider, Literal(True, datatype=XSD.boolean))
         sp.add(JAZZ_PROCESS.supportOSLCSimpleQuery, Literal(True, datatype=XSD.boolean))
-        sp.add(JAZZ_PROCESS.globalConfigurationAware, Literal('yes', datatype=XSD.String))
+        sp.add(JAZZ_PROCESS.globalConfigurationAware, Literal('yes', datatype=XSD.string))
 
         return sp
 
@@ -886,10 +886,10 @@ class Dialog(BaseResource):
             d.add(DCTERMS.title, Literal(self.title))
 
         if self.hint_width:
-            d.add(DCTERMS.hintWidth, Literal(self.hint_width))
+            d.add(OSLC.hintWidth, Literal(self.hint_width))
 
         if self.hint_height:
-            d.add(DCTERMS.hintHeight, Literal(self.hint_height))
+            d.add(OSLC.hintHeight, Literal(self.hint_height))
 
         if self.dialog:
             d.add(OSLC.dialog, URIRef(self.dialog))
@@ -1153,7 +1153,7 @@ class ResponseInfo(FilteredResource):
         ri.add(RDF.type, OSLC.ResponseInfo)
 
         if self.title:
-            ri.add(DCTERMS.title, Literal(self.title, datatype=XSD.Literal))
+            ri.add(DCTERMS.title, Literal(self.title, datatype=RDF.XMLLiteral))
 
         if self.members:
             for item in self.members:

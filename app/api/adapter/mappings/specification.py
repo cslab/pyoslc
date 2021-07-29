@@ -7,7 +7,7 @@ specification_map = {
     'Author': {'attribute': '_BaseResource__creator', 'oslc_property': 'DCTERMS.creator'},
 
     # RM and Custom attributes
-    'Product': {'attribute': '_BaseResource__short_title', 'oslc_property': 'DCTERMS.shortTitle'},
+    'Product': {'attribute': '_BaseResource__short_title', 'oslc_property': 'OSLC.shortTitle'},
     # 'Subject': {'attribute': '_BaseResource__subject', 'oslc_property': 'DCTERMS.subject'},
     'Source': {'attribute': '_Requirement__elaborated_by', 'oslc_property': 'OSLC_RM.elaboratedBy'},
     'Category': {'attribute': '_Requirement__constrained_by', 'oslc_property': 'OSLC_RM.constrainedBy'},

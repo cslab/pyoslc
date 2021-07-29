@@ -1,5 +1,10 @@
 from flask import session, g
-from flask._compat import string_types
+from six import PY2
+
+if PY2:
+    from flask._compat import string_types
+else:
+    string_types = (str,)
 from flask_login import login_user
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, StringField, PasswordField

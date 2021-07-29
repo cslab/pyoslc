@@ -24,7 +24,7 @@ def test_get_item_requirement(pyoslc):
     """
     response = pyoslc.item('X1C2V3B1')
     assert b'http://localhost/oslc/rm/requirement/X1C2V3B1' in response.data
-    assert b'http://purl.org/dc/terms/shortTitle' in response.data
+    assert b'http://open-services.net/ns/core#shortTitle' in response.data
     assert b'SDK-Dev' in response.data
     assert b'http://purl.org/dc/terms/subject' in response.data
     assert b'Project-1' in response.data

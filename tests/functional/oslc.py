@@ -66,6 +66,7 @@ class PyOSLC:
     def create(self, project_id):
         payload = """
             <rdf:RDF
+                xmlns:oslc="http://open-services.net/ns/core#"
                 xmlns:oslc_rm="http://open-services.net/ns/rm#"
                 xmlns:dcterms="http://purl.org/dc/terms/"
                 xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
@@ -79,7 +80,7 @@ class PyOSLC:
                     <oslc_rm:validatedBy>1</oslc_rm:validatedBy>
                     <dcterms:title>The SAFER FTA should not limit EVA crewmember mobility</dcterms:title>
                     <oslc_rm:affectedBy>0</oslc_rm:affectedBy>
-                    <dcterms:shortTitle>SDK-Dev</dcterms:shortTitle>
+                    <oslc:shortTitle>SDK-Dev</oslc:shortTitle>
                     <dcterms:creator>Mario</dcterms:creator>
                     <dcterms:subject>Project-1</dcterms:subject>
                     <oslc_rm:elaboratedBy>Ian Altman</oslc_rm:elaboratedBy>
@@ -94,6 +95,7 @@ class PyOSLC:
     def update(self, project_id, etag):
         payload = """
             <rdf:RDF
+                xmlns:oslc="http://open-services.net/ns/core#"
                 xmlns:oslc_rm="http://open-services.net/ns/rm#"
                 xmlns:dcterms="http://purl.org/dc/terms/"
                 xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
@@ -106,7 +108,7 @@ class PyOSLC:
                     <oslc_rm:validatedBy>1</oslc_rm:validatedBy>
                     <dcterms:title>[[UPDATED]] - The SAFER FTA should not limit EVA crewmember mobility</dcterms:title>
                     <oslc_rm:affectedBy>0</oslc_rm:affectedBy>
-                    <dcterms:shortTitle>[[UPDATED]] - SDK-Dev</dcterms:shortTitle>
+                    <oslc:shortTitle>[[UPDATED]] - SDK-Dev</oslc:shortTitle>
                     <dcterms:creator>Mario</dcterms:creator>
                     <dcterms:subject>Project-1</dcterms:subject>
                     <oslc_rm:elaboratedBy>Ian Altman</oslc_rm:elaboratedBy>

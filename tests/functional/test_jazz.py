@@ -67,9 +67,9 @@ def test_rootservices(pyoslc):
     assert (None, RDF.type, PYOSLC.TrackedResourceSetProvider) in g, 'The TRS Provider endpoint was not added'
     assert (None, RDF.type, OSLC_TRS.TrackedResourceSet) in g, 'The TRS endpoint was not added'
 
-    assert (None, DCTERMS.type, OSLC_CM.uri) in g, 'The CM type was not added'
-    assert (None, OSLC.domain, OSLC_RM.uri) in g, 'The RM Domain was not added'
-    assert (None, OSLC.domain, OSLC_AM.uri) in g, 'The AM Domain was not added'
+    assert (None, DCTERMS.type, URIRef(OSLC_CM.uri) if isinstance(OSLC_CM.uri, str) else OSLC_CM.uri) in g, 'The CM type was not added'
+    assert (None, OSLC.domain, URIRef(OSLC_RM.uri) if isinstance(OSLC_RM.uri, str) else OSLC_RM.uri) in g, 'The RM Domain was not added'
+    assert (None, OSLC.domain, URIRef(OSLC_AM.uri) if isinstance(OSLC_AM.uri, str) else OSLC_AM.uri) in g, 'The AM Domain was not added'
 
 
 def test_publisher(pyoslc):
