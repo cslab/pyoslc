@@ -26,3 +26,5 @@ docs/build
 
 .tox/
 test-reports/
+
+.python-version
