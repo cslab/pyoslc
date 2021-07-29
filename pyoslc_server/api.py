@@ -16,7 +16,7 @@ class OSLCAPI:
 
     # url_rule_class = Rule
 
-    def __init__(self, path: str, prefix="", **kwargs):
+    def __init__(self, path, prefix="", **kwargs):
         self.path = path
         self.view_functions = {}
         self.url_map = Map()
