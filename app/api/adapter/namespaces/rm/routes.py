@@ -75,7 +75,7 @@ class RequirementList(Resource):
                 data = graph.serialize(format=content_type)
 
                 # Sending the response to the client
-                response = make_response(data.decode('utf-8'), 200)
+                response = make_response(data.decode('utf-8') if not isinstance(data, str) else data, 200)
                 response.headers['Content-Type'] = content_type
                 response.headers['Oslc-Core-Version'] = "2.0"
 
@@ -223,7 +223,7 @@ class RequirementItem(Resource):
                 data = graph.serialize(format=content_type)
 
                 # Sending the response to the client
-                response = make_response(data.decode('utf-8'), 200)
+                response = make_response(data.decode('utf-8') if not isinstance(data, str) else data, 200)
                 response.headers['Content-Type'] = content_type
                 response.headers['Oslc-Core-Version'] = "2.0"
 

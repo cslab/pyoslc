@@ -5,6 +5,7 @@ from rdflib.extras.describer import Describer
 from rdflib.namespace import DCTERMS
 
 from pyoslc.resources.models import BaseResource
+from pyoslc.vocabularies.core import OSLC
 from pyoslc.vocabularies.rm import OSLC_RM
 import six
 
@@ -60,6 +61,7 @@ class Requirement(BaseResource):
         assert attributes is not None, 'The mapping for attributes is required'
 
         graph.bind('oslc_rm', OSLC_RM)
+        graph.bind('oslc', OSLC)
 
         d = Describer(graph, base=base_url)
         identifier = getattr(self, '_BaseResource__identifier')
