@@ -84,7 +84,7 @@ class OslcResource(Resource):
             return response_object, 400
 
         # Sending the response to the client
-        response = make_response(data.decode('utf-8'), 200)
+        response = make_response(data.decode('utf-8') if not isinstance(data, str) else data, 200)
         response.headers['Accept'] = accept
         response.headers['Content-Type'] = content
         response.headers['OSLC-Core-Version'] = "2.0"

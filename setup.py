@@ -29,6 +29,9 @@ setup(
         'RDFLib-JSONLD',
         'Flask',
         'Flask-RESTx',
+        'authlib',
+        'cachelib',
+        'requests',
     ],
     extras_require={
         'dev': ['check-manifest'],

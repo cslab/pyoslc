@@ -51,7 +51,7 @@ def test_requirement(client):
     assert b'X1C2V3B4' in response.data
     assert b'http://purl.org/dc/terms/title' in response.data
     assert b'OSLC RM Spec 4' in response.data
-    assert b'http://purl.org/dc/terms/shortTitle' in response.data
+    assert b'http://open-services.net/ns/core#shortTitle' in response.data
     assert b'SDK-Dev' in response.data
     assert b'http://purl.org/dc/terms/subject' in response.data
     assert b'OSLC RM Spec 4' in response.data

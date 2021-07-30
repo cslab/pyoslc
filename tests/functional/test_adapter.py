@@ -63,7 +63,7 @@ def test_service_provider_catalog(pyoslc):
 
         assert (spc, RDF.type, OSLC.ServiceProviderCatalog) in g, 'The ServiceProviderCatalog was not generated'
         assert (spc, OSLC.serviceProvider, None) in g, 'The response does not contain a ServiceProvider'
-        assert (spc, OSLC.domain, OSLC_RM.uri) in g, 'The ServiceProvider is not on RM domain'
+        assert (spc, OSLC.domain, URIRef(OSLC_RM.uri) if isinstance(OSLC_RM.uri, str) else OSLC_RM.uri) in g, 'The ServiceProvider is not on RM domain'
 
         assert 'Service Provider Catalog' in [t for t in g.objects(spc, DCTERMS.title)][0]
         assert 'Project-1' in [t for t in g.objects(spc, OSLC.serviceProvider)][0]
@@ -263,7 +263,7 @@ def test_update_resource(pyoslc):
     assert (None, RDF.type, OSLC_RM.Requirement) in g, 'The Requirement should be generated'
     assert (ri, DCTERMS.identifier, Literal('X1C2V3B6')) in g, 'The response does not contain a identifier'
 
-    short_title = [st for st in g.objects(ri, DCTERMS.shortTitle)]
+    short_title = [st for st in g.objects(ri, OSLC.shortTitle)]
     assert short_title is not None, 'The resource should have a title'
 
     assert '[[UPDATED]] - SDK-Dev' == short_title[0].value, 'The response does not contain a identifier'
