@@ -14,8 +14,7 @@ class Context:
 
     def match_request(self):
         try:
-            url_rule, self.request.view_args = \
-                self.adapter.match(return_rule=True)
+            url_rule, self.request.view_args = self.adapter.match(return_rule=True)
             self.request.url_rule = url_rule
         except HTTPException as e:
             self.request.routing_exception = e

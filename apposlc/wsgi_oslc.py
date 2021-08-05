@@ -1,6 +1,6 @@
 from werkzeug import run_simple
 
-from app import create_oslc_app
+from apposlc import create_oslc_app
 
 app = create_oslc_app()
 

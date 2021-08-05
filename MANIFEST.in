@@ -4,3 +4,5 @@ graft pyoslc/app/api/adapter/static
 graft pyoslc/app/api/adapter/dialogs/static
 graft pyoslc/app/api/adapter/dialogs/templates
 graft pyoslc/app/web/templates
+
+graft src/pyoslc_oauth/routes/templates
