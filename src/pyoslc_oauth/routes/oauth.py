@@ -9,7 +9,7 @@ from pyoslc_oauth.resources import OAuthConfiguration
 from pyoslc_oauth.server import auth_server
 
 oauth_bp = Blueprint('oauth', __name__,
-                     template_folder='../templates',
+                     template_folder='templates',
                      static_folder='../static')
 
 

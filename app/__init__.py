@@ -56,9 +56,3 @@ def create_app(app_config=None):
     oslc_oauth.init_app(app)
 
     return app
-
-
-def create_oslc_app():
-    from app.oslc_enabled import OSLCEnabled
-    app = OSLCEnabled()
-    return app

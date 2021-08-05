@@ -1,7 +1,8 @@
 from collections import namedtuple
 
-from rdflib import Graph, URIRef, RDF, RDFS, DCTERMS, Literal, XSD
+from rdflib import Graph, URIRef, RDF, Literal, XSD, RDFS, DCTERMS
 from rdflib.resource import Resource
+from werkzeug.datastructures import Headers
 from werkzeug.exceptions import HTTPException
 from werkzeug.routing import Map
 
@@ -14,8 +15,6 @@ ResourceRoute = namedtuple("ResourceRoute", "resource urls kwargs")
 
 class OSLCAPI:
 
-    # url_rule_class = Rule
-
     def __init__(self, path, prefix="", **kwargs):
         self.path = path
         self.view_functions = {}
@@ -27,13 +26,31 @@ class OSLCAPI:
         self.graph.bind('rdf', RDF)
         self.graph.bind('rdfs', RDFS)
         self.graph.bind('dcterms', DCTERMS)
+        self.rdf_format = 'text/turtle'
+        self.accept = 'text/turtle'
 
-    def add_resource(self, resource, *urls, **kwargs):
-        self.resources.append(ResourceRoute(resource, urls, kwargs))
+    # def add_resource(self, resource, *urls, **kwargs):
+    #     self.resources.append(ResourceRoute(resource, urls, kwargs))
 
     def handle_exception(self, error):
         if isinstance(error, HTTPException):
             return error
+
+    def preprocess_request(self, request):
+        accept = request.accept_mimetypes
+
+        if accept.best == '*/*' and not request.content_type:
+            request.content_type = accept
+
+        if accept in ('application/json-ld', 'application/ld+json', 'application/json'):
+            # If the content-type is any kind of json,
+            # we will use the json-ld format for the response.
+            self.rdf_format = 'json-ld'
+
+        if accept in ('application/xml', 'application/rdf+xml', 'application/atom+xml'):
+            self.rdf_format = 'pretty-xml'
+
+        return None
 
     def dispatch_request(self, context):
         request = context.request
@@ -45,7 +62,9 @@ class OSLCAPI:
 
     def full_dispatch_request(self, context):
         try:
-            res = self.dispatch_request(context)
+            res = self.preprocess_request(context.request)
+            if not res:
+                res = self.dispatch_request(context)
         except Exception as e:
             res = self.handle_exception(e)
 
@@ -64,7 +83,12 @@ class OSLCAPI:
             r.add(OSLC.statusCode, Literal(response.code))
             r.add(OSLC.message, Literal(response.description, datatype=XSD.string))
 
-            response = Response(self.graph.serialize(), status=response.code, mimetype='application/rdf+xml')
+            response = Response(self.graph.serialize(format=self.rdf_format),
+                                status=response.code,
+                                mimetype=request.content_type)
+
+        headers = Headers([('OSLC-Core-Version', '2.0')])
+        response.headers.extend(headers)
 
         return response
 

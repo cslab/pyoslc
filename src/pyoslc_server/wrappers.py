@@ -7,7 +7,7 @@ class RDFMixing:
     def is_rdf(self):
         mt = self.mimetype
         return (
-            mt == 'application/rdf+xml'
+            mt == 'text/turtle'
             or (mt.startswith('application/')) and mt.endswith('+xml')
         )
 
@@ -23,7 +23,8 @@ class Request(RequestBase, RDFMixing):
     url_rule = None
     view_args = None
     routing_exception = None
+    content_type = 'text/turtle'
 
 
 class Response(ResponseBase, RDFMixing):
-    default_mimetype = 'application/rdf+xml'
+    default_mimetype = 'text/turtle'
