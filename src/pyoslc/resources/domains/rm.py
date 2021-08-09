@@ -1,8 +1,7 @@
 import logging
 
-from rdflib import RDF, Literal
+from rdflib import RDF, Literal, DCTERMS
 from rdflib.extras.describer import Describer
-from rdflib.namespace import DCTERMS
 
 from pyoslc.resources.models import BaseResource
 from pyoslc.vocabularies.core import OSLC
@@ -62,6 +61,7 @@ class Requirement(BaseResource):
 
         graph.bind('oslc_rm', OSLC_RM)
         graph.bind('oslc', OSLC)
+        graph.bind('dcterms', DCTERMS)
 
         d = Describer(graph, base=base_url)
         identifier = getattr(self, '_BaseResource__identifier')
