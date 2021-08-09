@@ -14,7 +14,7 @@ RDFLib-jsonld
 
 Authlib~=0.14.3
 
-Werkzeug==0.16.1
+Werkzeug
 requests
 pytest
 
