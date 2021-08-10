@@ -10,7 +10,6 @@ from functools import update_wrapper
 from threading import Lock, Thread
 
 import click
-from werkzeug.utils import import_string
 
 try:
     import dotenv
@@ -43,8 +42,8 @@ def find_best_app(script_info, module):
     elif len(matches) > 1:
         raise NoAppException(
             "Detected multiple PyOSLC applications in module"
-            f" {module.__name__!r}. Use 'PYOSLC_APP={module.__name__}:name'"
-            f" to specify the correct one."
+            " {module}. Use 'PYOSLC_APP={module}:name'"
+            " to specify the correct one.".format(module=module.__name__)
         )
 
     # Search for app factory functions.
@@ -61,16 +60,18 @@ def find_best_app(script_info, module):
                 if not _called_with_wrong_args(app_factory):
                     raise
                 raise NoAppException(
-                    f"Detected factory {attr_name!r} in module {module.__name__!r},"
+                    "Detected factory {factory} in module {module},"
                     " but could not call it without arguments. Use"
-                    f" \"PYOSLC_APP='{module.__name__}:{attr_name}(args)'\""
-                    " to specify arguments."
+                    " \"PYOSLC_APP='{module}:{factory}(args)'\""
+                    " to specify arguments.".format(
+                        factory=attr_name, module=module.__name__
+                    )
                 )
 
     raise NoAppException(
         "Failed to find PyOSLC application or factory in module"
-        f" {module.__name__!r}. Use 'PYOSLC_APP={module.__name__}:name'"
-        " to specify one."
+        " {module}. Use 'PYOSLC_APP={module}:name'"
+        " to specify one.".format(module=module.__name__)
     )
 
 
@@ -145,7 +146,7 @@ def find_app_by_string(script_info, module, app_name):
         expr = ast.parse(app_name.strip(), mode="eval").body
     except SyntaxError:
         raise NoAppException(
-            f"Failed to parse {app_name!r} as an attribute name or function call."
+            "Failed to parse {app_name} as an attribute name or function call.".format(app_name=app_name)
         )
 
     if isinstance(expr, ast.Name):
@@ -155,7 +156,7 @@ def find_app_by_string(script_info, module, app_name):
         # Ensure the function name is an attribute name only.
         if not isinstance(expr.func, ast.Name):
             raise NoAppException(
-                f"Function reference must be a simple name: {app_name!r}."
+                "Function reference must be a simple name: {app_name}.".format(app_name=app_name)
             )
 
         name = expr.func.id
@@ -168,18 +169,18 @@ def find_app_by_string(script_info, module, app_name):
             # literal_eval gives cryptic error messages, show a generic
             # message with the full expression instead.
             raise NoAppException(
-                f"Failed to parse arguments as literal values: {app_name!r}."
+                "Failed to parse arguments as literal values: {app_name}.".format(app_name=app_name)
             )
     else:
         raise NoAppException(
-            f"Failed to parse {app_name!r} as an attribute name or function call."
+            "Failed to parse {app_name} as an attribute name or function call.".format(app_name=app_name)
         )
 
     try:
         attr = getattr(module, name)
     except AttributeError:
         raise NoAppException(
-            f"Failed to find attribute {name!r} in {module.__name__!r}."
+            "Failed to find attribute {name} in {module}.".format(name=name, module=module.__name__)
         )
 
     # If the attribute is a function, call it with any args and kwargs
@@ -192,9 +193,9 @@ def find_app_by_string(script_info, module, app_name):
                 raise
 
             raise NoAppException(
-                f"The factory {app_name!r} in module"
-                f" {module.__name__!r} could not be called with the"
-                " specified arguments."
+                "The factory {app_name} in module"
+                " {module} could not be called with the"
+                " specified arguments.".format(app_name=app_name, module=module.__name__)
             )
     else:
         app = attr
@@ -204,7 +205,7 @@ def find_app_by_string(script_info, module, app_name):
 
     raise NoAppException(
         "A valid PyOSLC application was not obtained from"
-        f" '{module.__name__}:{app_name}'."
+        " '{module}:{app_name}'.".format(module=module.__name__, app_name=app_name)
     )
 
 
@@ -247,11 +248,11 @@ def locate_app(script_info, module_name, app_name, raise_if_not_found=True):
         # Determine this by checking whether the trace has a depth > 1.
         if sys.exc_info()[2].tb_next:
             raise NoAppException(
-                f"While importing {module_name!r}, an ImportError was"
-                f" raised:\n\n{traceback.format_exc()}"
+                "While importing {module}, an ImportError was"
+                " raised:\n\n{traceback}".format(module=module_name, traceback=traceback.format_exc())
             )
         elif raise_if_not_found:
-            raise NoAppException(f"Could not import {module_name!r}.")
+            raise NoAppException("Could not import {module}.".format(module=module_name))
         else:
             return
 
@@ -271,9 +272,13 @@ def get_version(ctx, param, value):
     from pyoslc import __version__
 
     click.echo(
-        f"Python {platform.python_version()}\n"
-        f"PyOSLC {__version__}\n"
-        f"Werkzeug {werkzeug.__version__}",
+        "Python {platform}\n"
+        "PyOSLC {pyoslc_version}\n"
+        "Werkzeug {werkzeug_version}".format(
+            platform=platform.python_version(),
+            pyoslc_version=__version__,
+            werkzeug_version=werkzeug.__version__
+        ),
         color=ctx.color,
     )
     ctx.exit()
@@ -430,7 +435,7 @@ def with_appcontext(f):
     return update_wrapper(decorator, f)
 
 
-def get_env() -> str:
+def get_env():
     """Get the environment the app is running in, indicated by the
     :envvar:`PYOSLC_ENV` environment variable. The default is
     ``'production'``.
@@ -438,7 +443,7 @@ def get_env() -> str:
     return os.environ.get("PYOSLC_ENV") or "production"
 
 
-def get_debug_flag() -> bool:
+def get_debug_flag():
     """Get whether debug mode should be enabled for the app, indicated
     by the :envvar:`PYOSLC_DEBUG` environment variable. The default is
     ``True`` if :func:`.get_env` returns ``'development'``, or ``False``
@@ -513,7 +518,7 @@ class OSLCGroup(AppGroup):
         add_version_option=True,
         load_dotenv=True,
         set_debug_flag=True,
-        **extra,
+        **extra
     ):
         params = list(extra.pop("params", None) or ())
 
@@ -546,7 +551,7 @@ class OSLCGroup(AppGroup):
         try:
             return info.load_app().cli.get_command(ctx, name)
         except NoAppException as e:
-            click.secho(f"Error: {e.format_message()}\n", err=True, fg="red")
+            click.secho("Error: {error}\n".format(error=e.format_message()), err=True, fg="red")
 
     def list_commands(self, ctx):
         # Start with the built-in and plugin commands.
@@ -560,11 +565,11 @@ class OSLCGroup(AppGroup):
         except NoAppException as e:
             # When an app couldn't be loaded, show the error message
             # without the traceback.
-            click.secho(f"Error: {e.format_message()}\n", err=True, fg="red")
+            click.secho("Error: {error}\n".format(error=e.format_message()), err=True, fg="red")
         except Exception:
             # When any other errors occurred during loading, show the
             # full traceback.
-            click.secho(f"{traceback.format_exc()}\n", err=True, fg="red")
+            click.secho("{traceback}\n".format(traceback=traceback.format_exc()), err=True, fg="red")
 
         return sorted(rv)
 
@@ -654,14 +659,14 @@ def show_server_banner(env, debug, app_import_path, eager_loading):
         return
 
     if app_import_path is not None:
-        message = f" * Serving PyOSLC app {app_import_path!r}"
+        message = " * Serving PyOSLC app {path}".format(path=app_import_path)
 
         if not eager_loading:
             message += " (lazy loading)"
 
         click.echo(message)
 
-    click.echo(f" * Environment: {env}")
+    click.echo(" * Environment: {env}".format(env=env))
 
     if env == "production":
         click.secho(
@@ -672,7 +677,7 @@ def show_server_banner(env, debug, app_import_path, eager_loading):
         click.secho("   Use a production WSGI server instead.", dim=True)
 
     if debug is not None:
-        click.echo(f" * Debug mode: {'on' if debug else 'off'}")
+        click.echo(" * Debug mode: {mode}".format(mode='on' if debug else 'off'))
 
 
 @click.command("run", short_help="Run a development server.")
@@ -757,7 +762,7 @@ debug mode.
 )
 
 
-def main() -> None:
+def main():
     if int(click.__version__[0]) < 8:
         warnings.warn(
             "Using the `pyoslc` cli with Click 7 is deprecated and"
