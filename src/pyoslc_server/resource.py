@@ -1,28 +1,28 @@
 import logging
 
-from flask import request, make_response
-from flask_restx import Resource
 from rdflib import Graph, RDF, RDFS, DCTERMS
 from rdflib.plugin import PluginException
 from werkzeug.exceptions import UnsupportedMediaType
 
 from pyoslc.vocabularies.core import OSLC
-from pyoslc.vocabularies.jazz import JAZZ_PROCESS
+from pyoslc_server import request
+
+from .views import OSLCResourceView
+from .wrappers import Response
 
 logger = logging.getLogger(__name__)
 
-
-class OslcResource(Resource):
+class OSLCResource(OSLCResourceView):
 
     def __init__(self, *args, **kwargs):
-        super(OslcResource, self).__init__(*args, **kwargs)
+        super(OSLCResource, self).__init__(*args, **kwargs)
 
         self.graph = kwargs.get('graph', Graph())
         self.graph.bind('oslc', OSLC)
         self.graph.bind('rdf', RDF)
         self.graph.bind('rdfs', RDFS)
         self.graph.bind('dcterms', DCTERMS)
-        self.graph.bind('j.0', JAZZ_PROCESS)
+        # self.graph.bind('j.0', JAZZ_PROCESS)
 
     def get(self, *args, **kwargs):
         accept = request.headers.get('accept')
@@ -84,7 +84,7 @@ class OslcResource(Resource):
             return response_object, 400
 
         # Sending the response to the client
-        response = make_response(data.decode('utf-8') if not isinstance(data, str) else data, 200)
+        response = Response(data.decode('utf-8') if not isinstance(data, str) else data, 200)
         response.headers['Accept'] = accept
         response.headers['Content-Type'] = content
         response.headers['OSLC-Core-Version'] = "2.0"

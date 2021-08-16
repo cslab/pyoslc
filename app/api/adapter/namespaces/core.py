@@ -1,5 +1,8 @@
 import logging
 from datetime import datetime
+
+from pyoslc_server.providers import ServiceProviderCatalogSingleton
+from pyoslc_server.resource import OSLCResource
 from six.moves.urllib.parse import urlparse
 from xml.sax import SAXParseException
 
@@ -17,11 +20,10 @@ from app.api.adapter.namespaces.business import get_requirement_list, get_requir
 from app.api.adapter.namespaces.rm.csv_requirement_repository import CsvRequirementRepository
 from app.api.adapter.namespaces.rm.parsers import specification_parser
 from app.api.adapter.resources.resource_service import config_service_resource
-from app.api.adapter.services.providers import ServiceProviderCatalogSingleton, RootServiceSingleton, PublisherSingleton
+from app.api.adapter.services.providers import RootServiceSingleton, PublisherSingleton
 from app.api.adapter.services.specification import ServiceResource
 from pyoslc.resources.domains.rm import Requirement
 from pyoslc.resources.models import ResponseInfo, Compact, Preview
-from pyoslc.rest.resource import OslcResource
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +44,7 @@ config_service_resource(
 @api.representation('application/rdf+xml')
 @api.representation('application/json-ld')
 @api.representation('text/turtle')
-class ServiceProviderCatalog(OslcResource):
+class ServiceProviderCatalog(OSLCResource):
 
     def __init__(self, *args, **kwargs):
         super(ServiceProviderCatalog, self).__init__(*args, **kwargs)
@@ -64,7 +66,7 @@ class ServiceProviderCatalog(OslcResource):
 @api.representation('application/rdf+xml')
 @api.representation('application/json-ld')
 @api.representation('text/turtle')
-class ServiceProvider(OslcResource):
+class ServiceProvider(OSLCResource):
 
     def __init__(self, *args, **kwargs):
         super(ServiceProvider, self).__init__(*args, **kwargs)
@@ -90,7 +92,7 @@ class ServiceProvider(OslcResource):
 @api.representation('application/rdf+xml')
 @api.representation('application/json-ld')
 @api.representation('text/turtle')
-class ResourceOperation(OslcResource):
+class ResourceOperation(OSLCResource):
 
     def get(self, service_provider_id):
         super(ResourceOperation, self).get()
@@ -156,7 +158,7 @@ class ResourceOperation(OslcResource):
 @api.representation('application/rdf+xml')
 @api.representation('application/json-ld')
 @api.representation('text/turtle')
-class ResourcePreview(OslcResource):
+class ResourcePreview(OSLCResource):
 
     def get(self, service_provider_id, requirement_id):
         super(ResourcePreview, self).get()
@@ -261,7 +263,7 @@ class ResourcePreview(OslcResource):
 
 
 @adapter_ns.route('/provider/<service_provider_id>/resources/requirement/<requirement_id>/<preview_type>')
-class ResourcePreviewSmallLarge(OslcResource):
+class ResourcePreviewSmallLarge(OSLCResource):
 
     def get(self, service_provider_id, requirement_id, preview_type):
         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
@@ -287,7 +289,7 @@ class ResourcePreviewSmallLarge(OslcResource):
 
 
 @adapter_ns.route('/rootservices')
-class RootServices(OslcResource):
+class RootServices(OSLCResource):
 
     def get(self):
 
@@ -312,7 +314,7 @@ class RootServices(OslcResource):
 
 
 @adapter_ns.route('/config')
-class ConfigurationCatalog(OslcResource):
+class ConfigurationCatalog(OSLCResource):
 
     def get(self):
         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint))
@@ -335,7 +337,7 @@ class ConfigurationCatalog(OslcResource):
 
 
 @adapter_ns.route('/config/components')
-class ConfigurationComponent(OslcResource):
+class ConfigurationComponent(OSLCResource):
 
     def get(self):
         super(ConfigurationComponent, self).get()
@@ -359,7 +361,7 @@ class ConfigurationComponent(OslcResource):
 
 
 @adapter_ns.route('/config/publisher')
-class ConfigurationPublisher(OslcResource):
+class ConfigurationPublisher(OSLCResource):
 
     def get(self):
         super(ConfigurationPublisher, self).get()
@@ -381,7 +383,7 @@ class ConfigurationPublisher(OslcResource):
 
 
 @adapter_ns.route('/config/selection')
-class ConfigurationSelection(OslcResource):
+class ConfigurationSelection(OSLCResource):
 
     def get(self):
         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint))
@@ -422,7 +424,7 @@ class ConfigurationSelection(OslcResource):
 
 
 @adapter_ns.route('/config/stream/<int:stream_id>')
-class ConfigurationStream(OslcResource):
+class ConfigurationStream(OSLCResource):
 
     def get(self, stream_id):
         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint), stream_id=stream_id)
@@ -453,7 +455,7 @@ class ConfigurationStream(OslcResource):
 
 
 @adapter_ns.route('/scr')
-class Source(OslcResource):
+class Source(OSLCResource):
 
     def get(self):
         response = make_response(render_template('pyoslc_oauth/scr.html'))

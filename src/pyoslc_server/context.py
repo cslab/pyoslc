@@ -5,10 +5,13 @@ from pyoslc_server.wrappers import Request
 
 class Context:
 
-    def __init__(self, app, environ, request=None):
+    def __init__(self, app, environ, request=None, session=None):
         self.app = app
         self.request = request if request else Request(environ)
         self.adapter = app.get_adapter(self.request)
+        self.session = session
+        self.preserved = False
+        self._preserved_exc = None
 
         self.match_request()
 
