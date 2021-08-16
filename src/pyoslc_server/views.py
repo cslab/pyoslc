@@ -200,7 +200,7 @@ class View(object):
     """Alternative way to use view functions.  A subclass has to implement
     :meth:`dispatch_request` which is called with the view arguments from
     the URL routing system.  If :attr:`methods` is provided the methods
-    do not have to be passed to the :meth:`~flask.Flask.add_url_rule`
+    do not have to be passed to the :meth:`~app.OSLCAPP.add_url_rule`
     method explicitly::
 
         class MyView(View):
@@ -391,5 +391,3 @@ def unpack(response, default_code=HTTPStatus.OK):
         return data, code or default_code, headers
     else:
         raise ValueError("Too many response values")
-
-
