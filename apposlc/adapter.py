@@ -1,6 +1,5 @@
 from pyoslc.vocabularies.rm import OSLC_RM
-from rdflib import DCTERMS, RDF, Literal, Graph, URIRef
-from rdflib.resource import Resource
+from rdflib import DCTERMS
 
 REQ_TO_RDF = {
     "identifier": DCTERMS.identifier,
@@ -33,19 +32,3 @@ class RequirementAdapter:
 
     def item_keys(self, item):
         return item.identifier
-
-    def to_rdf(self, graph, subject, item):
-        graph.bind('rdf', RDF)
-        graph.bind('dcterms', DCTERMS)
-        graph.bind('oslc_rm', OSLC_RM)
-        r = Resource(graph, URIRef(subject))
-        r.add(RDF.type, OSLC_RM.Requirement)
-
-        for field, property in REQ_TO_RDF.items():
-            r.add(property, Literal(getattr(item, field)))
-
-        return graph
-
-    def __iter__(self):
-        pass
-

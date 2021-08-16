@@ -20,7 +20,6 @@ def camel_to_dash(value):
 
 
 def url_for(endpoint, **values):
-    #appctx = _app_ctx_stack.top
     reqctx = _request_ctx_stack.top
 
     # If request specific information is available we have some extra

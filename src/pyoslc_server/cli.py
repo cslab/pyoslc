@@ -539,7 +539,7 @@ class OSLCGroup(AppGroup):
         # self._load_plugin_commands()
         # Look up built-in and plugin commands, which should be
         # available even if the app fails to load.
-        rv = super().get_command(ctx, name)
+        rv = super(OSLCGroup, self).get_command(ctx, name)
 
         if rv is not None:
             return rv
@@ -555,7 +555,7 @@ class OSLCGroup(AppGroup):
 
     def list_commands(self, ctx):
         # Start with the built-in and plugin commands.
-        rv = set(super().list_commands(ctx))
+        rv = set(super(OSLCGroup, self).list_commands(ctx))
         info = ctx.ensure_object(ScriptInfo)
 
         # Add commands provided by the app, showing an error and
@@ -591,7 +591,7 @@ class OSLCGroup(AppGroup):
 
         kwargs["obj"] = obj
         kwargs.setdefault("auto_envvar_prefix", "PYOSLC")
-        return super().main(*args, **kwargs)
+        return super(OSLCGroup, self).main(*args, **kwargs)
 
 
 def load_dotenv(path=None):

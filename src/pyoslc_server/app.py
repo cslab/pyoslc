@@ -7,13 +7,13 @@ from werkzeug.exceptions import HTTPException, InternalServerError
 from werkzeug.routing import Map
 from werkzeug.routing import Rule
 
-
 from pyoslc.vocabularies.core import OSLC
 from .api import API
 from .context import Context
 from .wrappers import Response
 from .globals import _request_ctx_stack
 from .rdf import to_rdf
+
 
 class OSLCAPP:
 
@@ -36,7 +36,6 @@ class OSLCAPP:
         self.default_mediatype = 'application/json'
 
         self.api = API(self, '{prefix}/service/catalog'.format(prefix=self.prefix))
-
 
     def add_url_rule(self, rule, endpoint=None, view_func=None, **options):
 
@@ -86,8 +85,6 @@ class OSLCAPP:
             return error
 
         return InternalServerError()
-
-
 
     def preprocess_request(self, request):
         accept = request.accept_mimetypes

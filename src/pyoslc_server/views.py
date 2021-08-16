@@ -3,15 +3,19 @@ from werkzeug.wrappers import BaseResponse
 
 from .wrappers import RequestBase as request
 
+
 def with_metaclass(meta, *bases):
     """Create a base class with a metaclass."""
+
     # This requires a bit of explanation: the basic idea is to make a
     # dummy metaclass for one level of class instantiation that replaces
     # itself with the actual metaclass.
     class metaclass(type):
         def __new__(cls, name, this_bases, d):
             return meta(name, bases, d)
+
     return type.__new__(metaclass, 'temporary_class', (), {})
+
 
 class HTTPStatus(IntEnum):
     """HTTP status codes and reason phrases
@@ -192,9 +196,11 @@ class HTTPStatus(IntEnum):
         "The client needs to authenticate to gain network access",
     )
 
+
 http_method_funcs = frozenset(
     ["get", "post", "head", "options", "delete", "put", "trace", "patch", "get_item"]
 )
+
 
 class View(object):
     """Alternative way to use view functions.  A subclass has to implement
@@ -262,6 +268,7 @@ class View(object):
         The arguments passed to :meth:`as_view` are forwarded to the
         constructor of the class.
         """
+
         def view(*args, **kwargs):
             self = view.view_class(*class_args, **class_kwargs)
             return self.dispatch_request(*args, **kwargs)
@@ -374,7 +381,6 @@ class OSLCResourceView(MethodView):
 
 
 def unpack(response, default_code=HTTPStatus.OK):
-
     if not isinstance(response, tuple):
         # data only
         return response, default_code, {}

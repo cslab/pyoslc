@@ -5,8 +5,9 @@ from functools import wraps
 from werkzeug.wrappers import BaseResponse
 
 from .namespace import Namespace
-from .endpoints import ServiceProviderCatalog
+# from .endpoints import ServiceProviderCatalog
 from .helpers import camel_to_dash
+
 
 class API(object):
 
@@ -112,7 +113,7 @@ class API(object):
 
     def make_response(self, data, *args, **kwargs):
         default_mediatype = (
-            kwargs.pop("fallback_mediatype", None) or self.default_mediatype
+                kwargs.pop("fallback_mediatype", None) or self.default_mediatype
         )
         mediatype = request.accept_mimetypes.best_match(
             self.representations, default=default_mediatype,
@@ -189,8 +190,8 @@ class API(object):
         """Returns a list of requested mediatypes sent in the Accept header"""
         # 'application/json',
         return [
-                h
-                for h, q in sorted(
-                    request.accept_mimetypes, key=operator.itemgetter(1), reverse=True
-                )
-                ]
+            h
+            for h, q in sorted(
+                request.accept_mimetypes, key=operator.itemgetter(1), reverse=True
+            )
+        ]

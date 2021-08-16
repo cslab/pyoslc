@@ -12,6 +12,7 @@ from .wrappers import Response
 
 logger = logging.getLogger(__name__)
 
+
 class OSLCResource(OSLCResourceView):
 
     def __init__(self, *args, **kwargs):
