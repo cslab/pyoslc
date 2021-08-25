@@ -1,7 +1,6 @@
 import logging
 from datetime import datetime
 
-from pyoslc_server.providers import ServiceProviderCatalogSingleton
 from pyoslc_server.resource import OSLCResource
 from six.moves.urllib.parse import urlparse
 from xml.sax import SAXParseException
@@ -40,52 +39,52 @@ config_service_resource(
 )
 
 
-@adapter_ns.route('/catalog')
-@api.representation('application/rdf+xml')
-@api.representation('application/json-ld')
-@api.representation('text/turtle')
-class ServiceProviderCatalog(OSLCResource):
+# @adapter_ns.route('/catalog')
+# @api.representation('application/rdf+xml')
+# @api.representation('application/json-ld')
+# @api.representation('text/turtle')
+# class ServiceProviderCatalog(OSLCResource):
+#
+#     def __init__(self, *args, **kwargs):
+#         super(ServiceProviderCatalog, self).__init__(*args, **kwargs)
+#
+#     def get(self):
+#         super(ServiceProviderCatalog, self).get()
+#         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint))
+#         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
+#
+#         catalog_url = urlparse(base_url).geturl()
+#
+#         catalog = ServiceProviderCatalogSingleton.get_catalog(catalog_url)
+#         catalog.to_rdf(self.graph)
+#
+#         return self.create_response(graph=self.graph)
 
-    def __init__(self, *args, **kwargs):
-        super(ServiceProviderCatalog, self).__init__(*args, **kwargs)
 
-    def get(self):
-        super(ServiceProviderCatalog, self).get()
-        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint))
-        base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
-
-        catalog_url = urlparse(base_url).geturl()
-
-        catalog = ServiceProviderCatalogSingleton.get_catalog(catalog_url)
-        catalog.to_rdf(self.graph)
-
-        return self.create_response(graph=self.graph)
-
-
-@adapter_ns.route('/provider/<service_provider_id>')
-@api.representation('application/rdf+xml')
-@api.representation('application/json-ld')
-@api.representation('text/turtle')
-class ServiceProvider(OSLCResource):
-
-    def __init__(self, *args, **kwargs):
-        super(ServiceProvider, self).__init__(*args, **kwargs)
-
-    def get(self, service_provider_id):
-        super(ServiceProvider, self).get()
-        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
-                               service_provider_id=service_provider_id)
-        base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
-
-        service_provider_url = urlparse(base_url).geturl()
-
-        provider = ServiceProviderCatalogSingleton.get_provider(service_provider_url, service_provider_id)
-
-        if not provider:
-            return make_response('No resources with ID {}'.format(service_provider_id), 404)
-
-        provider.to_rdf(self.graph)
-        return self.create_response(graph=self.graph)
+# @adapter_ns.route('/provider/<service_provider_id>')
+# @api.representation('application/rdf+xml')
+# @api.representation('application/json-ld')
+# @api.representation('text/turtle')
+# class ServiceProvider(OSLCResource):
+#
+#     def __init__(self, *args, **kwargs):
+#         super(ServiceProvider, self).__init__(*args, **kwargs)
+#
+#     def get(self, service_provider_id):
+#         super(ServiceProvider, self).get()
+#         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
+#                                service_provider_id=service_provider_id)
+#         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
+#
+#         service_provider_url = urlparse(base_url).geturl()
+#
+#         provider = ServiceProviderCatalogSingleton.get_provider(service_provider_url, service_provider_id)
+#
+#         if not provider:
+#             return make_response('No resources with ID {}'.format(service_provider_id), 404)
+#
+#         provider.to_rdf(self.graph)
+#         return self.create_response(graph=self.graph)
 
 
 @adapter_ns.route('/provider/<service_provider_id>/resources/requirement')

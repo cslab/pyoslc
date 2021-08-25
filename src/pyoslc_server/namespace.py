@@ -5,7 +5,7 @@ ResourceRoute = namedtuple("ResourceRoute", "resource urls kwargs")
 
 class Namespace(object):
 
-    def __init__(self, name, description=None, path=None, authorizations=None, **kwargs):
+    def __init__(self, name, description=None, path='/', authorizations=None, **kwargs):
         print(
             "creating Namespace: <name: {name}> <description: {description}> <path: {path}> <kwargs: {kwargs}>".format(
                 name=name, description=description, path=path, kwargs=kwargs))

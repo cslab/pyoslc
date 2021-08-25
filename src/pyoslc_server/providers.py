@@ -1,4 +1,8 @@
+from datetime import datetime
+
 from pyoslc.resources.models import ServiceProviderCatalog
+from pyoslc_server.factories import ContactServiceProviderFactory
+
 
 class ServiceProviderCatalogSingleton(object):
     instance = None
@@ -8,54 +12,54 @@ class ServiceProviderCatalogSingleton(object):
     def __new__(cls, *args, **kwargs):
         if not cls.instance:
             cls.instance = super(ServiceProviderCatalogSingleton, cls).__new__(cls, *args, **kwargs)
-
             cls.catalog = ServiceProviderCatalog()
-            cls.catalog.title = 'Contact Software Platform Service Provider Catalog'
-            cls.catalog.description = 'A Service Provider for the Contact Software Platform.'
 
         return cls.instance
 
     @classmethod
-    def get_catalog(cls, catalog_url):
+    def get_catalog(cls, catalog_url, title=None, description=None, providers=None):
         if not cls.instance:
             cls()
 
         cls.catalog.about = catalog_url
-        # cls.initialize_providers(catalog_url)
+        cls.catalog.title = title if title else 'Service Provider Catalog'
+        cls.catalog.description = description if description else 'Service Provider Catalog for the PyOSLC application.'
+
+        cls.initialize_providers(catalog_url, providers if providers else [])
 
         return cls.catalog
 
     @classmethod
-    def get_providers(cls, request):
-        cls.initialize_providers(request)
+    def get_providers(cls, request, providers=None):
+        cls.initialize_providers(request, providers=providers)
         return cls.providers
 
     @classmethod
-    def get_provider(cls, service_provider_url, identifier):
+    def get_provider(cls, service_provider_url, identifier, title=None, description=None, providers=None):
         if not cls.instance:
             sp = 'provider/{}'.format(identifier)
             catalog_url = service_provider_url.replace(sp, 'catalog')
-            cls.get_catalog(catalog_url)
+            cls.get_catalog(catalog_url, providers=providers)
 
         sp = cls.providers.get(identifier)
         if not sp:
-            cls.get_providers(service_provider_url)
+            cls.get_providers(service_provider_url, providers=providers)
             sp = cls.providers.get(identifier)
 
         return sp
 
     @classmethod
-    def initialize_providers(cls, catalog_url):
+    def initialize_providers(cls, catalog_url, providers=None):
 
-        service_providers = CSVImplementation.get_service_provider_info()
+        service_providers = providers  # CSVImplementation.get_service_provider_info()
 
         for sp in service_providers:
             identifier = sp.get('id')
             if identifier not in list(cls.providers.keys()):
                 name = sp.get('name')
                 title = '{}'.format(name)
-                description = 'Service Provider for the Contact Software platform service (id: {}; kind: {})'.format(
-                    identifier, sp.get('class').__name__)
+                description = 'Service Provider for the Contact Software platform service (id: {})'.format(
+                    identifier)
                 publisher = None
                 parameters = {'id': sp.get('id')}
                 sp = ContactServiceProviderFactory.create_service_provider(catalog_url, title, description, publisher,

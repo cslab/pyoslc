@@ -27,4 +27,3 @@ def to_rdf(subject, attr_mapping, rdf_type, oslc_domain, rdf_format, *args, **kw
         r.add(property, Literal(getattr(data, field)))
 
     return graph.serialize(format=rdf_format)
-

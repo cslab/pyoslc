@@ -1,12 +1,18 @@
+import operator
+
 import six
 
 from functools import wraps
 
+from werkzeug.exceptions import NotAcceptable, InternalServerError
 from werkzeug.wrappers import BaseResponse
 
 from .namespace import Namespace
-# from .endpoints import ServiceProviderCatalog
+from .endpoints import ServiceProviderCatalog, ServiceProvider
 from .helpers import camel_to_dash
+from .views import unpack
+from .globals import request
+from .helpers import make_response as oslcapp_make_response
 
 
 class API(object):
@@ -20,6 +26,7 @@ class API(object):
         self.resources = []
         self.app = None
 
+        self.default_namespace = None
         # self.default_namespace = self.namespace(
         #     name='SPC',
         #     description='SPC',
@@ -125,7 +132,7 @@ class API(object):
             resp.headers["Content-Type"] = mediatype
             return resp
         elif mediatype == "text/plain":
-            resp = original_app_make_response(str(data), *args, **kwargs)
+            resp = oslcapp_make_response(str(data), *args, **kwargs)
             resp.headers["Content-Type"] = "text/plain"
             return resp
         else:
@@ -180,6 +187,28 @@ class API(object):
         print("namespace: <args: {args}> <kwargs: {kwargs}>".format(args=args, kwargs=kwargs))
         ns = Namespace(*args, **kwargs)
         self.add_namespace(ns)
+        return ns
+
+    def add_catalog(self, *args, **kwargs):
+        name = kwargs.get('title', None)
+        ns = Namespace(name=name, api=self, *args, **kwargs)
+        self.add_namespace(ns)
+        # kwargs.update({'provider': [{
+        #     'id': 'Project-1',
+        #     'name': 'PyOSLC Service Provider for Project 1',
+        #     'class': ''
+        # }]})
+        ns.add_resource(ServiceProviderCatalog, '/catalog')  # , resource_class_kwargs=kwargs)
+        return ns
+
+    def add_provider(self, catalog_id, *args, **kwargs):
+        ns = self.namespaces[[a.name for a in self.namespaces].index(catalog_id)]
+        # kwargs.update({'provider': ns.resources})
+        kwargs.update({'providers': [{
+            'id': 'Project-1',
+            'name': 'PyOSLC Service Provider for Project 1'
+        }]})
+        ns.add_resource(ServiceProvider, '/provider/<string:provider_id>', resource_class_kwargs=kwargs)
         return ns
 
     def mediatypes_method(self):

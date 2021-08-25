@@ -4,7 +4,7 @@ from datetime import date
 
 import six
 from rdflib import URIRef, Literal, RDF, XSD, BNode
-from rdflib.namespace import DCTERMS, RDFS
+from rdflib.namespace import DCTERMS, RDFS, ClosedNamespace
 from rdflib.resource import Resource
 
 from pyoslc.helpers import build_uri
@@ -568,7 +568,7 @@ class Service(BaseResource):
             s.add(DCTERMS.description, Literal(self.description, datatype=XSD.Literal))
 
         if self.domain:
-            s.add(OSLC.domain, URIRef(self.domain))
+            s.add(OSLC.domain, URIRef(self.domain.uri if isinstance(self.domain, ClosedNamespace) else self.domain))
 
         if self.creation_factory:
             for cf in self.creation_factory:
@@ -1311,6 +1311,47 @@ class Compact(AbstractResource):
 
         return d
 
+
+class Error(AbstractResource):
+
+    def __init__(self, about=None, types=None, properties=None,
+                 status_code=None, message=None, extended_error=None):
+        super(Error, self).__init__(about, types, properties)
+        self.__status_code = status_code if status_code is not None else None
+        self.__message = message if message is not None else None
+        self.__extended_error = extended_error if extended_error is not None else None
+
+    @property
+    def status_code(self):
+        return self.__status_code
+
+    @status_code.setter
+    def status_code(self, status_code):
+        self.__status_code = status_code
+
+    @property
+    def message(self):
+        return self.__message
+
+    @message.setter
+    def message(self, message):
+        self.__message = message
+
+    def to_rdf(self, graph):
+        super(Error, self).to_rdf(graph)
+
+        uri = self.about if self.about else ''
+
+        error = Resource(graph, URIRef(uri))
+        error.add(RDF.type, OSLC.Error)
+
+        if self.status_code:
+            error.add(OSLC.statusCode, Literal(self.status_code))
+
+        if self.message:
+            error.add(OSLC.message, Literal(self.message, datatype=XSD.string))
+
+        return error
 
 """
 

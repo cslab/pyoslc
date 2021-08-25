@@ -1,18 +1,23 @@
-import logging
+import sys
 
-from rdflib import Graph, URIRef, RDF, Literal, XSD, RDFS, DCTERMS
+from rdflib import Graph, URIRef, RDF, Literal, XSD
 from rdflib.resource import Resource
+from werkzeug._compat import integer_types, reraise, text_type
 from werkzeug.datastructures import Headers
-from werkzeug.exceptions import HTTPException, InternalServerError
+from werkzeug.exceptions import HTTPException, InternalServerError, BadRequestKeyError, default_exceptions
 from werkzeug.routing import Map
 from werkzeug.routing import Rule
+from werkzeug.routing import RoutingException
+from werkzeug.wrappers import BaseResponse
 
 from pyoslc.vocabularies.core import OSLC
+from pyoslc.resources.models import AbstractResource
 from .api import API
 from .context import Context
 from .wrappers import Response
-from .globals import _request_ctx_stack
+from .globals import _request_ctx_stack, request
 from .rdf import to_rdf
+from .exceptions import OSLCException
 
 
 class OSLCAPP:
@@ -26,18 +31,18 @@ class OSLCAPP:
         self.oslc_domain = {}
         self.url_map = Map()
 
-        self.graph = Graph()
-        self.graph.bind('oslc', OSLC)
-        self.graph.bind('rdf', RDF)
-        self.graph.bind('rdfs', RDFS)
-        self.graph.bind('dcterms', DCTERMS)
         self.rdf_format = 'text/turtle'
-        self.accept = 'text/turtle'
-        self.default_mediatype = 'application/json'
+        # self.accept = 'text/turtle'
+        # self.default_mediatype = 'application/json'
 
-        self.api = API(self, '{prefix}/service/catalog'.format(prefix=self.prefix))
+        self.error_handler_spec = {}
+
+        self.api = API(self, '/services')
 
     def add_url_rule(self, rule, endpoint=None, view_func=None, **options):
+
+        print("add_rule: <rule: {rule}> <endpoint: {endpoint}> <view_func: {view_func}> <options: {options}>".format(
+            rule=rule, endpoint=endpoint, view_func=view_func, options=options))
 
         if endpoint is None:
             assert view_func is not None, 'expected view func if endpoint ' \
@@ -80,11 +85,88 @@ class OSLCAPP:
             self.rdf_type[endpoint] = rdf_type
             self.oslc_domain[endpoint] = oslc_domain
 
-    def handle_exception(self, error):
-        if isinstance(error, HTTPException):
+    @staticmethod
+    def _get_exc_class_and_code(exc_class_or_code):
+        """Get the exception class being handled. For HTTP status codes
+        or ``HTTPException`` subclasses, return both the exception and
+        status code.
+
+        :param exc_class_or_code: Any exception class, or an HTTP status
+            code as an integer.
+        """
+        if isinstance(exc_class_or_code, integer_types):
+            exc_class = default_exceptions[exc_class_or_code]
+        else:
+            exc_class = exc_class_or_code
+
+        assert issubclass(exc_class, Exception)
+
+        if issubclass(exc_class, HTTPException):
+            return exc_class, exc_class.code
+        else:
+            return exc_class, None
+
+    def _find_error_handler(self, error):
+        exc_class, code = self._get_exc_class_and_code(type(error))
+
+        for name, c in (
+                (request.url_rule.endpoint, code),
+                (None, code),
+                (request.url_rule.endpoint, None),
+                (None, None),
+        ):
+            handler_map = self.error_handler_spec.setdefault(name, {}).get(c)
+
+            if not handler_map:
+                continue
+
+            for cls in exc_class.__mro__:
+                handler = handler_map.get(cls)
+
+                if handler is not None:
+                    return handler
+
+    def handle_http_exception(self, error):
+        if error.code is None:
             return error
 
-        return InternalServerError()
+        if isinstance(error, RoutingException):
+            return error
+
+        handler = self._find_error_handler(error)
+        if handler is None:
+            return error
+
+        return handler(error)
+
+    def handle_user_exception(self, error):
+
+        exc_type, exc_value, tb = sys.exc_info()
+        assert exc_value is error
+
+        if isinstance(error, BadRequestKeyError):
+            if not hasattr(BadRequestKeyError, "show_exception"):
+                error.args = ()
+
+        if isinstance(error, HTTPException):
+            return self.handle_http_exception(error)
+
+        handler = self._find_error_handler(error)
+        if handler is None:
+            reraise(exc_type, exc_value, tb)
+
+        return handler(error)
+
+    def handle_exception(self, error):
+
+        server_error = InternalServerError()
+        server_error.original_exception = error
+        handler = self._find_error_handler(server_error)
+
+        if handler is not None:
+            server_error = handler(server_error)
+
+        return self.finalize_request(server_error)  # , from_error_handler=True)
 
     def preprocess_request(self, request):
         accept = request.accept_mimetypes
@@ -118,39 +200,59 @@ class OSLCAPP:
             if not res:
                 res = self.dispatch_request(context)
         except Exception as e:
-            res = self.handle_exception(e)
+            res = self.handle_user_exception(e)
 
-        return self.finalize_request(res, context.request)
+        return self.finalize_request(res)
 
-    def finalize_request(self, res, request):
-        response = self.make_response(res, request)
+    def finalize_request(self, res):
+        response = self.make_response(res)
         return response
 
-    def make_response(self, response, request):
+    def make_response(self, response):
         status = headers = None
-
-        if not isinstance(response, Response):
-            if isinstance(response, object):
+        
+        if isinstance(response, HTTPException):
+            error = OSLCException(about=request.base_url, status_code=response.code, message=response.description)
+            response = error.to_rdf()
+            response = Response(response.serialize(format=self.rdf_format),
+                                status=error.status_code,
+                                mimetype='text/turtle')
+            status = headers = None
+        elif not isinstance(response, Response):
+            if isinstance(response, (text_type, bytes, bytearray)):
+                # let the response class set the status and headers instead of
+                # waiting to do it manually, so that the class can handle any
+                # special logic
+                response = Response(response, status=status, headers=headers)
+                status = headers = None
+            elif isinstance(response, dict):
                 rdf_type = self.rdf_type[request.url_rule.endpoint]
                 oslc_domain = self.oslc_domain[request.url_rule.endpoint]
                 attr_mapping = self.view_mappings[request.url_rule.endpoint]
                 response = to_rdf(request.base_url, attr_mapping, rdf_type, oslc_domain, self.rdf_format, response)
                 response = Response(response, status=status, headers=headers)
                 status = headers = None
+            elif isinstance(response, BaseResponse) or callable(response):
+                # evaluate a WSGI callable, or coerce a different response
+                # class to the correct type
+                try:
+                    response = Response.force_type(response, request.environ)
+                except TypeError as e:
+                    new_error = TypeError(
+                        "{e}\nThe view function did not return a valid"
+                        " response. The return type must be a string, dict, tuple,"
+                        " Response instance, or WSGI callable, but it was a"
+                        " {rv.__class__.__name__}.".format(e=e, rv=response)
+                    )
+                    reraise(TypeError, new_error, sys.exc_info()[2])
 
-            elif isinstance(response, (Graph)):
-                response = Response(response.serialize(format=self.rdf_format),
-                                    status=200,
-                                    mimetype='text/turtle')
-            else:
-                r = Resource(self.graph, URIRef(request.url_root))
-                r.add(RDF.type, OSLC.Error)
-                r.add(OSLC.statusCode, Literal(response.code))
-                r.add(OSLC.message, Literal(response.description, datatype=XSD.string))
-
-                response = Response(self.graph.serialize(format=self.rdf_format),
-                                    status=response.code,
-                                    mimetype=request.content_type)
+            if isinstance(response, object):  # dictionary
+                rdf_type = self.rdf_type[request.url_rule.endpoint]
+                oslc_domain = self.oslc_domain[request.url_rule.endpoint]
+                attr_mapping = self.view_mappings[request.url_rule.endpoint]
+                response = to_rdf(request.base_url, attr_mapping, rdf_type, oslc_domain, self.rdf_format, response)
+                response = Response(response, status=status, headers=headers)
+                status = headers = None
 
         headers = Headers([('OSLC-Core-Version', '2.0')])
         response.headers.extend(headers)

@@ -1,7 +1,7 @@
 from enum import IntEnum
 from werkzeug.wrappers import BaseResponse
 
-from .wrappers import RequestBase as request
+from .globals import request
 
 
 def with_metaclass(meta, *bases):
@@ -198,7 +198,7 @@ class HTTPStatus(IntEnum):
 
 
 http_method_funcs = frozenset(
-    ["get", "post", "head", "options", "delete", "put", "trace", "patch", "get_item"]
+    ["get", "post", "head", "options", "delete", "put", "trace", "patch", "query_capability"]
 )
 
 
@@ -216,22 +216,6 @@ class View(object):
                 return 'Hello %s!' % name
 
         app.add_url_rule('/hello/<name>', view_func=MyView.as_view('myview'))
-
-    When you want to decorate a pluggable view you will have to either do that
-    when the view function is created (by wrapping the return value of
-    :meth:`as_view`) or you can use the :attr:`decorators` attribute::
-
-        class SecretView(View):
-            methods = ['GET']
-            decorators = [superuser_required]
-
-            def dispatch_request(self):
-                ...
-
-    The decorators stored in the decorators list are applied one after another
-    when the view function is created.  Note that you can *not* use the class
-    based decorators since those would decorate the view class and not the
-    generated view function!
     """
 
     #: A list of methods this view can handle.
@@ -244,12 +228,6 @@ class View(object):
     #: return value of as_view().  However since this moves parts of the
     #: logic from the class declaration to the place where it's hooked
     #: into the routing system.
-    #:
-    #: You can place one or more decorators in this list and whenever the
-    #: view function is created the result is automatically decorated.
-    #:
-    #: .. versionadded:: 0.8
-    decorators = ()
 
     def dispatch_request(self):
         """Subclasses have to override this method to implement the
@@ -272,12 +250,6 @@ class View(object):
         def view(*args, **kwargs):
             self = view.view_class(*class_args, **class_kwargs)
             return self.dispatch_request(*args, **kwargs)
-
-        if cls.decorators:
-            view.__name__ = name
-            view.__module__ = cls.__module__
-            for decorator in cls.decorators:
-                view = decorator(view)
 
         # We attach the view class to the view function for two reasons:
         # first of all it allows us to easily figure out what class-based
@@ -346,20 +318,16 @@ class MethodView(with_metaclass(MethodViewType, View)):
 
 class OSLCResourceView(MethodView):
     representations = None
-    method_decorators = []
 
     def __init__(self, api=None, *args, **kwargs):
         self.api = api
 
     def dispatch_request(self, *args, **kwargs):
         # Taken from flask
-        meth = getattr(self, request.method.default.lower(), None)
+        meth = getattr(self, request.method.lower(), None)
         if meth is None and request.method == "HEAD":
             meth = getattr(self, "get", None)
         assert meth is not None, "Unimplemented method %r" % request.method
-
-        for decorator in self.method_decorators:
-            meth = decorator(meth)
 
         # self.validate_payload(meth)
 

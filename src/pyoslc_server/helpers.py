@@ -26,13 +26,6 @@ def url_for(endpoint, **values):
     # features that support "relative" URLs.
     if reqctx is not None:
         adapter = reqctx.adapter
-
-        if endpoint[:1] == ".":
-            if blueprint_name is not None:
-                endpoint = blueprint_name + endpoint
-            else:
-                endpoint = endpoint[1:]
-
         external = values.pop("_external", False)
 
     # Otherwise go with the url adapter from the appctx and make
@@ -91,4 +84,4 @@ def make_response(*args):
         return Response()
     if len(args) == 1:
         args = args[0]
-    return current_app.make_response(args)
+    return None  # current_app.make_response(args)

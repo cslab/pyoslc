@@ -1,4 +1,4 @@
-from pyoslc_server.app import OSLCAPP
+from pyoslc_server import OSLCAPP
 
 from apposlc.adapter import RequirementAdapter, REQ_TO_RDF
 from apposlc.resource import REQSTORE
@@ -8,6 +8,10 @@ class OSLCEnabled:
 
     def __init__(self):
         self.api = OSLCAPP(prefix='/oslc')
+
+        self.api.api.add_catalog(title='catalog', description='Service Provider Catalog')
+        self.api.api.add_provider(catalog_id='catalog', title='provider', description='Service Provider',
+                                  adapter=RequirementAdapter)
 
         req_data = RequirementAdapter(REQSTORE)
         self.api.add_url_rule(

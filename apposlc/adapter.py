@@ -10,8 +10,9 @@ REQ_TO_RDF = {
 
 class RequirementAdapter:
 
-    domain = [OSLC_RM]
+    domain = OSLC_RM
     type = [OSLC_RM.Requirement]
+    service_path = 'provider/{id}/resources'
 
     items = None
 
@@ -21,14 +22,14 @@ class RequirementAdapter:
     def set(self, data_items):
         self.items = data_items
 
-    def query_capability(self):
-        pass
+    @staticmethod
+    def query_capability(self, identifier):
+        return self.get_item(identifier)
 
     def get_item(self, identifier):
         for item in self.items:
             if item.identifier == identifier:
                 return item
-                # return self.to_rdf(Graph(), 'http://localhost/oslc/requirements/' + item.identifier, item)
 
     def item_keys(self, item):
         return item.identifier

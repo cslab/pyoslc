@@ -4,30 +4,30 @@ from pyoslc.resources.factories import ServiceProviderFactory, ConfigurationFact
 from pyoslc.vocabularies.jazz import JAZZ_CONFIG
 
 
-class ContactServiceProviderFactory(object):
-
-    @classmethod
-    def create_service_provider(cls, base_uri, title, description, publisher, parameters):
-        classes = get_service_resources(ServiceResource)
-
-        sp = ServiceProviderFactory.create_service_provider(base_uri, title, description,
-                                                            publisher, classes, parameters)
-
-        sp.add_detail(base_uri)
-
-        prefix_definitions = list()
-        # prefix_definitions.append(PrefixDefinition(prefix='dcterms', prefix_base=DCTERMS))
-        # prefix_definitions.append(PrefixDefinition(prefix='oslc', prefix_base=OSLC))
-        # prefix_definitions.append(PrefixDefinition(prefix='oslc_data', prefix_base=OSLCData))
-        # prefix_definitions.append(PrefixDefinition(prefix='rdf', prefix_base=RDF))
-        # prefix_definitions.append(PrefixDefinition(prefix='rdfs', prefix_base=RDFS))
-        # prefix_definitions.append(PrefixDefinition(prefix='oslc_am', prefix_base=OSLC_AM))
-        # prefix_definitions.append(PrefixDefinition(prefix='oslc_cm', prefix_base=OSLC_CM))
-        # prefix_definitions.append(PrefixDefinition(prefix='oslc_rm', prefix_base=OSLC_RM))
-
-        sp.prefix_definition = prefix_definitions
-
-        return sp
+# class ContactServiceProviderFactory(object):
+#
+#     @classmethod
+#     def create_service_provider(cls, base_uri, title, description, publisher, parameters):
+#         classes = get_service_resources(ServiceResource)
+#
+#         sp = ServiceProviderFactory.create_service_provider(base_uri, title, description,
+#                                                             publisher, classes, parameters)
+#
+#         sp.add_detail(base_uri)
+#
+#         prefix_definitions = list()
+#         # prefix_definitions.append(PrefixDefinition(prefix='dcterms', prefix_base=DCTERMS))
+#         # prefix_definitions.append(PrefixDefinition(prefix='oslc', prefix_base=OSLC))
+#         # prefix_definitions.append(PrefixDefinition(prefix='oslc_data', prefix_base=OSLCData))
+#         # prefix_definitions.append(PrefixDefinition(prefix='rdf', prefix_base=RDF))
+#         # prefix_definitions.append(PrefixDefinition(prefix='rdfs', prefix_base=RDFS))
+#         # prefix_definitions.append(PrefixDefinition(prefix='oslc_am', prefix_base=OSLC_AM))
+#         # prefix_definitions.append(PrefixDefinition(prefix='oslc_cm', prefix_base=OSLC_CM))
+#         # prefix_definitions.append(PrefixDefinition(prefix='oslc_rm', prefix_base=OSLC_RM))
+#
+#         sp.prefix_definition = prefix_definitions
+#
+#         return sp
 
 
 class ContactConfigurationFactory(object):
