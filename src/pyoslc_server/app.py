@@ -1,23 +1,25 @@
+import logging
 import sys
 
-from rdflib import Graph, URIRef, RDF, Literal, XSD
-from rdflib.resource import Resource
 from werkzeug._compat import integer_types, reraise, text_type
 from werkzeug.datastructures import Headers
-from werkzeug.exceptions import HTTPException, InternalServerError, BadRequestKeyError, default_exceptions
+from werkzeug.exceptions import HTTPException, InternalServerError, BadRequestKeyError, default_exceptions, NotFound
 from werkzeug.routing import Map
 from werkzeug.routing import Rule
 from werkzeug.routing import RoutingException
 from werkzeug.wrappers import BaseResponse
 
-from pyoslc.vocabularies.core import OSLC
-from pyoslc.resources.models import AbstractResource
 from .api import API
 from .context import Context
 from .wrappers import Response
 from .globals import _request_ctx_stack, request
 from .rdf import to_rdf
 from .exceptions import OSLCException
+
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.DEBUG)
+stream_handler.setFormatter(logging.Formatter('%(asctime)s '
+                                              '%(levelname)s: %(message)s '))
 
 
 class OSLCAPP:
@@ -32,16 +34,20 @@ class OSLCAPP:
         self.url_map = Map()
 
         self.rdf_format = 'text/turtle'
-        # self.accept = 'text/turtle'
-        # self.default_mediatype = 'application/json'
+        self.accept = 'text/turtle'
 
         self.error_handler_spec = {}
 
+        self.logger = logging.getLogger(self.name)
+        self.logger.setLevel(logging.DEBUG)
+        self.logger.addHandler(stream_handler)
+
+        self.logger.debug('Initializing OSLC APP: <name: {name}> <prefix: {prefix}>'.format(name=name, prefix=prefix))
         self.api = API(self, '/services')
 
     def add_url_rule(self, rule, endpoint=None, view_func=None, **options):
 
-        print("add_rule: <rule: {rule}> <endpoint: {endpoint}> <view_func: {view_func}> <options: {options}>".format(
+        self.logger.debug("<rule: {rule}> <endpoint: {endpoint}> <view_func: {view_func}> <options: {options}>".format(
             rule=rule, endpoint=endpoint, view_func=view_func, options=options))
 
         if endpoint is None:
@@ -131,6 +137,9 @@ class OSLCAPP:
             return error
 
         if isinstance(error, RoutingException):
+            return error
+
+        if isinstance(error, NotFound):
             return error
 
         handler = self._find_error_handler(error)

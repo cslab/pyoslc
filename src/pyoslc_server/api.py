@@ -17,7 +17,7 @@ from .helpers import make_response as oslcapp_make_response
 
 class API(object):
 
-    def __init__(self, app, prefix="/services", **kwargs):
+    def __init__(self, app=None, prefix="/services", **kwargs):
         self.namespaces = []
         self.ns_paths = dict()
         self.urls = {}
@@ -25,21 +25,18 @@ class API(object):
         self.endpoints = set()
         self.resources = []
         self.app = None
+        self.default_mediatype = 'text/turtle'
 
         self.default_namespace = None
-        # self.default_namespace = self.namespace(
-        #     name='SPC',
-        #     description='SPC',
-        #     endpoint='SPC',
-        #     api=self,
-        #     path='/',
-        # )
-
-        # self.default_namespace.add_resource(ServiceProviderCatalog, '/')
 
         if app is not None:
             self.app = app
             self.init_app(app)
+
+        app.logger.debug(
+            'Initializing OSLC API: <name: {name}> <prefix: {prefix}>'.format(name=app.name, prefix=self.prefix))
+
+        self.default_namespace = self._namespace(title='catalog', description='Service Provider Catalog')
 
     def init_app(self, app, **kwargs):
         self.app = app
@@ -73,8 +70,9 @@ class API(object):
         return endpoint
 
     def _register_view(self, app, resource, namespace, *urls, **kwargs):
-        print('register view: <ns: {name}> <resource: {resource}> <urls: {urls}> <kwargs: {kwargs}>'.format(
-            name=namespace.name, resource=resource, urls=urls, kwargs=kwargs))
+        self.app.logger.debug(
+            'Register: <namespace: {name}> <resource: {resource}> <urls: {urls}> <kwargs: {kwargs}>'.format(
+                name=namespace.name, resource=resource.__name__, urls=urls, kwargs=kwargs))
         endpoint = kwargs.pop("endpoint", None) or camel_to_dash(resource.__name__)
         resource_class_args = kwargs.pop("resource_class_args", ())
         resource_class_kwargs = kwargs.pop("resource_class_kwargs", {})
@@ -159,8 +157,8 @@ class API(object):
         path = self.get_ns_path(ns) or ns.path
         return [path + url for url in urls]
 
-    def add_namespace(self, ns, path=None):
-        print("add_namespace: <ns: {ns}> <path: {path}>".format(ns=ns, path=path))
+    def _add_namespace(self, ns, path=None):
+        self.app.logger.debug("Adding Namespace: <name: {name}> <path: {path}>".format(name=ns.name, path=path))
         if ns not in self.namespaces:
             self.namespaces.append(ns)
             if self not in ns.apis:
@@ -168,45 +166,31 @@ class API(object):
             # Associate ns with prefix-path
             if path is not None:
                 self.ns_paths[ns] = path
-        # Register resources
-        # print('current resources: {[r.name for r in ns.resources]}')
-        # print('resources: {ns.resources}')
+
         for r in ns.resources:
-            print('resource: ==> {r}'.format(r=r))
             urls = self.ns_urls(ns, r.urls)
-            print('resource urls: ==> {urls}'.format(urls=urls))
             self.register_resource(ns, r.resource, *urls, **r.kwargs)
         # Register models
         for name, definition in six.iteritems(ns.models):
             self.models[name] = definition
 
-        # if not self.blueprint and self.app is not None:
-        #     self._configure_namespace_logger(self.app, ns)
-
-    def namespace(self, *args, **kwargs):
-        print("namespace: <args: {args}> <kwargs: {kwargs}>".format(args=args, kwargs=kwargs))
-        ns = Namespace(*args, **kwargs)
-        self.add_namespace(ns)
-        return ns
-
-    def add_catalog(self, *args, **kwargs):
+    def _namespace(self, *args, **kwargs):
         name = kwargs.get('title', None)
         ns = Namespace(name=name, api=self, *args, **kwargs)
-        self.add_namespace(ns)
-        # kwargs.update({'provider': [{
-        #     'id': 'Project-1',
-        #     'name': 'PyOSLC Service Provider for Project 1',
-        #     'class': ''
-        # }]})
-        ns.add_resource(ServiceProviderCatalog, '/catalog')  # , resource_class_kwargs=kwargs)
+        self._add_namespace(ns)
+        ns.add_resource(ServiceProviderCatalog, '/catalog', resource_class_kwargs=kwargs)
         return ns
 
     def add_provider(self, catalog_id, *args, **kwargs):
         ns = self.namespaces[[a.name for a in self.namespaces].index(catalog_id)]
         # kwargs.update({'provider': ns.resources})
+        provider_id = kwargs.get('provider_id', None)
+        name = kwargs.get('title', None)
+        description = kwargs.get('description', None)
         kwargs.update({'providers': [{
-            'id': 'Project-1',
-            'name': 'PyOSLC Service Provider for Project 1'
+            'id': provider_id,
+            'name': name,
+            'description': description,
         }]})
         ns.add_resource(ServiceProvider, '/provider/<string:provider_id>', resource_class_kwargs=kwargs)
         return ns

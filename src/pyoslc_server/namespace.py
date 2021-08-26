@@ -6,10 +6,6 @@ ResourceRoute = namedtuple("ResourceRoute", "resource urls kwargs")
 class Namespace(object):
 
     def __init__(self, name, description=None, path='/', authorizations=None, **kwargs):
-        print(
-            "creating Namespace: <name: {name}> <description: {description}> <path: {path}> <kwargs: {kwargs}>".format(
-                name=name, description=description, path=path, kwargs=kwargs))
-
         self.name = name
         self.description = description
         self._path = path
@@ -21,7 +17,11 @@ class Namespace(object):
 
         self.apis = []
         if "api" in kwargs:
-            self.apis.append(kwargs["api"])
+            api = kwargs["api"]
+            api.app.logger.debug(
+                "Initializing Namespace <name: {name}> <path: {path}>".format(
+                    name=name, description=description, path=path, kwargs=kwargs))
+            self.apis.append(api)
 
     @property
     def path(self):
@@ -31,4 +31,5 @@ class Namespace(object):
         self.resources.append(ResourceRoute(resource, urls, kwargs))
         for api in self.apis:
             ns_urls = api.ns_urls(self, urls)
+            api.app.logger.debug('<Resource: {resource}> <urls: {urls}>'.format(resource=resource.__name__, urls=urls))
             api.register_resource(self, resource, *ns_urls, **kwargs)

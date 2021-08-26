@@ -7,14 +7,16 @@ from apposlc.resource import REQSTORE
 class OSLCEnabled:
 
     def __init__(self):
-        self.api = OSLCAPP(prefix='/oslc')
+        self.app = OSLCAPP(prefix='/oslc')
 
-        self.api.api.add_catalog(title='catalog', description='Service Provider Catalog')
-        self.api.api.add_provider(catalog_id='catalog', title='provider', description='Service Provider',
+        self.app.api.add_provider(catalog_id='catalog',
+                                  provider_id='Project-1',
+                                  title='PyOSLC Service Provider for Project 1',
+                                  description='Service Provider',
                                   adapter=RequirementAdapter)
 
         req_data = RequirementAdapter(REQSTORE)
-        self.api.add_url_rule(
+        self.app.add_url_rule(
             "/requirements/<string:identifier>",
             view_func=req_data.get_item,
             attr_mapping=REQ_TO_RDF,
@@ -27,8 +29,8 @@ class OSLCEnabled:
         Callable function required
         """
 
-        if self.api.wsgi_check(environ):
-            return self.api(environ, start_response)
+        if self.app.wsgi_check(environ):
+            return self.app(environ, start_response)
 
         start_response("200 OK", [('Content-type', 'text/plain')])
         return [b'Hello World, This could be a CE Application !']
