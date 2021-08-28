@@ -1,9 +1,10 @@
 import logging
 import sys
 
-from werkzeug._compat import integer_types, reraise, text_type
+from werkzeug._compat import reraise, text_type
 from werkzeug.datastructures import Headers
-from werkzeug.exceptions import HTTPException, InternalServerError, BadRequestKeyError, default_exceptions, NotFound
+from werkzeug.exceptions import HTTPException, InternalServerError, BadRequestKeyError, NotFound, \
+    UnsupportedMediaType
 from werkzeug.routing import Map
 from werkzeug.routing import Rule
 from werkzeug.routing import RoutingException
@@ -32,11 +33,8 @@ class OSLCAPP:
         self.rdf_type = {}
         self.oslc_domain = {}
         self.url_map = Map()
-
         self.rdf_format = 'text/turtle'
         self.accept = 'text/turtle'
-
-        self.error_handler_spec = {}
 
         self.logger = logging.getLogger(self.name)
         self.logger.setLevel(logging.DEBUG)
@@ -45,10 +43,20 @@ class OSLCAPP:
         self.logger.debug('Initializing OSLC APP: <name: {name}> <prefix: {prefix}>'.format(name=name, prefix=prefix))
         self.api = API(self, '/services')
 
-    def add_url_rule(self, rule, endpoint=None, view_func=None, **options):
+    def add_url_rule(self, rule, endpoint=None, view_func=None, adapter_func=None, **options):
 
-        self.logger.debug("<rule: {rule}> <endpoint: {endpoint}> <view_func: {view_func}> <options: {options}>".format(
-            rule=rule, endpoint=endpoint, view_func=view_func, options=options))
+        self.logger.debug(
+            "Adding Rule: \n"
+            "\t <rule: {rule}> \n"
+            "\t <endpoint: {endpoint}>\n"
+            "\t <view_func: {view_func}>\n"
+            "\t <adapter_func: {adapter_func}>\n"
+            "\t <options: {options}>\n".format(
+                rule=rule, endpoint=endpoint,
+                view_func=view_func,
+                adapter_func=adapter_func,
+                options=options
+            ))
 
         if endpoint is None:
             assert view_func is not None, 'expected view func if endpoint ' \
@@ -91,47 +99,6 @@ class OSLCAPP:
             self.rdf_type[endpoint] = rdf_type
             self.oslc_domain[endpoint] = oslc_domain
 
-    @staticmethod
-    def _get_exc_class_and_code(exc_class_or_code):
-        """Get the exception class being handled. For HTTP status codes
-        or ``HTTPException`` subclasses, return both the exception and
-        status code.
-
-        :param exc_class_or_code: Any exception class, or an HTTP status
-            code as an integer.
-        """
-        if isinstance(exc_class_or_code, integer_types):
-            exc_class = default_exceptions[exc_class_or_code]
-        else:
-            exc_class = exc_class_or_code
-
-        assert issubclass(exc_class, Exception)
-
-        if issubclass(exc_class, HTTPException):
-            return exc_class, exc_class.code
-        else:
-            return exc_class, None
-
-    def _find_error_handler(self, error):
-        exc_class, code = self._get_exc_class_and_code(type(error))
-
-        for name, c in (
-                (request.url_rule.endpoint, code),
-                (None, code),
-                (request.url_rule.endpoint, None),
-                (None, None),
-        ):
-            handler_map = self.error_handler_spec.setdefault(name, {}).get(c)
-
-            if not handler_map:
-                continue
-
-            for cls in exc_class.__mro__:
-                handler = handler_map.get(cls)
-
-                if handler is not None:
-                    return handler
-
     def handle_http_exception(self, error):
         if error.code is None:
             return error
@@ -139,14 +106,10 @@ class OSLCAPP:
         if isinstance(error, RoutingException):
             return error
 
-        if isinstance(error, NotFound):
+        if isinstance(error, NotFound) or isinstance(error, UnsupportedMediaType):
             return error
 
-        handler = self._find_error_handler(error)
-        if handler is None:
-            return error
-
-        return handler(error)
+        return self.handle_exception(error)
 
     def handle_user_exception(self, error):
 
@@ -160,27 +123,31 @@ class OSLCAPP:
         if isinstance(error, HTTPException):
             return self.handle_http_exception(error)
 
-        handler = self._find_error_handler(error)
-        if handler is None:
-            reraise(exc_type, exc_value, tb)
-
-        return handler(error)
+        reraise(exc_type, exc_value, tb)
 
     def handle_exception(self, error):
-
         server_error = InternalServerError()
         server_error.original_exception = error
-        handler = self._find_error_handler(server_error)
+        return self.finalize_request(server_error)
 
-        if handler is not None:
-            server_error = handler(server_error)
+    def preprocess_request(self):
+        request = _request_ctx_stack.top.request
 
-        return self.finalize_request(server_error)  # , from_error_handler=True)
+        if not request.accept_mimetypes.best in ('*/*', 'text/html'):
+            accept = request.accept_mimetypes.best
+        else:
+            accept = self.accept
 
-    def preprocess_request(self, request):
-        accept = request.accept_mimetypes
+        if not (accept in ('application/rdf+xml', 'application/json',
+                           'application/ld+json', 'application/json-ld',
+                           'application/xml', 'application/atom+xml',
+                           'text/turtle',
+                           'application/xml, application/x-oslc-cm-service-description+xml',
+                           'application/x-oslc-compact+xml, application/x-jazz-compact-rendering; q=0.5',
+                           'application/rdf+xml,application/x-turtle,application/ntriples,application/json')):
+            raise UnsupportedMediaType
 
-        if accept.best == '*/*' and not request.content_type:
+        if not request.content_type:
             request.content_type = accept
 
         if accept in ('application/json-ld', 'application/ld+json', 'application/json'):
@@ -191,11 +158,8 @@ class OSLCAPP:
         if accept in ('application/xml', 'application/rdf+xml', 'application/atom+xml'):
             self.rdf_format = 'pretty-xml'
 
-        return None
-
-    def dispatch_request(self, context):
-        request = context.request
-        req = _request_ctx_stack.top.request
+    def dispatch_request(self):
+        request = _request_ctx_stack.top.request
 
         if request.routing_exception is not None:
             raise request.routing_exception
@@ -203,11 +167,11 @@ class OSLCAPP:
         rule = request.url_rule
         return self.view_functions[rule.endpoint](**request.view_args)
 
-    def full_dispatch_request(self, context):
+    def full_dispatch_request(self):
         try:
-            res = self.preprocess_request(context.request)
+            res = self.preprocess_request()
             if not res:
-                res = self.dispatch_request(context)
+                res = self.dispatch_request()
         except Exception as e:
             res = self.handle_user_exception(e)
 
@@ -219,13 +183,20 @@ class OSLCAPP:
 
     def make_response(self, response):
         status = headers = None
-        
+
+        if response is None:
+            raise TypeError(
+                "The view function did not return a valid response. The"
+                " function either returned None or ended without a return"
+                " statement."
+            )
+
         if isinstance(response, HTTPException):
             error = OSLCException(about=request.base_url, status_code=response.code, message=response.description)
             response = error.to_rdf()
             response = Response(response.serialize(format=self.rdf_format),
                                 status=error.status_code,
-                                mimetype='text/turtle')
+                                mimetype=self.accept)
             status = headers = None
         elif not isinstance(response, Response):
             if isinstance(response, (text_type, bytes, bytearray)):
@@ -269,7 +240,14 @@ class OSLCAPP:
         return response
 
     def get_adapter(self, request):
-        return self.url_map.bind_to_environ(request.environ)
+        if request is not None:
+            return self.url_map.bind_to_environ(request.environ)
+
+        return self.url_map.bind(
+            'localhost',
+            script_name=self.name,
+            url_scheme='http',
+        )
 
     def get_context(self, environ):
         return Context(self, environ)
@@ -283,17 +261,14 @@ class OSLCAPP:
     def wsgi_app(self, environ, start_response):
         context = self.get_context(environ)
         try:
-            top = _request_ctx_stack.top
-            if top is not None and top.preserved:
-                _request_ctx_stack.pop()
-
-            _request_ctx_stack.push(context)
-
-            response = self.full_dispatch_request(context=context)
-        except Exception as e:
-            response = self.handle_exception(e)
-
-        return response(environ, start_response)
+            try:
+                context.push()
+                response = self.full_dispatch_request()
+            except Exception as e:
+                response = self.handle_exception(e)
+            return response(environ, start_response)
+        finally:
+            context.pop()
 
     def __call__(self, environ, start_response):
         return self.wsgi_app(environ, start_response)
