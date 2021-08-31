@@ -25,6 +25,11 @@ class Request(RequestBase, RDFMixing):
     routing_exception = None
     content_type = 'text/turtle'
 
+    @property
+    def endpoint(self):
+        if self.url_rule is not None:
+            return self.url_rule.endpoint
+
 
 class Response(ResponseBase, RDFMixing):
     default_mimetype = 'text/turtle'

@@ -6,12 +6,12 @@ from werkzeug.datastructures import Headers
 from werkzeug.exceptions import HTTPException, InternalServerError, BadRequestKeyError, NotFound, \
     UnsupportedMediaType
 from werkzeug.routing import Map
-from werkzeug.routing import Rule
 from werkzeug.routing import RoutingException
 from werkzeug.wrappers import BaseResponse
 
 from .api import API
 from .context import Context
+from .routing import OSLCRule
 from .wrappers import Response
 from .globals import _request_ctx_stack, request
 from .rdf import to_rdf
@@ -44,20 +44,6 @@ class OSLCAPP:
         self.api = API(self, '/services')
 
     def add_url_rule(self, rule, endpoint=None, view_func=None, adapter_func=None, **options):
-
-        self.logger.debug(
-            "Adding Rule: \n"
-            "\t <rule: {rule}> \n"
-            "\t <endpoint: {endpoint}>\n"
-            "\t <view_func: {view_func}>\n"
-            "\t <adapter_func: {adapter_func}>\n"
-            "\t <options: {options}>\n".format(
-                rule=rule, endpoint=endpoint,
-                view_func=view_func,
-                adapter_func=adapter_func,
-                options=options
-            ))
-
         if endpoint is None:
             assert view_func is not None, 'expected view func if endpoint ' \
                                           'is not provided.'
@@ -86,7 +72,10 @@ class OSLCAPP:
         oslc_domain = options.pop('oslc_domain', None)
         attr_mapping = options.pop('attr_mapping', None)
 
-        rule = Rule(self.prefix + rule, methods=methods, **options)
+        oslc_methods = getattr(adapter_func, 'methods', None) or ('QUERY_CAPABILITY',)
+
+        # rule = Rule(self.prefix + rule, methods=methods, **options)
+        rule = OSLCRule(self.prefix + rule, methods=methods, oslc_methods=oslc_methods, **options)
 
         self.url_map.add(rule)
         if view_func is not None:

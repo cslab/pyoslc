@@ -340,7 +340,7 @@ class ServiceProviderCatalog(BaseResource):
 
         if self.domain:
             for item in self.domain:
-                spc.add(OSLC.domain, URIRef(item))
+                spc.add(OSLC.domain, URIRef(str(item)))
 
         if self.service_provider:
             for sp in self.service_provider:

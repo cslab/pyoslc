@@ -2,15 +2,15 @@ import inspect
 from urlparse import urlparse
 
 from pyoslc.resources.models import ServiceProvider, Service, QueryCapability
+from .resource_service import get_service_resources
+from .specification import ServiceResource
 
 
 class ContactServiceProviderFactory(object):
 
     @classmethod
     def create_service_provider(cls, base_uri, title, description, publisher, parameters):
-        # classes = get_service_resources(ServiceResource)
-        from apposlc.adapter import RequirementAdapter
-        classes = [RequirementAdapter]
+        classes = get_service_resources(ServiceResource)
 
         sp = ServiceProviderFactory.create_service_provider(base_uri, title, description,
                                                             publisher, classes, parameters)

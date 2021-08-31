@@ -24,8 +24,9 @@ class ServiceProviderCatalogSingleton(object):
         cls.catalog.about = catalog_url
         cls.catalog.title = title if title else 'Service Provider Catalog'
         cls.catalog.description = description if description else 'Service Provider Catalog for the PyOSLC application.'
+        cls.catalog.providers = providers if providers else {}
 
-        cls.initialize_providers(catalog_url, providers if providers else [])
+        cls.initialize_providers(catalog_url, providers)
 
         return cls.catalog
 
@@ -51,7 +52,7 @@ class ServiceProviderCatalogSingleton(object):
     @classmethod
     def initialize_providers(cls, catalog_url, providers=None):
 
-        service_providers = providers  # CSVImplementation.get_service_provider_info()
+        service_providers = [providers]  # CSVImplementation.get_service_provider_info()
 
         for sp in service_providers:
             identifier = sp.get('id')

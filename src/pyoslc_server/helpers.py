@@ -1,5 +1,8 @@
 import re
 
+from werkzeug.routing import BuildError
+from werkzeug.urls import url_quote
+
 from .globals import _request_ctx_stack
 from .wrappers import Response
 
@@ -28,24 +31,9 @@ def url_for(endpoint, **values):
         adapter = reqctx.adapter
         external = values.pop("_external", False)
 
-    # Otherwise go with the url adapter from the appctx and make
-    # the URLs external by default.
-    else:
-        adapter = appctx.adapter
-
-        if adapter is None:
-            raise RuntimeError(
-                "Application was not able to create a URL adapter for request"
-                " independent URL generation. You might be able to fix this by"
-                " setting the SERVER_NAME config variable."
-            )
-
-        external = values.pop("_external", True)
-
     anchor = values.pop("_anchor", None)
     method = values.pop("_method", None)
     scheme = values.pop("_scheme", None)
-    # appctx.app.inject_url_defaults(endpoint, values)
 
     # This is not the best way to deal with this but currently the
     # underlying Werkzeug router does not support overriding the scheme on
@@ -79,7 +67,7 @@ def url_for(endpoint, **values):
     return rv
 
 
-def make_response(*args):
+def make_response(*args, **kwargs):
     if not args:
         return Response()
     if len(args) == 1:

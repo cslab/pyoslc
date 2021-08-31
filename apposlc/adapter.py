@@ -1,6 +1,8 @@
 from pyoslc.vocabularies.rm import OSLC_RM
 from rdflib import DCTERMS
 
+from pyoslc_server.specification import ServiceResourceAdapter
+
 REQ_TO_RDF = {
     "identifier": DCTERMS.identifier,
     "title": DCTERMS.title,
@@ -8,7 +10,7 @@ REQ_TO_RDF = {
 }
 
 
-class RequirementAdapter:
+class RequirementAdapter(ServiceResourceAdapter):
 
     domain = OSLC_RM
     type = [OSLC_RM.Requirement]
@@ -16,7 +18,8 @@ class RequirementAdapter:
 
     items = None
 
-    def __init__(self, data_items):
+    def __init__(self, data_items, *args, **kwargs):
+        super(RequirementAdapter, self).__init__(*args, **kwargs)
         self.items = data_items
 
     def set(self, data_items):
@@ -33,3 +36,12 @@ class RequirementAdapter:
 
     def item_keys(self, item):
         return item.identifier
+
+
+class RQAdapter(ServiceResourceAdapter):
+
+    def query_capability(self):
+        pass
+
+    def creation_factory(self):
+        pass

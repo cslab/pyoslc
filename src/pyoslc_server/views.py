@@ -68,6 +68,9 @@ class View(object):
             self = view.view_class(*class_args, **class_kwargs)
             return self.dispatch_request(*args, **kwargs)
 
+        if hasattr(cls, 'providers'):
+            cls.providers = class_kwargs.get('providers', None)
+
         # We attach the view class to the view function for two reasons:
         # first of all it allows us to easily figure out what class-based
         # view this thing came from, secondly it's also used for instantiating
@@ -78,6 +81,8 @@ class View(object):
         view.__doc__ = cls.__doc__
         view.__module__ = cls.__module__
         view.methods = cls.methods
+        view.oslc_methods = ['QC']
+        view.namespace = class_kwargs.get('namespace', None)
         return view
 
 
@@ -144,8 +149,6 @@ class OSLCResourceView(MethodView):
         if meth is None and request.method == "HEAD":
             meth = getattr(self, "get", None)
         assert meth is not None, "Unimplemented method %r" % request.method
-
-        # self.validate_payload(meth)
 
         resp = meth(*args, **kwargs)
 
