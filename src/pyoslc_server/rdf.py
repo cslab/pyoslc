@@ -4,7 +4,8 @@ from rdflib.resource import Resource
 from pyoslc.vocabularies.rm import OSLC_RM
 
 
-def to_rdf(subject, attr_mapping, rdf_type, oslc_domain, rdf_format, *args, **kwargs):
+# def to_rdf(subject, attr_mapping, rdf_type, oslc_domain, rdf_format, *args, **kwargs):
+def to_rdf(*args, **kwargs):
 
     if len(args) == 1:
         data = args[0]

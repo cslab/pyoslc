@@ -1,13 +1,12 @@
 from pyoslc_server import OSLCAPP
 
-from apposlc.adapter import RQAdapter
-
+from apposlc.adapter import RequirementAdapter
 
 class OSLCEnabled:
 
     def __init__(self):
         self.app = OSLCAPP(prefix='/oslc')
-        self.app.api.add_provider(RQAdapter, '/req', 'Requirements')
+        self.app.api.add_provider(RequirementAdapter, '/req', 'Requirements')
 
     def __call__(self, environ, start_response):
         """

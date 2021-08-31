@@ -29,6 +29,7 @@ class OSLCAPP:
         self.name = name
         self.prefix = prefix
         self.view_functions = {}
+        self.adapter_functions = {}
         self.view_mappings = {}
         self.rdf_type = {}
         self.oslc_domain = {}
@@ -84,6 +85,7 @@ class OSLCAPP:
                 raise AssertionError('View function mapping is overwriting an '
                                      'existing endpoint function: %s' % endpoint)
             self.view_functions[endpoint] = view_func
+            self.adapter_functions[endpoint+'adap'] = adapter_func
             self.view_mappings[endpoint] = attr_mapping
             self.rdf_type[endpoint] = rdf_type
             self.oslc_domain[endpoint] = oslc_domain

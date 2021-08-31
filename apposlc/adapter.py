@@ -9,6 +9,8 @@ REQ_TO_RDF = {
     "description": DCTERMS.description,
 }
 
+from .resource import REQSTORE
+
 
 class RequirementAdapter(ServiceResourceAdapter):
 
@@ -16,32 +18,24 @@ class RequirementAdapter(ServiceResourceAdapter):
     type = [OSLC_RM.Requirement]
     service_path = 'provider/{id}/resources'
 
-    items = None
+    items = REQSTORE
 
     def __init__(self, data_items, *args, **kwargs):
         super(RequirementAdapter, self).__init__(*args, **kwargs)
-        self.items = data_items
+        # self.items = data_items
 
     def set(self, data_items):
         self.items = data_items
 
-    @staticmethod
-    def query_capability(self, identifier):
-        return self.get_item(identifier)
+    def query_capability(self, provider_id):
+        return self.items
 
     def get_item(self, identifier):
         for item in self.items:
             if item.identifier == identifier:
                 return item
 
+        return None
+
     def item_keys(self, item):
         return item.identifier
-
-
-class RQAdapter(ServiceResourceAdapter):
-
-    def query_capability(self):
-        pass
-
-    def creation_factory(self):
-        pass

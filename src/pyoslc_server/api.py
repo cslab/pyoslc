@@ -69,15 +69,14 @@ class API(object):
             resource.as_view(endpoint, self, namespace=namespace, *resource_class_args, **resource_class_kwargs)
         )
         adapter_func = self.output(
-          adapter['class'].as_provider(endpoint, self, namespace=namespace, *resource_class_args, **resource_class_kwargs)
-        ) if adapter else adapter
-
-        # add the adapter as another resource component
+            adapter['class'].as_provider(endpoint + 'adap', self, namespace=namespace, *resource_class_args,
+                                         **resource_class_kwargs)
+        ) if adapter else None
 
         for url in urls:
             rule = self._complete_url(url, "")
             # Add the url to the application
-            app.add_url_rule(rule, view_func=resource_func,  **kwargs)
+            app.add_url_rule(rule, view_func=resource_func, adapter_func=adapter_func,  **kwargs)
 
     def output(self, resource):
 
@@ -154,7 +153,7 @@ class API(object):
         provider = {
             'id': id,
             'name': name,
-            'class': klass
+            'class': klass,
         }
         resource_class_kwargs = {'providers': provider}
         self.default_namespace.add_resource(ServiceProviderCatalog, '/catalog', resource_class_kwargs=resource_class_kwargs)

@@ -134,14 +134,14 @@ class ServiceResourceAdapter(ServiceResource):
 
     def generate(self, *args, **kwargs):
         # Taken from flask
-        meth = getattr(self, request.method.lower(), None)
+        meth = getattr(self, 'query_capability', None)
         if meth is None and request.method == "HEAD":
-            meth = getattr(self, "get", None)
+            meth = getattr(self, "query_capability", None)
         assert meth is not None, "Unimplemented method %r" % request.method
 
         resp = meth(*args, **kwargs)
 
-        if isinstance(resp, BaseResponse):
+        if isinstance(resp, list):
             return resp
 
         representations = self.representations or {}

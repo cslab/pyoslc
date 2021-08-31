@@ -67,7 +67,10 @@ class ResourceOperation(OSLCResource):
         endpoint_url = url_for('{}'.format(self.endpoint), provider_id=provider_id)
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
 
-        data = get_requirement_list(base_url, select, where)
+        rule = request.url_rule
+        data = self.api.app.adapter_functions[rule.endpoint+'adap'](**request.view_args)
+
+        # data = get_requirement_list(base_url, select, where)
         if len(data) == 0:
             return make_response('No resources form provider with ID {}'.format(provider_id), 404)
 
