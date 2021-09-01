@@ -1,6 +1,3 @@
-# from pyoslc.vocabularies.jazz import JAZZ_CONFIG
-from werkzeug.wrappers import BaseResponse
-
 from .globals import request
 from .utils import unpack
 
@@ -18,10 +15,9 @@ def with_metaclass(meta, *bases):
     return type.__new__(metaclass, 'temporary_class', (), {})
 
 
-method_funcs = frozenset(['creation_factory',
-                          'query_capability',
-                          'creation_dialog',
-                          'selection_dialog'])
+method_funcs = frozenset(
+    ['query_capability', 'creation_factory', 'selection_dialog', 'creation_dialog']
+)
 
 
 class Provider(object):
@@ -83,55 +79,6 @@ class ServiceResourceAdapter(ServiceResource):
     def __init__(self, api=None, *args, **kwargs):
         self.api = api
 
-    # @staticmethod
-    # def query_capability():
-    #     return {
-    #         'title': 'Query Capability',
-    #         'label': 'Query Capability',
-    #         'resource_shape': 'resourceShapes/requirement',
-    #         'resource_type': ['http://open-services.net/ns/rm#Requirement'],
-    #         'usages': []
-    #     }
-    #
-    # @staticmethod
-    # def creation_factory():
-    #     return {
-    #         'title': 'Creation Factory',
-    #         'label': 'Creation Factory',
-    #         'resource_shape': ['resourceShapes/requirement'],
-    #         'resource_type': ['http://open-services.net/ns/rm#Requirement'],
-    #         'usages': []
-    #     }
-    #
-    # @staticmethod
-    # def selection_dialog():
-    #     return {
-    #         'title': 'Selection Dialog',
-    #         'label': 'Selection Dialog Service',
-    #         'uri': 'provider/{id}/resources/selector',
-    #         'hint_width': '525px',
-    #         'hint_height': '325px',
-    #         'resource_type': ['http://open-services.net/ns/cm#ChangeRequest',
-    #                           'http://open-services.net/ns/am#Resource',
-    #                           'http://open-services.net/ns/rm#Requirement'],
-    #         'usages': ['http://open-services.net/ns/am#PyOSLCSelectionDialog']
-    #     }
-    #
-    # @staticmethod
-    # def creation_dialog():
-    #     return {
-    #         'title': 'Creation Dialog',
-    #         'label': 'Creation Dialog service',
-    #         'uri': 'provider/{id}/resources/creator',
-    #         'hint_width': '525px',
-    #         'hint_height': '325px',
-    #         'resource_shape': 'resourceShapes/eventType',
-    #         'resource_type': ['http://open-services.net/ns/cm#ChangeRequest',
-    #                           'http://open-services.net/ns/am#Resource',
-    #                           'http://open-services.net/ns/rm#Requirement'],
-    #         'usages': ['http://open-services.net/ns/am#PyOSLCCreationDialog']
-    #     }
-
     def generate(self, *args, **kwargs):
         # Taken from flask
         meth = getattr(self, 'query_capability', None)
@@ -154,18 +101,3 @@ class ServiceResourceAdapter(ServiceResource):
             return resp
 
         return resp
-
-
-# class Configuration(ServiceResource):
-#
-#     @staticmethod
-#     def selection_dialog():
-#         return {
-#             'title': 'Configuration Picker',
-#             'label': 'Selection Component',
-#             'uri': 'config/selection',
-#             'hintWidth': '600px',
-#             'hintHeight': '500px',
-#             'resource_type': [JAZZ_CONFIG.Configuration],
-#             'usages': [JAZZ_CONFIG.Configuration]
-#         }

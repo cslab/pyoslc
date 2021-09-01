@@ -68,7 +68,7 @@ class API(object):
         resource_func = self.output(
             resource.as_view(endpoint, self, namespace=namespace, *resource_class_args, **resource_class_kwargs)
         )
-        adapter_func = self.output(
+        adapter_func = self.output_adapter(
             adapter['class'].as_provider(endpoint + 'adap', self, namespace=namespace, *resource_class_args,
                                          **resource_class_kwargs)
         ) if adapter else None
@@ -87,6 +87,19 @@ class API(object):
                 return resp
             data, code, headers = unpack(resp)
             return self.make_response(data, code, headers=headers)
+
+        return wrapper
+
+    def output_adapter(self, resource):
+
+        @wraps(resource)
+        def wrapper(*args, **kwargs):
+            resp = resource(*args, **kwargs)
+            return resp
+            # if isinstance(resp, BaseResponse):
+            #     return resp
+            # data, code, headers = unpack(resp)
+            # return self.make_response(data, code, headers=headers)
 
         return wrapper
 
@@ -142,20 +155,19 @@ class API(object):
         self._add_namespace(ns)
         return ns
 
-    def add_provider(self, *args, **kwargs):
-        klass = args[0]
-        id = klass.__name__.lower()
-        endpoint = args[1]
-        name = args[2]
-
+    def add_provider(self, klass, id, title, description, *args, **kwargs):
         config_service_resource(id, ServiceResource, klass.__module__, klass.__name__)
 
         provider = {
             'id': id,
-            'name': name,
+            'name': title,
+            'description': description,
             'class': klass,
         }
         resource_class_kwargs = {'providers': provider}
-        self.default_namespace.add_resource(ServiceProviderCatalog, '/catalog', resource_class_kwargs=resource_class_kwargs)
-        self.default_namespace.add_resource(ServiceProvider, '/provider/<string:provider_id>', resource_class_kwargs=resource_class_kwargs)
-        self.default_namespace.add_resource(ResourceOperation, '/provider/<string:provider_id>/resources/requirement', resource_class_kwargs=resource_class_kwargs)
+        self.default_namespace.add_resource(ServiceProviderCatalog, '/catalog',
+                                            resource_class_kwargs=resource_class_kwargs)
+        self.default_namespace.add_resource(ServiceProvider, '/provider/<string:provider_id>',
+                                            resource_class_kwargs=resource_class_kwargs)
+        self.default_namespace.add_resource(ResourceOperation, '/provider/<string:provider_id>/resources/requirement',
+                                            resource_class_kwargs=resource_class_kwargs)

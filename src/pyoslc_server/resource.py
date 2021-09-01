@@ -29,6 +29,10 @@ class OSLCResource(OSLCResourceView):
         accept = request.headers.get('accept')
         logger.debug("accept: {}".format(accept))
         print("accept " + accept)
+
+        if accept in ('*/*', 'text/html'):
+            accept = 'text/turtle'
+
         if not (accept in ('application/rdf+xml', 'application/json',
                            'application/ld+json', 'application/json-ld',
                            'application/xml', 'application/atom+xml',

@@ -54,13 +54,7 @@ def url_for(endpoint, **values):
             if old_scheme is not None:
                 adapter.url_scheme = old_scheme
     except BuildError as error:
-        # We need to inject the values again so that the app callback can
-        # deal with that sort of stuff.
-        values["_external"] = external
-        values["_anchor"] = anchor
-        values["_method"] = method
-        values["_scheme"] = scheme
-        return appctx.app.handle_url_build_error(error, endpoint, values)
+        raise error
 
     if anchor is not None:
         rv += "#" + url_quote(anchor)

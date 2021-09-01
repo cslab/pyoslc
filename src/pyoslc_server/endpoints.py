@@ -1,10 +1,18 @@
+from xml.sax import SAXParseException
+
+from rdflib import Graph
 from six.moves.urllib.parse import urlparse
+from werkzeug.exceptions import UnsupportedMediaType, BadRequest
 
 from pyoslc_server import request
+
+from pyoslc.resources.models import ResponseInfo
+from pyoslc.resources.domains.rm import Requirement
 
 from .resource import OSLCResource
 from .providers import ServiceProviderCatalogSingleton
 from .helpers import url_for, make_response
+from .wrappers import Response
 
 
 class ServiceProviderCatalog(OSLCResource):
@@ -47,7 +55,8 @@ class ServiceProvider(OSLCResource):
 
         service_provider_url = urlparse(base_url).geturl()
 
-        provider = ServiceProviderCatalogSingleton.get_provider(service_provider_url, provider_id, providers=self.providers)
+        provider = ServiceProviderCatalogSingleton.get_provider(service_provider_url, provider_id,
+                                                                providers=self.providers)
 
         if not provider:
             return make_response('No resources with ID {}'.format(provider_id), 404)
@@ -83,38 +92,41 @@ class ResourceOperation(OSLCResource):
 
         return self.create_response(graph=self.graph)
 
-    def post(self, service_provider_id):
+    def post(self, provider_id):
         accept = request.headers.get('accept')
-        if not (accept in ('application/rdf+xml', 'application/json', 'application/ld+json',
+        if not (accept in ('text/turtle', 'application/rdf+xml', 'application/json', 'application/ld+json',
                            'application/xml', 'application/atom+xml')):
             raise UnsupportedMediaType
 
-        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
-                               service_provider_id=service_provider_id)
+        endpoint_url = url_for('{}'.format(self.endpoint), provider_id=provider_id)
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
 
+        from apposlc.adapter import REQ_TO_RDF
+        req = None
         if accept == 'application/json':
-            data = specification_parser.parse_args()
+            # data = specification_parser.parse_args()
+            pass
         else:
             try:
                 data = Graph().parse(data=request.data, format='xml')
+                req = Requirement()
+
+                req.from_rdf(data, attributes=REQ_TO_RDF)
             except SAXParseException:
                 raise BadRequest()
 
-        req = create_requirement(data)
         if isinstance(req, Requirement):
-            req.to_rdf(self.graph, base_url=base_url, attributes=attributes)
+            req.to_rdf(self.graph, base_url=base_url, attributes=REQ_TO_RDF)
             data = self.graph.serialize(format='pretty-xml')
 
             # Sending the response to the client
-            response = make_response(data.decode('utf-8') if not isinstance(data, str) else data, 201)
+            response = Response(data.decode('utf-8') if not isinstance(data, str) else data, 201)
             response.headers['Content-Type'] = 'application/rdf+xml; charset=UTF-8'
             response.headers['OSLC-Core-Version'] = "2.0"
             response.headers['Location'] = base_url + '/' + req.identifier
             response.set_etag(req.digestion())
-            response.headers['Last-Modified'] = http_date(datetime.now())
+            # response.headers['Last-Modified'] = http_date(datetime.now())
 
             return response
         else:
             return make_response(req.description, req.code)
-

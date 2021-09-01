@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime
 
 from pyoslc_server.resource import OSLCResource
 from six.moves.urllib.parse import urlparse
@@ -11,16 +10,14 @@ from rdflib import Graph
 from rdflib.plugin import register
 from rdflib.serializer import Serializer
 from werkzeug.exceptions import UnsupportedMediaType, NotAcceptable, PreconditionFailed, NotFound, BadRequest
-from werkzeug.http import http_date
 
 from app.api.adapter import api
-from app.api.adapter.namespaces.business import get_requirement_list, get_requirement, attributes, create_requirement, \
+from app.api.adapter.namespaces.business import get_requirement, attributes, \
     update_requirement, delete_requirement
 from app.api.adapter.namespaces.rm.csv_requirement_repository import CsvRequirementRepository
-from app.api.adapter.namespaces.rm.parsers import specification_parser
 from app.api.adapter.services.providers import RootServiceSingleton, PublisherSingleton
 from pyoslc.resources.domains.rm import Requirement
-from pyoslc.resources.models import ResponseInfo, Compact, Preview
+from pyoslc.resources.models import Compact, Preview
 from pyoslc_server.resource_service import config_service_resource
 from pyoslc_server.specification import ServiceResource
 
@@ -38,120 +35,6 @@ config_service_resource(
     'app.api.adapter.services.specification', 'Specification',
 )
 
-
-# @adapter_ns.route('/catalog')
-# @api.representation('application/rdf+xml')
-# @api.representation('application/json-ld')
-# @api.representation('text/turtle')
-# class ServiceProviderCatalog(OSLCResource):
-#
-#     def __init__(self, *args, **kwargs):
-#         super(ServiceProviderCatalog, self).__init__(*args, **kwargs)
-#
-#     def get(self):
-#         super(ServiceProviderCatalog, self).get()
-#         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint))
-#         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
-#
-#         catalog_url = urlparse(base_url).geturl()
-#
-#         catalog = ServiceProviderCatalogSingleton.get_catalog(catalog_url)
-#         catalog.to_rdf(self.graph)
-#
-#         return self.create_response(graph=self.graph)
-
-
-# @adapter_ns.route('/provider/<service_provider_id>')
-# @api.representation('application/rdf+xml')
-# @api.representation('application/json-ld')
-# @api.representation('text/turtle')
-# class ServiceProvider(OSLCResource):
-#
-#     def __init__(self, *args, **kwargs):
-#         super(ServiceProvider, self).__init__(*args, **kwargs)
-#
-#     def get(self, service_provider_id):
-#         super(ServiceProvider, self).get()
-#         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
-#                                service_provider_id=service_provider_id)
-#         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
-#
-#         service_provider_url = urlparse(base_url).geturl()
-#
-#         provider = ServiceProviderCatalogSingleton.get_provider(service_provider_url, service_provider_id)
-#
-#         if not provider:
-#             return make_response('No resources with ID {}'.format(service_provider_id), 404)
-#
-#         provider.to_rdf(self.graph)
-#         return self.create_response(graph=self.graph)
-
-
-# @adapter_ns.route('/provider/<service_provider_id>/resources/requirement')
-# @api.representation('application/rdf+xml')
-# @api.representation('application/json-ld')
-# @api.representation('text/turtle')
-# class ResourceOperation(OSLCResource):
-#
-#     def get(self, service_provider_id):
-#         super(ResourceOperation, self).get()
-#
-#         select = request.args.get('oslc.select', '')
-#         where = request.args.get('oslc.where', '')
-#
-#         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
-#                                service_provider_id=service_provider_id)
-#         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
-#
-#         data = get_requirement_list(base_url, select, where)
-#         if len(data) == 0:
-#             return make_response('No resources form provider with ID {}'.format(service_provider_id), 404)
-#
-#         response_info = ResponseInfo(base_url)
-#         response_info.total_count = len(data)
-#         response_info.title = 'Query Results for Requirements'
-#
-#         response_info.members = data
-#         response_info.to_rdf(self.graph)
-#
-#         return self.create_response(graph=self.graph)
-#
-#     # @adapter_ns.expect(specification)
-#     def post(self, service_provider_id):
-#         accept = request.headers.get('accept')
-#         if not (accept in ('application/rdf+xml', 'application/json', 'application/ld+json',
-#                            'application/xml', 'application/atom+xml')):
-#             raise UnsupportedMediaType
-#
-#         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
-#                                service_provider_id=service_provider_id)
-#         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
-#
-#         if accept == 'application/json':
-#             data = specification_parser.parse_args()
-#         else:
-#             try:
-#                 data = Graph().parse(data=request.data, format='xml')
-#             except SAXParseException:
-#                 raise BadRequest()
-#
-#         req = create_requirement(data)
-#         if isinstance(req, Requirement):
-#             req.to_rdf(self.graph, base_url=base_url, attributes=attributes)
-#             data = self.graph.serialize(format='pretty-xml')
-#
-#             # Sending the response to the client
-#             response = make_response(data.decode('utf-8') if not isinstance(data, str) else data, 201)
-#             response.headers['Content-Type'] = 'application/rdf+xml; charset=UTF-8'
-#             response.headers['OSLC-Core-Version'] = "2.0"
-#             response.headers['Location'] = base_url + '/' + req.identifier
-#             response.set_etag(req.digestion())
-#             response.headers['Last-Modified'] = http_date(datetime.now())
-#
-#             return response
-#         else:
-#             return make_response(req.description, req.code)
-#
 
 @adapter_ns.route('/provider/<service_provider_id>/resources/requirement/<requirement_id>')
 @api.representation('application/rdf+xml')

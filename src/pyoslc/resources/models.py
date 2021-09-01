@@ -1353,8 +1353,8 @@ class Error(AbstractResource):
 
         return error
 
-"""
 
+"""
 class ResourceShape(BaseResource):
     def __init__(self, about, types, properties,
                  describes, title):
@@ -1395,10 +1395,5 @@ class ResourceShape(BaseResource):
     @title.setter
     def title(self, title):
         self.__title = title
-
-
-
-
-
 
 """

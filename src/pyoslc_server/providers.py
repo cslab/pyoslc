@@ -59,12 +59,12 @@ class ServiceProviderCatalogSingleton(object):
             if identifier not in list(cls.providers.keys()):
                 name = sp.get('name')
                 title = '{}'.format(name)
-                description = 'Service Provider for the Contact Software platform service (id: {})'.format(
-                    identifier)
+                description = 'Service Provider for {}'.format(sp.get('name'))
                 publisher = None
                 parameters = {'id': sp.get('id')}
-                sp = ContactServiceProviderFactory.create_service_provider(catalog_url, title, description, publisher,
-                                                                           parameters)
+                sp = ContactServiceProviderFactory.create_service_provider(
+                    catalog_url, title, description, publisher, parameters
+                )
                 cls.register_service_provider(catalog_url, identifier, sp)
 
         return cls.providers

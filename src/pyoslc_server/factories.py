@@ -1,7 +1,7 @@
 import inspect
 from urlparse import urlparse
 
-from pyoslc.resources.models import ServiceProvider, Service, QueryCapability
+from pyoslc.resources.models import ServiceProvider, Service, QueryCapability, CreationFactory, Dialog
 from .resource_service import get_service_resources
 from .specification import ServiceResource
 
@@ -12,8 +12,9 @@ class ContactServiceProviderFactory(object):
     def create_service_provider(cls, base_uri, title, description, publisher, parameters):
         classes = get_service_resources(ServiceResource)
 
-        sp = ServiceProviderFactory.create_service_provider(base_uri, title, description,
-                                                            publisher, classes, parameters)
+        sp = ServiceProviderFactory.create_service_provider(
+            base_uri, title, description, publisher, classes, parameters
+        )
 
         sp.add_detail(base_uri)
 
@@ -85,6 +86,13 @@ class ServiceProviderFactory(object):
                     # resource_shape = query_capability.resource_shape
 
                 if item.name == 'creation_factory':
+                    resource_attributes = {
+                        'title': 'Creation Factory',
+                        'label': 'Creation Factory',
+                        'resource_shape': ['resourceShapes/requirement'],
+                        'resource_type': ['http://open-services.net/ns/rm#Requirement'],
+                        'usages': []
+                    }
                     creation_factory = cls.create_creation_factory(base_uri, resource_attributes, parameters)
                     service.add_creation_factory(creation_factory)
                     # resource_shape = creation_factory.resource_shape
