@@ -10,11 +10,9 @@ class ContactServiceProviderFactory(object):
 
     @classmethod
     def create_service_provider(cls, base_uri, title, description, publisher, parameters):
-        classes = get_service_resources(ServiceResource)
+        classes = get_service_resources(parameters.get('id'), ServiceResource)
 
-        sp = ServiceProviderFactory.create_service_provider(
-            base_uri, title, description, publisher, classes, parameters
-        )
+        sp = ServiceProviderFactory.create_service_provider(base_uri, title, description, publisher, classes, parameters)
 
         sp.add_detail(base_uri)
 
@@ -50,14 +48,19 @@ class ServiceProviderFactory(object):
         services = dict()
 
         for class_ in resource_classes:
-            service = services.get(class_.__name__)
-            if not service:
-                service = Service(domain=class_.domain)
-                services[class_.domain] = service
+            if class_.methods:
 
-            path = class_.service_path
+                service = services.get(class_.__name__)
+                if not service:
+                    assert class_.type, 'The OSLC Resource Type attribute is required in the {}'.format(class_.__name__)
+                    assert class_.domain, 'The OSLC Domain attribute is required in the {}'.format(class_.__name__)
+                    assert class_.service_path, 'The Service Path attribute is required in the {}'.format(class_.__name__)
+                    service = Service(domain=class_.domain)
+                    services[class_.domain] = service
 
-            cls.handle_resource_class(base_uri, class_, service, parameters, path)
+                path = class_.service_path
+
+                cls.handle_resource_class(base_uri, class_, service, parameters, path)
 
         for s in services.values():
             service_provider.add_service(s)
@@ -70,15 +73,12 @@ class ServiceProviderFactory(object):
         for item in inspect.classify_class_attrs(klass):
             if item.kind.__contains__('method') and item.defining_class == klass and item.name != '__init__':
 
-                # resource_shape = None
-                # resource_attributes = item.object.__func__()
-                resource_attributes = ""
                 if item.name == 'query_capability':
                     resource_attributes = {
                         'title': 'Query Capability',
                         'label': 'Query Capability',
                         'resource_shape': 'resourceShapes/requirement',
-                        'resource_type': ['http://open-services.net/ns/rm#Requirement'],
+                        'resource_type': klass.type,
                         'usages': []
                     }
                     query_capability = cls.create_query_capability(base_uri, resource_attributes, parameters)
@@ -90,7 +90,7 @@ class ServiceProviderFactory(object):
                         'title': 'Creation Factory',
                         'label': 'Creation Factory',
                         'resource_shape': ['resourceShapes/requirement'],
-                        'resource_type': ['http://open-services.net/ns/rm#Requirement'],
+                        'resource_type': klass.type,
                         'usages': []
                     }
                     creation_factory = cls.create_creation_factory(base_uri, resource_attributes, parameters)
@@ -98,10 +98,29 @@ class ServiceProviderFactory(object):
                     # resource_shape = creation_factory.resource_shape
 
                 if item.name == 'selection_dialog':
+                    resource_attributes = {
+                        'title': 'Selection Dialog',
+                        'label': 'Selection Dialog Service',
+                        'uri': 'provider/{id}/resources/selector',
+                        'hint_width': '525px',
+                        'hint_height': '325px',
+                        'resource_type': klass.type,
+                        'usages': ['http://open-services.net/ns/am#PyOSLCSelectionDialog']
+                    }
                     dialog = cls.create_selection_dialog(base_uri, resource_attributes, parameters)
                     service.add_selection_dialog(dialog)
 
                 if item.name == 'creation_dialog':
+                    resource_attributes = {
+                        'title': 'Creation Dialog',
+                        'label': 'Creation Dialog service',
+                        'uri': 'provider/{id}/resources/creator',
+                        'hint_width': '525px',
+                        'hint_height': '325px',
+                        'resource_shape': 'resourceShapes/eventType',
+                        'resource_type': klass.type,
+                        'usages': ['http://open-services.net/ns/am#PyOSLCCreationDialog']
+                    }
                     dialog = cls.create_creation_dialog(base_uri, resource_attributes, parameters)
                     service.add_creation_dialog(dialog)
 

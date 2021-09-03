@@ -68,8 +68,10 @@ class View(object):
             self = view.view_class(*class_args, **class_kwargs)
             return self.dispatch_request(*args, **kwargs)
 
-        if hasattr(cls, 'providers'):
-            cls.providers = class_kwargs.get('providers', None)
+        if hasattr(cls, 'adapters'):
+            adapter = class_kwargs.get('adapter', None)
+            if not adapter in cls.adapters:
+                cls.adapters.append(adapter)
 
         # We attach the view class to the view function for two reasons:
         # first of all it allows us to easily figure out what class-based
@@ -81,8 +83,8 @@ class View(object):
         view.__doc__ = cls.__doc__
         view.__module__ = cls.__module__
         view.methods = cls.methods
-        view.oslc_methods = ['QC']
-        view.namespace = class_kwargs.get('namespace', None)
+        # view.oslc_methods = ['QC']
+        # view.namespace = class_kwargs.get('namespace', None)
         return view
 
 

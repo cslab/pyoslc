@@ -344,8 +344,10 @@ class ServiceProviderCatalog(BaseResource):
 
         if self.service_provider:
             for sp in self.service_provider:
-                r = sp.to_rdf(graph)
-                spc.add(OSLC.serviceProvider, r)
+                uri = self.about if self.about.__contains__(sp.identifier) \
+                    else self.about.replace('/catalog', '') + '/{}'.format(sp.identifier) if sp.identifier else ''
+
+                spc.add(OSLC.serviceProvider, URIRef(uri))
 
         if self.service_provider_catalog:
             for item in self.service_provider_catalog:
@@ -468,10 +470,10 @@ class ServiceProvider(BaseResource):
                 r = pd.to_rdf(graph)
                 sp.add(OSLC.prefixDefinition, r)
 
-        sp.add(JAZZ_PROCESS.supportContributionsToLinkIndexProvider, Literal(True, datatype=XSD.boolean))
-        sp.add(JAZZ_PROCESS.supportLinkDiscoveryViaLinkIndexProvider, Literal(True, datatype=XSD.boolean))
-        sp.add(JAZZ_PROCESS.supportOSLCSimpleQuery, Literal(True, datatype=XSD.boolean))
-        sp.add(JAZZ_PROCESS.globalConfigurationAware, Literal('yes', datatype=XSD.string))
+        # sp.add(JAZZ_PROCESS.supportContributionsToLinkIndexProvider, Literal(True, datatype=XSD.boolean))
+        # sp.add(JAZZ_PROCESS.supportLinkDiscoveryViaLinkIndexProvider, Literal(True, datatype=XSD.boolean))
+        # sp.add(JAZZ_PROCESS.supportOSLCSimpleQuery, Literal(True, datatype=XSD.boolean))
+        # sp.add(JAZZ_PROCESS.globalConfigurationAware, Literal('yes', datatype=XSD.string))
 
         return sp
 

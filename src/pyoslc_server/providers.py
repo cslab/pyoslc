@@ -17,51 +17,46 @@ class ServiceProviderCatalogSingleton(object):
         return cls.instance
 
     @classmethod
-    def get_catalog(cls, catalog_url, title=None, description=None, providers=None):
+    def get_catalog(cls, catalog_url, title=None, description=None, adapters=None):
         if not cls.instance:
             cls()
 
         cls.catalog.about = catalog_url
         cls.catalog.title = title if title else 'Service Provider Catalog'
         cls.catalog.description = description if description else 'Service Provider Catalog for the PyOSLC application.'
-        cls.catalog.providers = providers if providers else {}
 
-        cls.initialize_providers(catalog_url, providers)
+        cls.initialize_providers(catalog_url, adapters)
 
         return cls.catalog
 
     @classmethod
-    def get_providers(cls, request, providers=None):
-        cls.initialize_providers(request, providers=providers)
+    def get_providers(cls, request, adapters=None):
+        cls.initialize_providers(request, adapters=adapters)
         return cls.providers
 
     @classmethod
-    def get_provider(cls, service_provider_url, identifier, title=None, description=None, providers=None):
+    def get_provider(cls, service_provider_url, identifier, adapters=None):
         if not cls.instance:
             sp = 'provider/{}'.format(identifier)
             catalog_url = service_provider_url.replace(sp, 'catalog')
-            cls.get_catalog(catalog_url, providers=providers)
+            cls.get_catalog(catalog_url, adapters=adapters)
 
-        sp = cls.providers.get(identifier)
+        sp = cls.providers.get(str(identifier))
         if not sp:
-            cls.get_providers(service_provider_url, providers=providers)
+            cls.get_providers(service_provider_url, adapters=adapters)
             sp = cls.providers.get(identifier)
 
         return sp
 
     @classmethod
-    def initialize_providers(cls, catalog_url, providers=None):
-
-        service_providers = [providers]  # CSVImplementation.get_service_provider_info()
-
-        for sp in service_providers:
-            identifier = sp.get('id')
+    def initialize_providers(cls, catalog_url, adapters=None):
+        for sp in adapters:
+            identifier = sp.get('identifier')
             if identifier not in list(cls.providers.keys()):
-                name = sp.get('name')
-                title = '{}'.format(name)
-                description = 'Service Provider for {}'.format(sp.get('name'))
+                title = sp.get('title', 'Service Provider')
+                description = sp.get('description', 'Service Provider')
                 publisher = None
-                parameters = {'id': sp.get('id')}
+                parameters = {'id': identifier}
                 sp = ContactServiceProviderFactory.create_service_provider(
                     catalog_url, title, description, publisher, parameters
                 )

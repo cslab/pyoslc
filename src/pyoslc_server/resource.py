@@ -15,6 +15,10 @@ logger = logging.getLogger(__name__)
 
 class OSLCResource(OSLCResourceView):
 
+    title = ''
+    description = ''
+    adapters = []
+
     def __init__(self, *args, **kwargs):
         super(OSLCResource, self).__init__(*args, **kwargs)
 
@@ -28,7 +32,6 @@ class OSLCResource(OSLCResourceView):
     def get(self, *args, **kwargs):
         accept = request.headers.get('accept')
         logger.debug("accept: {}".format(accept))
-        print("accept " + accept)
 
         if accept in ('*/*', 'text/html'):
             accept = 'text/turtle'

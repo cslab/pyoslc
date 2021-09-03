@@ -85,7 +85,7 @@ class OSLCAPP:
                 raise AssertionError('View function mapping is overwriting an '
                                      'existing endpoint function: %s' % endpoint)
             self.view_functions[endpoint] = view_func
-            self.adapter_functions[endpoint+'adap'] = adapter_func
+            self.adapter_functions[endpoint] = adapter_func
             self.view_mappings[endpoint] = attr_mapping
             self.rdf_type[endpoint] = rdf_type
             self.oslc_domain[endpoint] = oslc_domain
@@ -117,6 +117,10 @@ class OSLCAPP:
         reraise(exc_type, exc_value, tb)
 
     def handle_exception(self, error):
+        exc_type, exc_value, tb = sys.exc_info()
+        if exc_value is error:
+            reraise(exc_type, exc_value, tb)
+
         server_error = InternalServerError()
         server_error.original_exception = error
         return self.finalize_request(server_error)

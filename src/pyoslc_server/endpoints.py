@@ -17,15 +17,13 @@ from .wrappers import Response
 
 class ServiceProviderCatalog(OSLCResource):
 
-    title = ''
-    description = ''
-    providers = dict()
-
     def __init__(self, *args, **kwargs):
         super(ServiceProviderCatalog, self).__init__(*args, **kwargs)
         self.title = kwargs.get('title', None)
         self.description = kwargs.get('description', None)
-        self.providers = kwargs.get('providers', None)
+        adapter = kwargs.get('adapter', None)
+        if not adapter in self.adapters:
+            self.adapters.append(adapter)
 
     def get(self):
         super(ServiceProviderCatalog, self).get()
@@ -34,7 +32,7 @@ class ServiceProviderCatalog(OSLCResource):
 
         catalog_url = urlparse(base_url).geturl()
 
-        catalog = ServiceProviderCatalogSingleton.get_catalog(catalog_url, self.title, self.description, self.providers)
+        catalog = ServiceProviderCatalogSingleton.get_catalog(catalog_url, self.title, self.description, self.adapters)
         catalog.to_rdf(self.graph)
 
         return self.create_response(graph=self.graph)
@@ -56,7 +54,7 @@ class ServiceProvider(OSLCResource):
         service_provider_url = urlparse(base_url).geturl()
 
         provider = ServiceProviderCatalogSingleton.get_provider(service_provider_url, provider_id,
-                                                                providers=self.providers)
+                                                                adapters=self.adapters)
 
         if not provider:
             return make_response('No resources with ID {}'.format(provider_id), 404)

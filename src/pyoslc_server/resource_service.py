@@ -28,9 +28,9 @@ def config_service_resource(name, kind, module_path, class_name):
     _service_resources[(name, kind)] = srd
 
 
-def get_service_resources(kind):
+def get_service_resources(key, kind):
     try:
-        rs = [_service_resources[r] for r in _service_resources if r[1] == kind]
+        rs = [_service_resources[r] for r in _service_resources if r[1] == kind and r[0] == key]
     except KeyError:
         raise ServiceResourceException(
             "No Service Resource registered for (%s)" % kind)

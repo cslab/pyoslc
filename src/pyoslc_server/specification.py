@@ -71,10 +71,9 @@ class ServiceResource(with_metaclass(ProviderResource, Provider)):
 
 class ServiceResourceAdapter(ServiceResource):
     representations = None
-    # domain = None
-    domain = 'http://open-services.net/ns/rm#'
-    # service_path = None
-    service_path = 'provider/{id}/resources'
+    domain = None
+    type = None
+    service_path = None
 
     def __init__(self, api=None, *args, **kwargs):
         self.api = api
