@@ -75,7 +75,7 @@ class ResourceOperation(OSLCResource):
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
 
         rule = request.url_rule
-        data = self.api.app.adapter_functions[rule.endpoint+'adap'](**request.view_args)
+        data = self.api.app.adapter_functions[rule.endpoint](**request.view_args)
 
         # data = get_requirement_list(base_url, select, where)
         if len(data) == 0:
