@@ -57,9 +57,8 @@ class ServiceProviderCatalogSingleton(object):
                 description = sp.get('description', 'Service Provider')
                 publisher = None
                 parameters = {'id': identifier}
-                sp = ContactServiceProviderFactory.create_service_provider(
-                    catalog_url, title, description, publisher, parameters
-                )
+                sp = ContactServiceProviderFactory.create_service_provider(catalog_url, title, description, publisher,
+                                                                           parameters)
                 cls.register_service_provider(catalog_url, identifier, sp)
 
         return cls.providers

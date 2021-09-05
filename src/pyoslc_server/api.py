@@ -5,7 +5,7 @@ from werkzeug.exceptions import NotAcceptable, InternalServerError
 from werkzeug.wrappers import BaseResponse
 
 from .namespace import Namespace
-from .endpoints import ServiceProviderCatalog, ServiceProvider, ResourceOperation
+from .endpoints import ServiceProviderCatalog, ServiceProvider, ResourceListOperation, ResourceItemOperation
 from .helpers import camel_to_dash
 from .resource_service import config_service_resource
 from .specification import ServiceResource
@@ -157,7 +157,7 @@ class API(object):
         self._add_namespace(ns)
         return ns
 
-    def add_adapter(self, identifier, title, description, klass, *args, **kwargs):
+    def add_adapter(self, identifier, title, description, klass, mapping, *args, **kwargs):
         config_service_resource(identifier, ServiceResource, klass.__module__, klass.__name__)
 
         adapter = {
@@ -165,11 +165,16 @@ class API(object):
             'title': title,
             'description': description,
             'class': klass,
+            'mapping': mapping,
         }
         resource_class_kwargs = {'adapter': adapter}
         self.default_namespace.add_resource(ServiceProviderCatalog, '/catalog',
                                             resource_class_kwargs=resource_class_kwargs)
         self.default_namespace.add_resource(ServiceProvider, '/provider/<string:provider_id>',
                                             resource_class_kwargs=resource_class_kwargs)
-        self.default_namespace.add_resource(ResourceOperation, '/provider/<string:provider_id>/resources/requirement',
+        self.default_namespace.add_resource(ResourceListOperation,
+                                            '/provider/<string:provider_id>/resources',
+                                            resource_class_kwargs=resource_class_kwargs)
+        self.default_namespace.add_resource(ResourceItemOperation,
+                                            '/provider/<string:provider_id>/resources/<string:resource_id>',
                                             resource_class_kwargs=resource_class_kwargs)

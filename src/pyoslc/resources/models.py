@@ -4,6 +4,7 @@ from datetime import date
 
 import six
 from rdflib import URIRef, Literal, RDF, XSD, BNode
+from rdflib.extras.describer import Describer
 from rdflib.namespace import DCTERMS, RDFS, ClosedNamespace
 from rdflib.resource import Resource
 
@@ -61,6 +62,66 @@ class AbstractResource(object):
     def add_extended_property(self, extended_property):
         if extended_property:
             self.__extended_properties.append(extended_property)
+
+    def update(self, data, attributes):
+        assert attributes is not None, 'The mapping for attributes is required'
+        if isinstance(data, object):
+            data = data.__dict__
+
+        for k, v in data.items():
+            if k in attributes:
+                if hasattr(self, k):
+                    attribute_value = getattr(self, k)
+                    if isinstance(attribute_value, set):
+                        attribute_value.clear()
+                        attribute_value.add(v)
+                    else:
+                        setattr(self, k, v)
+                else:
+                    setattr(self, k, v)
+
+    def to_rdf_base(self, graph, base_url=None, attributes=None):
+        assert attributes is not None, 'The mapping for attributes is required'
+
+        # graph.bind('oslc_rm', OSLC_RM)
+        graph.bind('oslc', OSLC)
+        graph.bind('dcterms', DCTERMS)
+
+        d = Describer(graph, base=base_url)
+        identifier = getattr(self, 'identifier')
+        if isinstance(identifier, Literal):
+            identifier = identifier.value
+        if identifier not in base_url.split('/'):
+            base_url = self.get_absolute_url(base_url, identifier)
+
+        d.about(base_url)
+        # d.rdftype(OSLC_RM.Requirement)
+
+        for attribute_key in self.__dict__.keys():
+            item = {k: v for k, v in six.iteritems(attributes) if attribute_key.split('__')[1] == k}
+
+            if item and attribute_key.split('__')[1] in item.keys():
+                predicate = item.get(attribute_key.split('__')[1])
+                attr = getattr(self, attribute_key)
+                if isinstance(attr, set):
+                    if len(attr) > 0:
+                        val = attr.pop()
+                        if isinstance(val, Literal):
+                            d.value(predicate, val.value)
+                        else:
+                            d.value(predicate, val)
+                        attr.add(val)
+                    else:
+                        attr = getattr(self, attribute_key)
+                        val = attr.pop()
+                        d.value(predicate, val)
+                elif isinstance(attr, Literal):
+                    data = getattr(self, attribute_key)
+                    d.value(predicate, data.value)
+                else:
+                    d.value(predicate, getattr(self, attribute_key))
+
+        return graph
 
     def to_rdf(self, graph):
         logger.debug('Generating RDF for {}'.format(self.__class__.__name__))

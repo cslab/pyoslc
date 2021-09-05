@@ -4,7 +4,7 @@ import sys
 from werkzeug._compat import reraise, text_type
 from werkzeug.datastructures import Headers
 from werkzeug.exceptions import HTTPException, InternalServerError, BadRequestKeyError, NotFound, \
-    UnsupportedMediaType
+    UnsupportedMediaType, NotImplemented
 from werkzeug.routing import Map
 from werkzeug.routing import RoutingException
 from werkzeug.wrappers import BaseResponse
@@ -97,7 +97,7 @@ class OSLCAPP:
         if isinstance(error, RoutingException):
             return error
 
-        if isinstance(error, NotFound) or isinstance(error, UnsupportedMediaType):
+        if isinstance(error, NotFound) or isinstance(error, UnsupportedMediaType) or isinstance(error, NotImplemented):
             return error
 
         return self.handle_exception(error)
@@ -229,8 +229,9 @@ class OSLCAPP:
                 response = Response(response, status=status, headers=headers)
                 status = headers = None
 
-        headers = Headers([('OSLC-Core-Version', '2.0')])
-        response.headers.extend(headers)
+        if not('OSLC-Core-Version' in response.headers.keys()):
+            headers = Headers([('OSLC-Core-Version', '2.0')])
+            response.headers.extend(headers)
 
         return response
 

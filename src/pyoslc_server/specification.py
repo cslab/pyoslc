@@ -16,7 +16,7 @@ def with_metaclass(meta, *bases):
 
 
 method_funcs = frozenset(
-    ['query_capability', 'creation_factory', 'selection_dialog', 'creation_dialog']
+    ['query_capability', 'creation_factory', 'selection_dialog', 'creation_dialog', 'get_resource']
 )
 
 
@@ -73,21 +73,21 @@ class ServiceResourceAdapter(ServiceResource):
     representations = None
     domain = None
     type = None
-    service_path = None
+    service_path = 'provider/{id}/resources'
 
     def __init__(self, api=None, *args, **kwargs):
         self.api = api
 
     def generate(self, *args, **kwargs):
-        # Taken from flask
-        meth = getattr(self, 'query_capability', None)
-        if meth is None and request.method == "HEAD":
-            meth = getattr(self, "query_capability", None)
-        assert meth is not None, "Unimplemented method %r" % request.method
+        meth = getattr(self, args[0], None)
+        assert meth is not None, "Unimplemented method {} in {}".format(args[0].lower(), self.__class__.__name__)
 
-        resp = meth(*args, **kwargs)
+        if meth.__name__ == 'get_resource':
+            kwargs.pop('provider_id')
 
-        if isinstance(resp, list):
+        resp = meth(**kwargs)
+
+        if isinstance(resp, list) or isinstance(resp, object) or isinstance(resp, dict):
             return resp
 
         representations = self.representations or {}

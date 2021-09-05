@@ -83,8 +83,6 @@ class View(object):
         view.__doc__ = cls.__doc__
         view.__module__ = cls.__module__
         view.methods = cls.methods
-        # view.oslc_methods = ['QC']
-        # view.namespace = class_kwargs.get('namespace', None)
         return view
 
 

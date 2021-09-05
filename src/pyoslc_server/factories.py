@@ -81,7 +81,7 @@ class ServiceProviderFactory(object):
                         'resource_type': klass.type,
                         'usages': []
                     }
-                    query_capability = cls.create_query_capability(base_uri, resource_attributes, parameters)
+                    query_capability = cls.create_query_capability(base_uri, path, resource_attributes, parameters)
                     service.add_query_capability(query_capability)
                     # resource_shape = query_capability.resource_shape
 
@@ -101,7 +101,7 @@ class ServiceProviderFactory(object):
                     resource_attributes = {
                         'title': 'Selection Dialog',
                         'label': 'Selection Dialog Service',
-                        'uri': 'provider/{id}/resources/selector',
+                        'uri': '{}/selector'.format(path),
                         'hint_width': '525px',
                         'hint_height': '325px',
                         'resource_type': klass.type,
@@ -127,7 +127,7 @@ class ServiceProviderFactory(object):
         return True
 
     @classmethod
-    def create_query_capability(cls, base_uri, attributes, parameters):
+    def create_query_capability(cls, base_uri, path, attributes, parameters):
 
         title = attributes.get('title', 'OSLC Query Capability')
         label = attributes.get('label', 'Query Capability Service')
@@ -136,8 +136,8 @@ class ServiceProviderFactory(object):
         usages = attributes.get('usages', list())
 
         base_path = base_uri + '/'
-        class_path = 'provider/{id}/resources'
-        method_path = 'requirement'
+        class_path = path  # 'provider/{id}/resources'
+        method_path = ''
 
         base_path = base_path.replace('/catalog', '')
 

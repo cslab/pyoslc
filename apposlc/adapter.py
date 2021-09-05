@@ -16,39 +16,35 @@ class RequirementAdapter(ServiceResourceAdapter):
 
     domain = OSLC_RM
     type = [OSLC_RM.Requirement]
-    service_path = 'provider/{id}/resources'
-#     mapping = REQ_TO_RDF
-#
     items = REQSTORE
-#
-#     def __init__(self, data_items, *args, **kwargs):
-#         super(RequirementAdapter, self).__init__(*args, **kwargs)
-#         # self.items = data_items
-#
-#     def set(self, data_items):
-#         self.items = data_items
+
+    def __init__(self, data_items, *args, **kwargs):
+        super(RequirementAdapter, self).__init__(*args, **kwargs)
+        self.items = data_items
+
+    def set(self, data_items):
+        self.items = data_items
 
     def query_capability(self, provider_id):
         return self.items
-#
+
 #     def creation_factory(self, provider_id):
 #         return self.items
-#
-#     def get_item(self, identifier):
-#         for item in self.items:
-#             if item.identifier == identifier:
-#                 return item
-#
-#         return None
-#
-#     def item_keys(self, item):
-#         return item.identifier
+
+    def get_resource(self, resource_id):
+        for item in self.items:
+            if item.identifier == resource_id:
+                return item
+
+        return None
+
+    def item_keys(self, item):
+        return item.identifier
 
 
 class TestCaseAdapter(ServiceResourceAdapter):
     domain = OSLC_QM
     type = [OSLC_QM.TestCase]
-    service_path = 'provider/{id}/resources'
 
     def selection_dialog(self):
         pass

@@ -2,22 +2,14 @@ import logging
 
 from pyoslc_server.resource import OSLCResource
 from six.moves.urllib.parse import urlparse
-from xml.sax import SAXParseException
 
 from flask import request, make_response, url_for, render_template
 from flask_restx import Namespace
-from rdflib import Graph
 from rdflib.plugin import register
 from rdflib.serializer import Serializer
-from werkzeug.exceptions import UnsupportedMediaType, NotAcceptable, PreconditionFailed, NotFound, BadRequest
 
-from app.api.adapter import api
-from app.api.adapter.namespaces.business import get_requirement, attributes, \
-    update_requirement, delete_requirement
-from app.api.adapter.namespaces.rm.csv_requirement_repository import CsvRequirementRepository
+from app.api.adapter.namespaces.business import get_requirement
 from app.api.adapter.services.providers import RootServiceSingleton, PublisherSingleton
-from pyoslc.resources.domains.rm import Requirement
-from pyoslc.resources.models import Compact, Preview
 from pyoslc_server.resource_service import config_service_resource
 from pyoslc_server.specification import ServiceResource
 
@@ -34,114 +26,6 @@ config_service_resource(
     'specification', ServiceResource,
     'app.api.adapter.services.specification', 'Specification',
 )
-
-
-@adapter_ns.route('/provider/<service_provider_id>/resources/requirement/<requirement_id>')
-@api.representation('application/rdf+xml')
-@api.representation('application/json-ld')
-@api.representation('text/turtle')
-class ResourcePreview(OSLCResource):
-
-    def get(self, service_provider_id, requirement_id):
-        super(ResourcePreview, self).get()
-
-        accept = request.headers['accept']
-
-        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
-                               service_provider_id=service_provider_id, requirement_id=requirement_id)
-        base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
-
-        requirement = get_requirement(base_url, requirement_id)
-        if requirement:
-            requirement.about = base_url
-            requirement.to_rdf(self.graph, base_url, attributes)
-
-        if 'application/x-oslc-compact+xml' in accept or ', application/x-jazz-compact-rendering' in accept:
-            compact = Compact(about=base_url)
-            compact.title = requirement.identifier if requirement else 'REQ Not Found'
-            compact.icon = url_for('oslc.static', filename='pyicon24.ico', _external=True)
-
-            small_preview = Preview()
-            small_preview.document = base_url + '/smallPreview'
-            small_preview.hint_width = '45em'
-            small_preview.hint_height = '10em'
-
-            large_preview = Preview()
-            large_preview.document = base_url + '/largePreview'
-            large_preview.hint_width = '45em'
-            large_preview.hint_height = '20em'
-
-            compact.small_preview = small_preview
-            compact.large_preview = large_preview
-
-            compact.to_rdf(self.graph)
-
-        return self.create_response(graph=self.graph,
-                                    accept='application/x-oslc-compact+xml',
-                                    rdf_format='pretty-xml',
-                                    etag=True)
-
-    def put(self, service_provider_id, requirement_id):
-        accept = request.headers.get('accept')
-        if not (accept in ('application/rdf+xml', 'application/json', 'application/ld+json',
-                           'application/xml', 'application/atom+xml')):
-            raise UnsupportedMediaType
-
-        content = request.headers.get('content-type')
-        if not (content in ('application/rdf+xml', 'application/json', 'application/ld+json',
-                            'application/xml', 'application/atom+xml')):
-            raise UnsupportedMediaType
-
-        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
-                               service_provider_id=service_provider_id, requirement_id=requirement_id)
-        base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
-
-        etag = request.headers.get(key='If-Match', default=None, type=str)
-
-        rq = CsvRequirementRepository('specs')
-        r = rq.find(requirement_id)
-        r.about = base_url
-
-        if not r:
-            raise NotFound()
-        # elif r.identifier != requirement_id:
-        #     raise Conflict()
-        elif not etag:
-            raise BadRequest()
-        else:
-            dig = r.digestion()
-            if dig != etag.strip("\""):
-                raise PreconditionFailed()
-
-        g = Graph()
-        try:
-            data = g.parse(data=request.data, format='xml')
-        except SAXParseException:
-            raise NotAcceptable()
-
-        req = update_requirement(requirement_id, data)
-        if isinstance(req, Requirement):
-            req.to_rdf(self.graph, base_url, attributes)
-            return self.create_response(self.graph)
-        else:
-            return make_response(req.description, req.code)
-
-    def delete(self, service_provider_id, requirement_id):
-        rq = CsvRequirementRepository('specs')
-        r = rq.find(requirement_id)
-
-        if r:
-            req = delete_requirement(requirement_id)
-            if req:
-                response = make_response('Resource deleted.', 200)
-                # response.headers['Accept'] = 'application/rdf+xml'
-                # response.headers['Content-Type'] = 'application/rdf+xml'
-                # response.headers['OSLC-Core-Version'] = "2.0"
-                return response
-            else:
-                return make_response(req.description, req.code)
-        else:
-            return make_response('The resource was not found.', 404)
 
 
 @adapter_ns.route('/provider/<service_provider_id>/resources/requirement/<requirement_id>/<preview_type>')
