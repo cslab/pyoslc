@@ -11,7 +11,7 @@ class OSLCException(Error):
         self.graph = Graph()
         self.graph.bind('oslc', OSLC)
         self.types = [OSLC.Error]
-        
+
     def to_rdf(self, graph=None):
         super(OSLCException, self).to_rdf(self.graph)
         return self.graph

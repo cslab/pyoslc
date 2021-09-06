@@ -28,8 +28,8 @@ class RequirementAdapter(ServiceResourceAdapter):
     def query_capability(self, provider_id):
         return self.items
 
-#     def creation_factory(self, provider_id):
-#         return self.items
+    def creation_factory(self, provider_id):
+        return self.items
 
     def get_resource(self, resource_id):
         for item in self.items:

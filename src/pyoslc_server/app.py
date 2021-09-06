@@ -25,6 +25,8 @@ stream_handler.setFormatter(logging.Formatter('%(asctime)s '
 
 class OSLCAPP:
 
+    testing = False
+
     def __init__(self, name="oslc-app", prefix="oslc", **kwargs):
         self.name = name
         self.prefix = prefix
@@ -43,6 +45,10 @@ class OSLCAPP:
 
         self.logger.debug('Initializing OSLC APP: <name: {name}> <prefix: {prefix}>'.format(name=name, prefix=prefix))
         self.api = API(self, '/services')
+
+    def test_client(self, use_cookies=True, **kwargs):
+        from .testing import OSLCAPPClient
+        return OSLCAPPClient(self, Response, use_cookies=use_cookies, **kwargs)
 
     def add_url_rule(self, rule, endpoint=None, view_func=None, adapter_func=None, **options):
         if endpoint is None:
@@ -69,10 +75,6 @@ class OSLCAPP:
         # Add the required methods now.
         methods |= required_methods
 
-        rdf_type = options.pop('rdf_type', None)
-        oslc_domain = options.pop('oslc_domain', None)
-        attr_mapping = options.pop('attr_mapping', None)
-
         oslc_methods = getattr(adapter_func, 'methods', None) or ('QUERY_CAPABILITY',)
 
         # rule = Rule(self.prefix + rule, methods=methods, **options)
@@ -86,9 +88,6 @@ class OSLCAPP:
                                      'existing endpoint function: %s' % endpoint)
             self.view_functions[endpoint] = view_func
             self.adapter_functions[endpoint] = adapter_func
-            self.view_mappings[endpoint] = attr_mapping
-            self.rdf_type[endpoint] = rdf_type
-            self.oslc_domain[endpoint] = oslc_domain
 
     def handle_http_exception(self, error):
         if error.code is None:
@@ -128,7 +127,7 @@ class OSLCAPP:
     def preprocess_request(self):
         request = _request_ctx_stack.top.request
 
-        if not request.accept_mimetypes.best in ('*/*', 'text/html'):
+        if not(request.accept_mimetypes.best in ('*/*', 'text/html')):
             accept = request.accept_mimetypes.best
         else:
             accept = self.accept

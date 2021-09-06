@@ -6,7 +6,7 @@ from werkzeug.exceptions import UnsupportedMediaType, BadRequest, NotImplemented
 
 from pyoslc_server import request
 
-from pyoslc.resources.models import ResponseInfo, AbstractResource, BaseResource, Compact, Preview
+from pyoslc.resources.models import ResponseInfo, BaseResource, Compact, Preview
 from pyoslc.resources.domains.rm import Requirement
 
 from .resource import OSLCResource
@@ -22,7 +22,7 @@ class ServiceProviderCatalog(OSLCResource):
         self.title = kwargs.get('title', None)
         self.description = kwargs.get('description', None)
         adapter = kwargs.get('adapter', None)
-        if not adapter in self.adapters:
+        if not(adapter in self.adapters):
             self.adapters.append(adapter)
 
     def get(self):
@@ -68,8 +68,8 @@ class ResourceListOperation(OSLCResource):
     def get(self, provider_id):
         super(ResourceListOperation, self).get()
 
-        select = request.args.get('oslc.select', '')
-        where = request.args.get('oslc.where', '')
+        # select = request.args.get('oslc.select', '')
+        # where = request.args.get('oslc.where', '')
 
         endpoint_url = url_for('{}'.format(self.endpoint), provider_id=provider_id)
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
@@ -180,52 +180,52 @@ class ResourceItemOperation(OSLCResource):
                                         rdf_format='pretty-xml',
                                         etag=True)
         except AssertionError as e:
-            raise NotImplemented(e)
+            return NotImplemented(e)
 
-    def put(self, provider_id, resource_id):
-        accept = request.headers.get('accept')
-        if not (accept in ('application/rdf+xml', 'application/json', 'application/ld+json',
-                           'application/xml', 'application/atom+xml')):
-            raise UnsupportedMediaType
-
-        content = request.headers.get('content-type')
-        if not (content in ('application/rdf+xml', 'application/json', 'application/ld+json',
-                            'application/xml', 'application/atom+xml')):
-            raise UnsupportedMediaType
-
-        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
-                               service_provider_id=service_provider_id, requirement_id=requirement_id)
-        base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
-
-        etag = request.headers.get(key='If-Match', default=None, type=str)
-
-        rq = CsvRequirementRepository('specs')
-        r = rq.find(requirement_id)
-        r.about = base_url
-
-        if not r:
-            raise NotFound()
-        # elif r.identifier != requirement_id:
-        #     raise Conflict()
-        elif not etag:
-            raise BadRequest()
-        else:
-            dig = r.digestion()
-            if dig != etag.strip("\""):
-                raise PreconditionFailed()
-
-        g = Graph()
-        try:
-            data = g.parse(data=request.data, format='xml')
-        except SAXParseException:
-            raise NotAcceptable()
-
-        req = update_requirement(requirement_id, data)
-        if isinstance(req, Requirement):
-            req.to_rdf(self.graph, base_url, attributes)
-            return self.create_response(self.graph)
-        else:
-            return make_response(req.description, req.code)
+    # def put(self, provider_id, resource_id):
+    #     accept = request.headers.get('accept')
+    #     if not (accept in ('application/rdf+xml', 'application/json', 'application/ld+json',
+    #                        'application/xml', 'application/atom+xml')):
+    #         raise UnsupportedMediaType
+    #
+    #     content = request.headers.get('content-type')
+    #     if not (content in ('application/rdf+xml', 'application/json', 'application/ld+json',
+    #                         'application/xml', 'application/atom+xml')):
+    #         raise UnsupportedMediaType
+    #
+    #     endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
+    #                            service_provider_id=service_provider_id, requirement_id=requirement_id)
+    #     base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
+    #
+    #     etag = request.headers.get(key='If-Match', default=None, type=str)
+    #
+    #     rq = CsvRequirementRepository('specs')
+    #     r = rq.find(requirement_id)
+    #     r.about = base_url
+    #
+    #     if not r:
+    #         raise NotFound()
+    #     # elif r.identifier != requirement_id:
+    #     #     raise Conflict()
+    #     elif not etag:
+    #         raise BadRequest()
+    #     else:
+    #         dig = r.digestion()
+    #         if dig != etag.strip("\""):
+    #             raise PreconditionFailed()
+    #
+    #     g = Graph()
+    #     try:
+    #         data = g.parse(data=request.data, format='xml')
+    #     except SAXParseException:
+    #         raise NotAcceptable()
+    #
+    #     req = update_requirement(requirement_id, data)
+    #     if isinstance(req, Requirement):
+    #         req.to_rdf(self.graph, base_url, attributes)
+    #         return self.create_response(self.graph)
+    #     else:
+    #         return make_response(req.description, req.code)
 
     # def delete(self, provider_id, resource_id):
     #     rq = CsvRequirementRepository('specs')
@@ -243,4 +243,3 @@ class ResourceItemOperation(OSLCResource):
     #             return make_response(req.description, req.code)
     #     else:
     #         return make_response('The resource was not found.', 404)
-

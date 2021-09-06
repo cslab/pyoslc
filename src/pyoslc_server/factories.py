@@ -12,7 +12,8 @@ class ContactServiceProviderFactory(object):
     def create_service_provider(cls, base_uri, title, description, publisher, parameters):
         classes = get_service_resources(parameters.get('id'), ServiceResource)
 
-        sp = ServiceProviderFactory.create_service_provider(base_uri, title, description, publisher, classes, parameters)
+        sp = ServiceProviderFactory.create_service_provider(base_uri, title, description, publisher, classes,
+                                                            parameters)
 
         sp.add_detail(base_uri)
 
@@ -54,7 +55,8 @@ class ServiceProviderFactory(object):
                 if not service:
                     assert class_.type, 'The OSLC Resource Type attribute is required in the {}'.format(class_.__name__)
                     assert class_.domain, 'The OSLC Domain attribute is required in the {}'.format(class_.__name__)
-                    assert class_.service_path, 'The Service Path attribute is required in the {}'.format(class_.__name__)
+                    assert class_.service_path, 'The Service Path attribute is required in the {}'.format(
+                        class_.__name__)
                     service = Service(domain=class_.domain)
                     services[class_.domain] = service
 

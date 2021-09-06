@@ -70,7 +70,7 @@ class View(object):
 
         if hasattr(cls, 'adapters'):
             adapter = class_kwargs.get('adapter', None)
-            if not adapter in cls.adapters:
+            if not(adapter in cls.adapters):
                 cls.adapters.append(adapter)
 
         # We attach the view class to the view function for two reasons:
