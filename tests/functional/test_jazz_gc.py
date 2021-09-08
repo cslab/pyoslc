@@ -1,3 +1,4 @@
+import pytest
 from rdflib import Graph, URIRef, RDF
 
 from pyoslc.vocabularies.config import OSLC_CONFIG
@@ -5,6 +6,7 @@ from pyoslc.vocabularies.core import OSLC
 from pyoslc.vocabularies.jazz import JAZZ_CONFIG
 
 
+@pytest.mark.skip(reason="Configurations has not been implemented with the new PyOSLC OSLCAPP framework")
 def test_configuration_catalog(pyoslc):
     """
     GIVEN the PyOSLC API
@@ -32,6 +34,7 @@ def test_configuration_catalog(pyoslc):
     assert (cc, OSLC.serviceProvider, comp) in g, 'The ServiceProvider is not in the graph'
 
 
+@pytest.mark.skip(reason="Configurations has not been implemented with the new PyOSLC OSLCAPP framework")
 def test_configuration_components_container(pyoslc):
     """
     GIVEN the PyOSLC API
@@ -61,6 +64,7 @@ def test_configuration_components_container(pyoslc):
             JAZZ_CONFIG.Configuration) in g, 'The Configuration resource typeis not in the graph'
 
 
+@pytest.mark.skip(reason="Configurations has not been implemented with the new PyOSLC OSLCAPP framework")
 def test_configuration_components_selector(pyoslc):
     """
     GIVEN the PyOSLC API
@@ -77,6 +81,7 @@ def test_configuration_components_selector(pyoslc):
     assert b'Baseline' in response.data
 
 
+@pytest.mark.skip(reason="Configurations has not been implemented with the new PyOSLC OSLCAPP framework")
 def test_configuration_streams(pyoslc):
     """
     GIVEN the PyOSLC API
@@ -101,6 +106,7 @@ def test_configuration_streams(pyoslc):
     assert "http://open-services.net/ns/config#Stream" in types
 
 
+@pytest.mark.skip(reason="Configurations has not been implemented with the new PyOSLC OSLCAPP framework")
 def test_configuration_stream_detail(pyoslc):
     """
     GIVEN the PyOSLC API

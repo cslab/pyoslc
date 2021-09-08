@@ -1,117 +1,180 @@
-from collections import namedtuple
+from collections import OrderedDict
+from functools import wraps
 
-from rdflib import Graph, URIRef, RDF, Literal, XSD, RDFS, DCTERMS
-from rdflib.resource import Resource
-from werkzeug.datastructures import Headers
-from werkzeug.exceptions import HTTPException
-from werkzeug.routing import Map
+from werkzeug.exceptions import NotAcceptable, InternalServerError
+from werkzeug.wrappers import BaseResponse
 
-from pyoslc.vocabularies.core import OSLC
-from pyoslc_server.context import Context
-from pyoslc_server.wrappers import Response
+from .namespace import Namespace
+from .endpoints import ServiceProviderCatalog, ServiceProvider, ResourceListOperation, ResourceItemOperation
+from .helpers import camel_to_dash
+from .resource_service import config_service_resource
+from .specification import ServiceResource
+from .views import unpack
+from .globals import request
+from .helpers import make_response as oslcapp_make_response
+from .rdf import to_rdf
 
-ResourceRoute = namedtuple("ResourceRoute", "resource urls kwargs")
+DEFAULT_REPRESENTATIONS = [("text/turtle", to_rdf)]
 
 
-class OSLCAPI:
+class API(object):
 
-    def __init__(self, path, prefix="", **kwargs):
-        self.path = path
-        self.view_functions = {}
-        self.url_map = Map()
-        self.resources = []
+    def __init__(self, app=None, authorizations=None, prefix="/services", **kwargs):
+        self.app = app
+        self.namespaces = []
+        self.ns_paths = dict()
+        self.prefix = prefix
+        self.endpoints = set()
+        self.default_mediatype = 'text/turtle'
 
-        self.graph = Graph()
-        self.graph.bind('oslc', OSLC)
-        self.graph.bind('rdf', RDF)
-        self.graph.bind('rdfs', RDFS)
-        self.graph.bind('dcterms', DCTERMS)
-        self.rdf_format = 'text/turtle'
-        self.accept = 'text/turtle'
+        self.authorizations = authorizations
+        self.representations = OrderedDict(DEFAULT_REPRESENTATIONS)
+        self.default_namespace = self._namespace(title='catalog', description='Service Provider Catalog')
 
-    # def add_resource(self, resource, *urls, **kwargs):
-    #     self.resources.append(ResourceRoute(resource, urls, kwargs))
+    def _complete_url(self, url_part, registration_prefix):
+        parts = (registration_prefix, self.prefix, url_part)
+        return "".join(part for part in parts if part)
 
-    def handle_exception(self, error):
-        if isinstance(error, HTTPException):
-            return error
+    def register_resource(self, namespace, resource, *urls, **kwargs):
+        endpoint = kwargs.pop("endpoint", None)
+        endpoint = str(endpoint or self.default_endpoint(resource, namespace))
 
-    def preprocess_request(self, request):
-        accept = request.accept_mimetypes
+        kwargs["endpoint"] = endpoint
+        self.endpoints.add(endpoint)
 
-        if accept.best == '*/*' and not request.content_type:
-            request.content_type = accept
+        if self.app is not None:
+            self._register_view(self.app, resource, namespace, *urls, **kwargs)
 
-        if accept in ('application/json-ld', 'application/ld+json', 'application/json'):
-            # If the content-type is any kind of json,
-            # we will use the json-ld format for the response.
-            self.rdf_format = 'json-ld'
+        return endpoint
 
-        if accept in ('application/xml', 'application/rdf+xml', 'application/atom+xml'):
-            self.rdf_format = 'pretty-xml'
+    def _register_view(self, app, resource, namespace, *urls, **kwargs):
+        endpoint = kwargs.pop("endpoint", None) or camel_to_dash(resource.__name__)
+        resource_class_args = kwargs.pop("resource_class_args", ())
+        resource_class_kwargs = kwargs.pop("resource_class_kwargs", {})
 
-        return None
+        if endpoint in getattr(app, "view_functions", {}):
+            previous_view_class = app.view_functions[endpoint].__dict__["view_class"]
 
-    def dispatch_request(self, context):
-        request = context.request
-        if request.routing_exception is not None:
-            raise request.routing_exception
+            # if you override the endpoint with a different class, avoid the
+            # collision by raising an exception
+            if previous_view_class != resource:
+                msg = "This endpoint (%s) is already set to the class %s."
+                raise ValueError(msg % (endpoint, previous_view_class.__name__))
 
-        rule = request.url_rule
-        return self.view_functions[rule.endpoing](**request.view_args)
+        resource.endpoint = endpoint
 
-    def full_dispatch_request(self, context):
-        try:
-            res = self.preprocess_request(context.request)
-            if not res:
-                res = self.dispatch_request(context)
-        except Exception as e:
-            res = self.handle_exception(e)
+        adapter = resource_class_kwargs.get('adapter', None)
 
-        return self.finalize_request(res, context.request)
+        resource_func = self.output(
+            resource.as_view(
+                endpoint, self, namespace=namespace, *resource_class_args, **resource_class_kwargs
+            )
+        )
+        adapter_func = self.output_provider(
+            adapter['class'].as_provider(endpoint, self, namespace=namespace, *resource_class_args,
+                                         **resource_class_kwargs)
+        ) if adapter else None
 
-    def finalize_request(self, res, request):
-        response = self.make_response(res, request)
-        return response
+        for url in urls:
+            rule = self._complete_url(url, "")
+            # Add the url to the application
+            app.add_url_rule(rule, view_func=resource_func, adapter_func=adapter_func,  **kwargs)
 
-    def make_response(self, response, request):
-        # status = headers = None
+    def output(self, resource):
 
-        if not isinstance(response, Response):
-            r = Resource(self.graph, URIRef(request.url_root))
-            r.add(RDF.type, OSLC.Error)
-            r.add(OSLC.statusCode, Literal(response.code))
-            r.add(OSLC.message, Literal(response.description, datatype=XSD.string))
+        @wraps(resource)
+        def wrapper(*args, **kwargs):
+            resp = resource(*args, **kwargs)
+            if isinstance(resp, BaseResponse):
+                return resp
+            data, code, headers = unpack(resp)
+            return self.make_response(data, code, headers=headers)
 
-            response = Response(self.graph.serialize(format=self.rdf_format),
-                                status=response.code,
-                                mimetype=request.content_type)
+        return wrapper
 
-        headers = Headers([('OSLC-Core-Version', '2.0')])
-        response.headers.extend(headers)
+    def output_provider(self, resource):
 
-        return response
+        @wraps(resource)
+        def wrapper(*args, **kwargs):
+            resp = resource(*args, **kwargs)
+            return resp
+            # if isinstance(resp, BaseResponse):
+            #     return resp
+            # data, code, headers = unpack(resp)
+            # return self.make_response(data, code, headers=headers)
 
-    def get_adapter(self, request):
-        return self.url_map.bind_to_environ(request.environ)
+        return wrapper
 
-    def get_context(self, environ):
-        return Context(self, environ)
+    def make_response(self, data, *args, **kwargs):
+        default_mediatype = (
+                kwargs.pop("fallback_mediatype", None) or self.default_mediatype
+        )
+        mediatype = request.accept_mimetypes.best_match(
+            self.representations, default=default_mediatype,
+        )
+        if mediatype is None:
+            raise NotAcceptable()
+        if mediatype in self.representations:
+            resp = self.representations[mediatype](data, *args, **kwargs)
+            resp.headers["Content-Type"] = mediatype
+            return resp
+        elif mediatype == "text/plain":
+            resp = oslcapp_make_response(str(data), *args, **kwargs)
+            resp.headers["Content-Type"] = "text/plain"
+            return resp
+        else:
+            raise InternalServerError()
 
-    def wsgi_check(self, environ):
-        if environ['PATH_INFO'].startswith(self.path):
-            return True
+    def default_endpoint(self, resource, namespace):
+        endpoint = camel_to_dash(resource.__name__)
+        if namespace is not self.default_namespace:
+            endpoint = "{ns.title}_{endpoint}".format(ns=namespace, endpoint=endpoint)
+        if endpoint in self.endpoints:
+            suffix = 2
+            while True:
+                new_endpoint = "{base}_{suffix}".format(base=endpoint, suffix=suffix)
+                if new_endpoint not in self.endpoints:
+                    endpoint = new_endpoint
+                    break
+                suffix += 1
+        return endpoint
 
-        return False
+    def get_ns_path(self, ns):
+        return self.ns_paths.get(ns)
 
-    def wsgi_app(self, environ, start_response):
-        context = self.get_context(environ)
-        try:
-            response = self.full_dispatch_request(context=context)
-        except Exception as e:
-            response = self.handle_exception(e)
+    def ns_urls(self, ns, urls):
+        path = self.get_ns_path(ns) or ns.path
+        return [path + url for url in urls]
 
-        return response(environ, start_response)
+    def _add_namespace(self, ns, path=None):
+        if ns not in self.namespaces:
+            self.namespaces.append(ns)
+            if path is not None:
+                self.ns_paths[ns] = path
 
-    def __call__(self, environ, start_response):
-        return self.wsgi_app(environ, start_response)
+    def _namespace(self, *args, **kwargs):
+        ns = Namespace(api=self, *args, **kwargs)
+        self._add_namespace(ns)
+        return ns
+
+    def add_adapter(self, identifier, title, description, klass, mapping, *args, **kwargs):
+        config_service_resource(identifier, ServiceResource, klass.__module__, klass.__name__)
+
+        adapter = {
+            'identifier': identifier,
+            'title': title,
+            'description': description,
+            'class': klass,
+            'mapping': mapping,
+        }
+        resource_class_kwargs = {'adapter': adapter}
+        self.default_namespace.add_resource(ServiceProviderCatalog, '/catalog',
+                                            resource_class_kwargs=resource_class_kwargs)
+        self.default_namespace.add_resource(ServiceProvider, '/provider/<string:provider_id>',
+                                            resource_class_kwargs=resource_class_kwargs)
+        self.default_namespace.add_resource(ResourceListOperation,
+                                            '/provider/<string:provider_id>/resources',
+                                            resource_class_kwargs=resource_class_kwargs)
+        self.default_namespace.add_resource(ResourceItemOperation,
+                                            '/provider/<string:provider_id>/resources/<string:resource_id>',
+                                            resource_class_kwargs=resource_class_kwargs)

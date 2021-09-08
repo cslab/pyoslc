@@ -64,7 +64,7 @@ class Requirement(BaseResource):
         graph.bind('dcterms', DCTERMS)
 
         d = Describer(graph, base=base_url)
-        identifier = getattr(self, '_BaseResource__identifier')
+        identifier = getattr(self, 'identifier')
         if isinstance(identifier, Literal):
             identifier = identifier.value
         if identifier not in base_url.split('/'):
@@ -123,20 +123,10 @@ class Requirement(BaseResource):
             reviewed = list()
 
             for k, v in six.iteritems(attributes):
-                reviewed.append(v['attribute'])
-                item = {v['attribute']: a for a in self.__dict__.keys() if a.lower() == v['attribute'].lower()}
-                predicate = None
-                if item:
-                    try:
-                        predicate = eval(v['oslc_property'])
-                    except AttributeError:
-                        pass
-                else:
-                    ns, ln = v['oslc_property'].split('.')
-                    predicate = eval(ns).uri + ln
+                reviewed.append(k)
 
-                for i in g.objects(r, predicate=predicate):
-                    attribute_name = v['attribute']
+                for i in g.objects(r, predicate=v):
+                    attribute_name = k
                     if hasattr(self, attribute_name):
                         attribute_value = getattr(self, attribute_name)
                         if isinstance(attribute_value, set):
@@ -147,18 +137,18 @@ class Requirement(BaseResource):
                         elif isinstance(attribute_value, str):
                             if isinstance(i, Literal):
                                 i = i.value
-                            setattr(self, attribute_name, i)
+                            setattr(self, attribute_name, i if isinstance(i, str) else i.encode('utf-8'))
                         else:
                             if isinstance(i, Literal):
                                 setattr(self, attribute_name, i.value)
                             else:
                                 setattr(self, attribute_name, i)
 
-            no_reviewed = [a for a in self.__dict__.keys() if a not in reviewed]
+            no_reviewed = [a.split('__')[1].lower() for a in self.__dict__.keys() if
+                           a.split('__')[1].lower() not in reviewed]
 
             for attr in no_reviewed:
-                item = {attr: v for k, v in six.iteritems(attributes) if v['attribute'].lower() == attr.lower()}
-
+                item = {attr: v for k, v in six.iteritems(attributes) if k.lower() == attr.lower()}
                 if item:
                     for i in g.objects(r, eval(item.get(attr)['oslc_property'])):
                         attribute_name = item.get(attr)['attribute']

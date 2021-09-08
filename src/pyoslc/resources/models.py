@@ -4,7 +4,8 @@ from datetime import date
 
 import six
 from rdflib import URIRef, Literal, RDF, XSD, BNode
-from rdflib.namespace import DCTERMS, RDFS
+from rdflib.extras.describer import Describer
+from rdflib.namespace import DCTERMS, RDFS, ClosedNamespace
 from rdflib.resource import Resource
 
 from pyoslc.helpers import build_uri
@@ -61,6 +62,66 @@ class AbstractResource(object):
     def add_extended_property(self, extended_property):
         if extended_property:
             self.__extended_properties.append(extended_property)
+
+    def update(self, data, attributes):
+        assert attributes is not None, 'The mapping for attributes is required'
+        if isinstance(data, object):
+            data = data.__dict__
+
+        for k, v in data.items():
+            if k in attributes:
+                if hasattr(self, k):
+                    attribute_value = getattr(self, k)
+                    if isinstance(attribute_value, set):
+                        attribute_value.clear()
+                        attribute_value.add(v)
+                    else:
+                        setattr(self, k, v)
+                else:
+                    setattr(self, k, v)
+
+    def to_rdf_base(self, graph, base_url=None, attributes=None):
+        assert attributes is not None, 'The mapping for attributes is required'
+
+        # graph.bind('oslc_rm', OSLC_RM)
+        graph.bind('oslc', OSLC)
+        graph.bind('dcterms', DCTERMS)
+
+        d = Describer(graph, base=base_url)
+        identifier = getattr(self, 'identifier')
+        if isinstance(identifier, Literal):
+            identifier = identifier.value
+        if identifier not in base_url.split('/'):
+            base_url = self.get_absolute_url(base_url, identifier)
+
+        d.about(base_url)
+        # d.rdftype(OSLC_RM.Requirement)
+
+        for attribute_key in self.__dict__.keys():
+            item = {k: v for k, v in six.iteritems(attributes) if attribute_key.split('__')[1] == k}
+
+            if item and attribute_key.split('__')[1] in item.keys():
+                predicate = item.get(attribute_key.split('__')[1])
+                attr = getattr(self, attribute_key)
+                if isinstance(attr, set):
+                    if len(attr) > 0:
+                        val = attr.pop()
+                        if isinstance(val, Literal):
+                            d.value(predicate, val.value)
+                        else:
+                            d.value(predicate, val)
+                        attr.add(val)
+                    else:
+                        attr = getattr(self, attribute_key)
+                        val = attr.pop()
+                        d.value(predicate, val)
+                elif isinstance(attr, Literal):
+                    data = getattr(self, attribute_key)
+                    d.value(predicate, data.value)
+                else:
+                    d.value(predicate, getattr(self, attribute_key))
+
+        return graph
 
     def to_rdf(self, graph):
         logger.debug('Generating RDF for {}'.format(self.__class__.__name__))
@@ -340,12 +401,14 @@ class ServiceProviderCatalog(BaseResource):
 
         if self.domain:
             for item in self.domain:
-                spc.add(OSLC.domain, URIRef(item))
+                spc.add(OSLC.domain, URIRef(str(item)))
 
         if self.service_provider:
             for sp in self.service_provider:
-                r = sp.to_rdf(graph)
-                spc.add(OSLC.serviceProvider, r)
+                uri = self.about if self.about.__contains__(sp.identifier) \
+                    else self.about.replace('/catalog', '') + '/{}'.format(sp.identifier) if sp.identifier else ''
+
+                spc.add(OSLC.serviceProvider, URIRef(uri))
 
         if self.service_provider_catalog:
             for item in self.service_provider_catalog:
@@ -468,10 +531,10 @@ class ServiceProvider(BaseResource):
                 r = pd.to_rdf(graph)
                 sp.add(OSLC.prefixDefinition, r)
 
-        sp.add(JAZZ_PROCESS.supportContributionsToLinkIndexProvider, Literal(True, datatype=XSD.boolean))
-        sp.add(JAZZ_PROCESS.supportLinkDiscoveryViaLinkIndexProvider, Literal(True, datatype=XSD.boolean))
-        sp.add(JAZZ_PROCESS.supportOSLCSimpleQuery, Literal(True, datatype=XSD.boolean))
-        sp.add(JAZZ_PROCESS.globalConfigurationAware, Literal('yes', datatype=XSD.string))
+        # sp.add(JAZZ_PROCESS.supportContributionsToLinkIndexProvider, Literal(True, datatype=XSD.boolean))
+        # sp.add(JAZZ_PROCESS.supportLinkDiscoveryViaLinkIndexProvider, Literal(True, datatype=XSD.boolean))
+        # sp.add(JAZZ_PROCESS.supportOSLCSimpleQuery, Literal(True, datatype=XSD.boolean))
+        # sp.add(JAZZ_PROCESS.globalConfigurationAware, Literal('yes', datatype=XSD.string))
 
         return sp
 
@@ -568,7 +631,7 @@ class Service(BaseResource):
             s.add(DCTERMS.description, Literal(self.description, datatype=XSD.Literal))
 
         if self.domain:
-            s.add(OSLC.domain, URIRef(self.domain))
+            s.add(OSLC.domain, URIRef(self.domain.uri if isinstance(self.domain, ClosedNamespace) else self.domain))
 
         if self.creation_factory:
             for cf in self.creation_factory:
@@ -1312,8 +1375,49 @@ class Compact(AbstractResource):
         return d
 
 
-"""
+class Error(AbstractResource):
 
+    def __init__(self, about=None, types=None, properties=None,
+                 status_code=None, message=None, extended_error=None):
+        super(Error, self).__init__(about, types, properties)
+        self.__status_code = status_code if status_code is not None else None
+        self.__message = message if message is not None else None
+        self.__extended_error = extended_error if extended_error is not None else None
+
+    @property
+    def status_code(self):
+        return self.__status_code
+
+    @status_code.setter
+    def status_code(self, status_code):
+        self.__status_code = status_code
+
+    @property
+    def message(self):
+        return self.__message
+
+    @message.setter
+    def message(self, message):
+        self.__message = message
+
+    def to_rdf(self, graph):
+        super(Error, self).to_rdf(graph)
+
+        uri = self.about if self.about else ''
+
+        error = Resource(graph, URIRef(uri))
+        error.add(RDF.type, OSLC.Error)
+
+        if self.status_code:
+            error.add(OSLC.statusCode, Literal(self.status_code))
+
+        if self.message:
+            error.add(OSLC.message, Literal(self.message, datatype=XSD.string))
+
+        return error
+
+
+"""
 class ResourceShape(BaseResource):
     def __init__(self, about, types, properties,
                  describes, title):
@@ -1354,10 +1458,5 @@ class ResourceShape(BaseResource):
     @title.setter
     def title(self, title):
         self.__title = title
-
-
-
-
-
 
 """

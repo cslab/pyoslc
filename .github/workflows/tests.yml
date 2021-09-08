@@ -3,7 +3,14 @@
 
 name: Testing the Adapter
 
-on: [push]
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - develop
+      - master
 
 jobs:
   tests:

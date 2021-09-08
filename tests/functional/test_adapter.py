@@ -1,3 +1,4 @@
+import pytest
 from rdflib import Graph, RDF, URIRef, DCTERMS, RDFS, Literal
 
 from pyoslc.vocabularies.core import OSLC
@@ -5,6 +6,7 @@ from pyoslc.vocabularies.jazz import JAZZ_PROCESS
 from pyoslc.vocabularies.rm import OSLC_RM
 
 
+@pytest.mark.skip(reason="GET Resource was moved to the new PyOSLC OSLCAPP framework")
 def test_serializer_plugin_exception(pyoslc):
     """
     GIVEN the PyOSLC API and an invalid RDF representation
@@ -23,6 +25,7 @@ def test_serializer_plugin_exception(pyoslc):
     assert b'The server does not support the media type' in response.data
 
 
+@pytest.mark.skip(reason="GET Resource was moved to the new PyOSLC OSLCAPP framework")
 def test_unsupported_media_type(pyoslc):
     """
     GIVEN the PyOSLC API and an invalid RDF representation
@@ -36,6 +39,7 @@ def test_unsupported_media_type(pyoslc):
     assert response.status_code == 415
 
 
+@pytest.mark.skip(reason="GET Resource was moved to the new PyOSLC OSLCAPP framework")
 def test_service_provider_catalog(pyoslc):
     """
     GIVEN the PyOSLC API and a list of RDF representations
@@ -69,6 +73,7 @@ def test_service_provider_catalog(pyoslc):
         assert 'Project-1' in [t for t in g.objects(spc, OSLC.serviceProvider)][0]
 
 
+@pytest.mark.skip(reason="GET Resource was moved to the new PyOSLC OSLCAPP framework")
 def test_bad_service_provider(pyoslc):
     """
     GIVEN the PyOSLC API
@@ -84,6 +89,7 @@ def test_bad_service_provider(pyoslc):
     assert b'No resources with ID' in response.data
 
 
+@pytest.mark.skip(reason="GET Resource was moved to the new PyOSLC OSLCAPP framework")
 def test_service_provider(pyoslc):
     """
     GIVEN the PyOSLC API
@@ -122,6 +128,7 @@ def test_service_provider(pyoslc):
     assert 'Project-1' in [t for t in g.objects(sp, DCTERMS.identifier)][0]
 
 
+@pytest.mark.skip(reason="GET Resource was moved to the new PyOSLC OSLCAPP framework")
 def test_query_capability(pyoslc):
     """
     GIVEN the PyOSLC API
@@ -164,6 +171,7 @@ def test_query_capability(pyoslc):
     assert m3 in members, 'The ResponseInfo does not contain the member X1C2V3B1'
 
 
+@pytest.mark.skip(reason="POST Resource was moved to the new PyOSLC OSLCAPP framework")
 def test_creation_factory(pyoslc):
     """
     GIVEN the PyOSLC API
@@ -198,6 +206,7 @@ def test_creation_factory(pyoslc):
     assert response.status_code == 200
 
 
+@pytest.mark.skip(reason="GET Resource method has not been implemented with the new PyOSLC OSLCAPP framework")
 def test_query_resource(pyoslc):
     """
     GIVEN the PyOSLC API
@@ -227,6 +236,7 @@ def test_query_resource(pyoslc):
     assert (ri, DCTERMS.identifier, Literal('X1C2V3B1')) in g, 'The response does not contain a identifier'
 
 
+@pytest.mark.skip(reason="UPDATE method has not been implemented with the new PyOSLC OSLCAPP framework")
 def test_update_resource(pyoslc):
     """
     GIVEN the PyOSLC API
@@ -273,6 +283,7 @@ def test_update_resource(pyoslc):
     assert response.status_code == 200
 
 
+@pytest.mark.skip(reason="DELETE method has not been implemented with the new PyOSLC OSLCAPP framework")
 def test_delete_resource(pyoslc):
     """
     GIVEN the PyOSLC API

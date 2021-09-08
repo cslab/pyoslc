@@ -1,27 +1,17 @@
 import logging
-from datetime import datetime
+
+from pyoslc_server.resource import OSLCResource
 from six.moves.urllib.parse import urlparse
-from xml.sax import SAXParseException
 
 from flask import request, make_response, url_for, render_template
 from flask_restx import Namespace
-from rdflib import Graph
 from rdflib.plugin import register
 from rdflib.serializer import Serializer
-from werkzeug.exceptions import UnsupportedMediaType, NotAcceptable, PreconditionFailed, NotFound, BadRequest
-from werkzeug.http import http_date
 
-from app.api.adapter import api
-from app.api.adapter.namespaces.business import get_requirement_list, get_requirement, attributes, create_requirement, \
-    update_requirement, delete_requirement
-from app.api.adapter.namespaces.rm.csv_requirement_repository import CsvRequirementRepository
-from app.api.adapter.namespaces.rm.parsers import specification_parser
-from app.api.adapter.resources.resource_service import config_service_resource
-from app.api.adapter.services.providers import ServiceProviderCatalogSingleton, RootServiceSingleton, PublisherSingleton
-from app.api.adapter.services.specification import ServiceResource
-from pyoslc.resources.domains.rm import Requirement
-from pyoslc.resources.models import ResponseInfo, Compact, Preview
-from pyoslc.rest.resource import OslcResource
+from app.api.adapter.namespaces.business import get_requirement
+from app.api.adapter.services.providers import RootServiceSingleton, PublisherSingleton
+from pyoslc_server.resource_service import config_service_resource
+from pyoslc_server.specification import ServiceResource
 
 logger = logging.getLogger(__name__)
 
@@ -38,230 +28,8 @@ config_service_resource(
 )
 
 
-@adapter_ns.route('/catalog')
-@api.representation('application/rdf+xml')
-@api.representation('application/json-ld')
-@api.representation('text/turtle')
-class ServiceProviderCatalog(OslcResource):
-
-    def __init__(self, *args, **kwargs):
-        super(ServiceProviderCatalog, self).__init__(*args, **kwargs)
-
-    def get(self):
-        super(ServiceProviderCatalog, self).get()
-        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint))
-        base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
-
-        catalog_url = urlparse(base_url).geturl()
-
-        catalog = ServiceProviderCatalogSingleton.get_catalog(catalog_url)
-        catalog.to_rdf(self.graph)
-
-        return self.create_response(graph=self.graph)
-
-
-@adapter_ns.route('/provider/<service_provider_id>')
-@api.representation('application/rdf+xml')
-@api.representation('application/json-ld')
-@api.representation('text/turtle')
-class ServiceProvider(OslcResource):
-
-    def __init__(self, *args, **kwargs):
-        super(ServiceProvider, self).__init__(*args, **kwargs)
-
-    def get(self, service_provider_id):
-        super(ServiceProvider, self).get()
-        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
-                               service_provider_id=service_provider_id)
-        base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
-
-        service_provider_url = urlparse(base_url).geturl()
-
-        provider = ServiceProviderCatalogSingleton.get_provider(service_provider_url, service_provider_id)
-
-        if not provider:
-            return make_response('No resources with ID {}'.format(service_provider_id), 404)
-
-        provider.to_rdf(self.graph)
-        return self.create_response(graph=self.graph)
-
-
-@adapter_ns.route('/provider/<service_provider_id>/resources/requirement')
-@api.representation('application/rdf+xml')
-@api.representation('application/json-ld')
-@api.representation('text/turtle')
-class ResourceOperation(OslcResource):
-
-    def get(self, service_provider_id):
-        super(ResourceOperation, self).get()
-
-        select = request.args.get('oslc.select', '')
-        where = request.args.get('oslc.where', '')
-
-        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
-                               service_provider_id=service_provider_id)
-        base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
-
-        data = get_requirement_list(base_url, select, where)
-        if len(data) == 0:
-            return make_response('No resources form provider with ID {}'.format(service_provider_id), 404)
-
-        response_info = ResponseInfo(base_url)
-        response_info.total_count = len(data)
-        response_info.title = 'Query Results for Requirements'
-
-        response_info.members = data
-        response_info.to_rdf(self.graph)
-
-        return self.create_response(graph=self.graph)
-
-    # @adapter_ns.expect(specification)
-    def post(self, service_provider_id):
-        accept = request.headers.get('accept')
-        if not (accept in ('application/rdf+xml', 'application/json', 'application/ld+json',
-                           'application/xml', 'application/atom+xml')):
-            raise UnsupportedMediaType
-
-        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
-                               service_provider_id=service_provider_id)
-        base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
-
-        if accept == 'application/json':
-            data = specification_parser.parse_args()
-        else:
-            try:
-                data = Graph().parse(data=request.data, format='xml')
-            except SAXParseException:
-                raise BadRequest()
-
-        req = create_requirement(data)
-        if isinstance(req, Requirement):
-            req.to_rdf(self.graph, base_url=base_url, attributes=attributes)
-            data = self.graph.serialize(format='pretty-xml')
-
-            # Sending the response to the client
-            response = make_response(data.decode('utf-8') if not isinstance(data, str) else data, 201)
-            response.headers['Content-Type'] = 'application/rdf+xml; charset=UTF-8'
-            response.headers['OSLC-Core-Version'] = "2.0"
-            response.headers['Location'] = base_url + '/' + req.identifier
-            response.set_etag(req.digestion())
-            response.headers['Last-Modified'] = http_date(datetime.now())
-
-            return response
-        else:
-            return make_response(req.description, req.code)
-
-
-@adapter_ns.route('/provider/<service_provider_id>/resources/requirement/<requirement_id>')
-@api.representation('application/rdf+xml')
-@api.representation('application/json-ld')
-@api.representation('text/turtle')
-class ResourcePreview(OslcResource):
-
-    def get(self, service_provider_id, requirement_id):
-        super(ResourcePreview, self).get()
-
-        accept = request.headers['accept']
-
-        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
-                               service_provider_id=service_provider_id, requirement_id=requirement_id)
-        base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
-
-        requirement = get_requirement(base_url, requirement_id)
-        if requirement:
-            requirement.about = base_url
-            requirement.to_rdf(self.graph, base_url, attributes)
-
-        if 'application/x-oslc-compact+xml' in accept or ', application/x-jazz-compact-rendering' in accept:
-            compact = Compact(about=base_url)
-            compact.title = requirement.identifier if requirement else 'REQ Not Found'
-            compact.icon = url_for('oslc.static', filename='pyicon24.ico', _external=True)
-
-            small_preview = Preview()
-            small_preview.document = base_url + '/smallPreview'
-            small_preview.hint_width = '45em'
-            small_preview.hint_height = '10em'
-
-            large_preview = Preview()
-            large_preview.document = base_url + '/largePreview'
-            large_preview.hint_width = '45em'
-            large_preview.hint_height = '20em'
-
-            compact.small_preview = small_preview
-            compact.large_preview = large_preview
-
-            compact.to_rdf(self.graph)
-
-        return self.create_response(graph=self.graph,
-                                    accept='application/x-oslc-compact+xml',
-                                    rdf_format='pretty-xml',
-                                    etag=True)
-
-    def put(self, service_provider_id, requirement_id):
-        accept = request.headers.get('accept')
-        if not (accept in ('application/rdf+xml', 'application/json', 'application/ld+json',
-                           'application/xml', 'application/atom+xml')):
-            raise UnsupportedMediaType
-
-        content = request.headers.get('content-type')
-        if not (content in ('application/rdf+xml', 'application/json', 'application/ld+json',
-                            'application/xml', 'application/atom+xml')):
-            raise UnsupportedMediaType
-
-        endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
-                               service_provider_id=service_provider_id, requirement_id=requirement_id)
-        base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
-
-        etag = request.headers.get(key='If-Match', default=None, type=str)
-
-        rq = CsvRequirementRepository('specs')
-        r = rq.find(requirement_id)
-        r.about = base_url
-
-        if not r:
-            raise NotFound()
-        # elif r.identifier != requirement_id:
-        #     raise Conflict()
-        elif not etag:
-            raise BadRequest()
-        else:
-            dig = r.digestion()
-            if dig != etag.strip("\""):
-                raise PreconditionFailed()
-
-        g = Graph()
-        try:
-            data = g.parse(data=request.data, format='xml')
-        except SAXParseException:
-            raise NotAcceptable()
-
-        req = update_requirement(requirement_id, data)
-        if isinstance(req, Requirement):
-            req.to_rdf(self.graph, base_url, attributes)
-            return self.create_response(self.graph)
-        else:
-            return make_response(req.description, req.code)
-
-    def delete(self, service_provider_id, requirement_id):
-        rq = CsvRequirementRepository('specs')
-        r = rq.find(requirement_id)
-
-        if r:
-            req = delete_requirement(requirement_id)
-            if req:
-                response = make_response('Resource deleted.', 200)
-                # response.headers['Accept'] = 'application/rdf+xml'
-                # response.headers['Content-Type'] = 'application/rdf+xml'
-                # response.headers['OSLC-Core-Version'] = "2.0"
-                return response
-            else:
-                return make_response(req.description, req.code)
-        else:
-            return make_response('The resource was not found.', 404)
-
-
 @adapter_ns.route('/provider/<service_provider_id>/resources/requirement/<requirement_id>/<preview_type>')
-class ResourcePreviewSmallLarge(OslcResource):
+class ResourcePreviewSmallLarge(OSLCResource):
 
     def get(self, service_provider_id, requirement_id, preview_type):
         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
@@ -287,7 +55,7 @@ class ResourcePreviewSmallLarge(OslcResource):
 
 
 @adapter_ns.route('/rootservices')
-class RootServices(OslcResource):
+class RootServices(OSLCResource):
 
     def get(self):
 
@@ -312,7 +80,7 @@ class RootServices(OslcResource):
 
 
 @adapter_ns.route('/config')
-class ConfigurationCatalog(OslcResource):
+class ConfigurationCatalog(OSLCResource):
 
     def get(self):
         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint))
@@ -335,7 +103,7 @@ class ConfigurationCatalog(OslcResource):
 
 
 @adapter_ns.route('/config/components')
-class ConfigurationComponent(OslcResource):
+class ConfigurationComponent(OSLCResource):
 
     def get(self):
         super(ConfigurationComponent, self).get()
@@ -359,7 +127,7 @@ class ConfigurationComponent(OslcResource):
 
 
 @adapter_ns.route('/config/publisher')
-class ConfigurationPublisher(OslcResource):
+class ConfigurationPublisher(OSLCResource):
 
     def get(self):
         super(ConfigurationPublisher, self).get()
@@ -381,7 +149,7 @@ class ConfigurationPublisher(OslcResource):
 
 
 @adapter_ns.route('/config/selection')
-class ConfigurationSelection(OslcResource):
+class ConfigurationSelection(OSLCResource):
 
     def get(self):
         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint))
@@ -422,7 +190,7 @@ class ConfigurationSelection(OslcResource):
 
 
 @adapter_ns.route('/config/stream/<int:stream_id>')
-class ConfigurationStream(OslcResource):
+class ConfigurationStream(OSLCResource):
 
     def get(self, stream_id):
         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint), stream_id=stream_id)
@@ -453,7 +221,7 @@ class ConfigurationStream(OslcResource):
 
 
 @adapter_ns.route('/scr')
-class Source(OslcResource):
+class Source(OSLCResource):
 
     def get(self):
         response = make_response(render_template('pyoslc_oauth/scr.html'))

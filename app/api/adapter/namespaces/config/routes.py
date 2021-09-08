@@ -1,3 +1,4 @@
+from pyoslc_server.resource import OSLCResource
 from six.moves.urllib.parse import urlparse
 
 from flask import url_for, request, render_template, make_response
@@ -6,7 +7,7 @@ from rdflib.plugin import register
 from rdflib.serializer import Serializer
 
 from app.api.adapter.services.providers import ConfigurationManagementSingleton
-from pyoslc.rest.resource import OslcResource
+
 
 config_ns = Namespace(name='config', description='Configuration Management', path='/config')
 
@@ -18,7 +19,7 @@ register(
 
 
 @config_ns.route('')
-class ConfigurationCatalog(OslcResource):
+class ConfigurationCatalog(OSLCResource):
 
     def get(self):
         super(ConfigurationCatalog, self).get()
@@ -48,7 +49,7 @@ class ConfigurationCatalog(OslcResource):
 
 
 @config_ns.route('/components/<string:component_id>')
-class ConfigurationComponent(OslcResource):
+class ConfigurationComponent(OSLCResource):
 
     def get(self, component_id):
         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint), component_id=component_id)
@@ -74,7 +75,7 @@ class ConfigurationComponent(OslcResource):
 
 
 @config_ns.route('/publisher')
-class ConfigurationPublisher(OslcResource):
+class ConfigurationPublisher(OSLCResource):
 
     def get(self):
         endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint))

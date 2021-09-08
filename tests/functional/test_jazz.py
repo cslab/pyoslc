@@ -1,3 +1,4 @@
+import pytest
 from rdflib import Graph, URIRef, RDF, DCTERMS
 
 from app.api.adapter.vocabulary import PYOSLC
@@ -11,6 +12,7 @@ from pyoslc.vocabularies.rm import OSLC_RM
 from pyoslc.vocabularies.trs import OSLC_TRS
 
 
+@pytest.mark.skip(reason="JAZZ integration has not been implemented with the new PyOSLC OSLCAPP framework")
 def test_unsupported_media_type(pyoslc):
     """
     GIVEN the PyOSLC API
@@ -23,6 +25,7 @@ def test_unsupported_media_type(pyoslc):
     assert response.status_code == 415
 
 
+@pytest.mark.skip(reason="JAZZ integration has not been implemented with the new PyOSLC OSLCAPP framework")
 def test_rootservices(pyoslc):
     """
     GIVEN the PyOSLC API
@@ -72,6 +75,7 @@ def test_rootservices(pyoslc):
     assert (None, OSLC.domain, URIRef(OSLC_AM.uri) if isinstance(OSLC_AM.uri, str) else OSLC_AM.uri) in g, 'The AM Domain was not added'
 
 
+@pytest.mark.skip(reason="JAZZ integration has not been implemented with the new PyOSLC OSLCAPP framework")
 def test_publisher(pyoslc):
     """
     GIVEN the PyOSLC API
@@ -97,6 +101,7 @@ def test_publisher(pyoslc):
     assert (p, JFS.version, None) in g, 'The version of JFS is not in the graph'
 
 
+@pytest.mark.skip(reason="JAZZ integration has not been implemented with the new PyOSLC OSLCAPP framework")
 def test_consumer_register(pyoslc):
     """
     GIVEN the PyOSLC API
@@ -115,6 +120,7 @@ def test_consumer_register(pyoslc):
     assert 'key' in response.json.keys(), 'The response should contain the key element'
 
 
+@pytest.mark.skip(reason="JAZZ integration has not been implemented with the new PyOSLC OSLCAPP framework")
 def test_associations(pyoslc):
     """
     GIVEN the PyOSLC API
@@ -155,6 +161,7 @@ def test_associations(pyoslc):
     assert response.status_code == 200
 
 
+@pytest.mark.skip(reason="JAZZ integration has not been implemented with the new PyOSLC OSLCAPP framework")
 def test_link_target_selector(pyoslc):
     """
     GIVEN the PyOSLC API
@@ -218,6 +225,7 @@ def test_link_target_selector(pyoslc):
     assert b'Find a specific resource through a full-text search.' in response.data
 
 
+@pytest.mark.skip(reason="JAZZ integration has not been implemented with the new PyOSLC OSLCAPP framework")
 def test_show_preview(pyoslc):
     """
     GIVEN the PyOSLC API
