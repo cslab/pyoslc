@@ -1,6 +1,5 @@
 from datetime import datetime
 
-from app.api.adapter.manager import CSVImplementation
 from app.api.adapter.services.factories import ContactConfigurationFactory
 from pyoslc.resources.jazz import RootService
 from pyoslc.resources.models import ServiceProviderCatalog, Publisher
@@ -83,7 +82,7 @@ class ConfigurationManagementSingleton(object):
     @classmethod
     def initialize_components(cls, catalog_url):
 
-        components = CSVImplementation.get_configuration_info()
+        components = []  # CSVImplementation.get_configuration_info()
 
         for component in components:
             identifier = component.get('id')

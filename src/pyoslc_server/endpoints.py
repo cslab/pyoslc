@@ -57,7 +57,7 @@ class ServiceProvider(OSLCResource):
                                                                 adapters=self.adapters)
 
         if not provider:
-            raise NotFound('The Service Provider with ID: {}, was not found.'.format(provider_id))
+            raise NotFound('The Service Provider with ID {}, was not found.'.format(provider_id))
 
         provider.to_rdf(self.graph)
         return self.create_response(graph=self.graph)

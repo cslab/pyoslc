@@ -1,12 +1,52 @@
 import sys
 
+from six import reraise
 from werkzeug.exceptions import HTTPException
 
 from pyoslc_server.wrappers import Request
 
-from .globals import _request_ctx_stack
+from .globals import _request_ctx_stack, _app_ctx_stack
 
 _sentinel = object()
+
+
+class AppContext(object):
+
+    def __init__(self, app):
+        self.app = app
+        self.adapter = app.get_adapter(None)
+        self._refcnt = 0
+
+    def push(self):
+        """Binds the app context to the current context."""
+        self._refcnt += 1
+        if hasattr(sys, "exc_clear"):
+            sys.exc_clear()
+        _app_ctx_stack.push(self)
+        # appcontext_pushed.send(self.app)
+
+    def pop(self, exc=_sentinel):
+        """Pops the app context."""
+        try:
+            self._refcnt -= 1
+            if self._refcnt <= 0:
+                if exc is _sentinel:
+                    exc = sys.exc_info()[1]
+                self.app.do_teardown_appcontext(exc)
+        finally:
+            rv = _app_ctx_stack.pop()
+        assert rv is self, "Popped wrong app context.  (%r instead of %r)" % (rv, self)
+        # appcontext_popped.send(self.app)
+
+    def __enter__(self):
+        self.push()
+        return self
+
+    def __exit__(self, exc_type, exc_value, tb):
+        self.pop(exc_value)
+
+        if False and exc_type is not None:
+            reraise(exc_type, exc_value, tb)
 
 
 class Context(object):

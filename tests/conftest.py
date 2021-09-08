@@ -4,18 +4,7 @@ from app import create_app
 from app.config import Config
 from tests.functional.oslc import PyOSLC
 
-
-@pytest.fixture(scope='session')
-def app():
-    """
-    Initializing the Flask application for the Minerva OSLC API
-    by passing the Config class as the configuration
-
-    :return: app: Flask application
-    """
-    app = create_app('testing')
-    app.testing = True
-    yield app
+from apposlc import create_oslc_app
 
 
 @pytest.fixture(scope='session')
@@ -36,6 +25,20 @@ def client():
             yield client  # this is where the testing happens!
 
 
+@pytest.fixture(scope='session')
+def client_oslc():
+    oslc_app = create_oslc_app()
+    oslc_app.app.testing = True
+    with oslc_app.app.test_client() as client:
+        with oslc_app.app.app_context():
+            yield client  # this is where the testing happens!
+
+
 @pytest.fixture
 def pyoslc(client):
     return PyOSLC(client)
+
+
+@pytest.fixture
+def pyoslc_enabled(client_oslc):
+    return PyOSLC(client_oslc)

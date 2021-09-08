@@ -1,7 +1,7 @@
 import logging
 import sys
 
-from werkzeug._compat import reraise, text_type
+from six import reraise, text_type
 from werkzeug.datastructures import Headers
 from werkzeug.exceptions import HTTPException, InternalServerError, BadRequestKeyError, NotFound, \
     UnsupportedMediaType, NotImplemented
@@ -10,7 +10,7 @@ from werkzeug.routing import RoutingException
 from werkzeug.wrappers import BaseResponse
 
 from .api import API
-from .context import Context
+from .context import Context, AppContext
 from .routing import OSLCRule
 from .wrappers import Response
 from .globals import _request_ctx_stack, request
@@ -233,6 +233,30 @@ class OSLCAPP:
             response.headers.extend(headers)
 
         return response
+
+    def do_teardown_appcontext(self, exc=object()):
+        """Called right before the application context is popped.
+
+        When handling a request, the application context is popped
+        after the request context. See :meth:`do_teardown_request`.
+
+        This calls all functions decorated with
+        :meth:`teardown_appcontext`. Then the
+        :data:`appcontext_tearing_down` signal is sent.
+
+        This is called by
+        :meth:`AppContext.pop() <flask.ctx.AppContext.pop>`.
+
+        .. versionadded:: 0.9
+        """
+        if exc is object():
+            exc = sys.exc_info()[1]
+        # for func in reversed(self.teardown_appcontext_funcs):
+        #     func(exc)
+        # appcontext_tearing_down.send(self, exc=exc)
+
+    def app_context(self):
+        return AppContext(self)
 
     def get_adapter(self, request):
         if request is not None:

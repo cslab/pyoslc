@@ -1,5 +1,11 @@
 import inspect
-from urlparse import urlparse
+
+from six import PY3
+
+if PY3:
+    from urllib.parse import urlparse
+else:
+    from urlparse import urlparse
 
 from pyoslc.resources.models import ServiceProvider, Service, QueryCapability, CreationFactory, Dialog
 from .resource_service import get_service_resources
