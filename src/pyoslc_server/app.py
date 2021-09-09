@@ -27,7 +27,7 @@ class OSLCAPP:
 
     testing = False
 
-    def __init__(self, name="oslc-app", prefix="oslc", **kwargs):
+    def __init__(self, name="oslc-app", prefix="/oslc", **kwargs):
         self.name = name
         self.prefix = prefix
         self.view_functions = {}

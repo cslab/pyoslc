@@ -25,17 +25,17 @@ def find_best_app(script_info, module):
     """Given a module instance this tries to find the best possible
     application in the module or raises an exception.
     """
-    from pyoslc_server.app import OSLCAPI
+    from pyoslc_server.app import OSLCAPP
 
     # Search for the most common names first.
     for attr_name in ("app", "application"):
         app = getattr(module, attr_name, None)
 
-        if isinstance(app, OSLCAPI):
+        if isinstance(app, OSLCAPP):
             return app
 
     # Otherwise find the only object that is a OSLCAPI instance.
-    matches = [v for v in module.__dict__.values() if isinstance(v, OSLCAPI)]
+    matches = [v for v in module.__dict__.values() if isinstance(v, OSLCAPP)]
 
     if len(matches) == 1:
         return matches[0]
@@ -54,7 +54,7 @@ def find_best_app(script_info, module):
             try:
                 app = call_factory(script_info, app_factory)
 
-                if isinstance(app, OSLCAPI):
+                if isinstance(app, OSLCAPP):
                     return app
             except TypeError:
                 if not _called_with_wrong_args(app_factory):
@@ -138,7 +138,7 @@ def find_app_by_string(script_info, module, app_name):
     """Check if the given string is a variable name or a function. Call
     a function to get the app instance, or return the variable directly.
     """
-    from pyoslc_server.app import OSLCAPI
+    from pyoslc_server.app import OSLCAPP
 
     # Parse app_name as a single expression to determine if it's a valid
     # attribute name or function call.
@@ -200,7 +200,7 @@ def find_app_by_string(script_info, module, app_name):
     else:
         app = attr
 
-    if isinstance(app, OSLCAPI):
+    if isinstance(app, OSLCAPP):
         return app
 
     raise NoAppException(
