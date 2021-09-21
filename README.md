@@ -158,7 +158,7 @@ the `OSLCAPP` instance and will deploy the application to start working with it.
 
 #### Requesting the PyOSLC Application
 
-Since the example contains the `RequirementAdapter` example it is possible to interact
+Since the example contains the `RequirementAdapter` class, it is possible to interact
 with the `OSLC API` to retrieve information from it.
 
 For instance:
@@ -182,6 +182,45 @@ Response:
     <dcterms:title>Service Provider Catalog</dcterms:title>
     <dcterms:description>Service Provider Catalog for the PyOSLC application.</dcterms:description>
   </oslc:ServiceProviderCatalog>
+</rdf:RDF>
+```
+
+#### Requesting resources using paging
+
+Since the Query Capability endpoint retrieves the list of resources within the 
+datasource it is possible to use the pagination for getting specific number of 
+resources, to do this, just add the `oslc.paging=true` query string parameters 
+as defined in the specification.
+
+By default, the pagination will return 50 resources per page, but it could be changed
+by sending the `oslc.pageSize` parameter.
+
+
+For instance:
+
+```bash
+(myenv) $ curl http://127.0.0.1:5000/oslc/services/provider/adapter/resources?oslc.paging=true -H accept:"application/rdf+xml"
+```
+
+Response:
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<rdf:RDF
+  xmlns:oslc="http://open-services.net/ns/core#"
+  xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  xmlns:dcterms="http://purl.org/dc/terms/"
+  xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+>
+  <oslc:ResponseInfo rdf:about="http://127.0.0.1:5000/oslc/services/provider/adapter/resources?oslc.pageSize=50&amp;oslc.pageNo=1&amp;oslc.paging=true">
+    <rdfs:member rdf:resource="/oslc/services/provider/adapter/resources/5"/>
+    <rdfs:member rdf:resource="/oslc/services/provider/adapter/resources/2"/>
+    <oslc:totalCount rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">5</oslc:totalCount>
+    <rdfs:member rdf:resource="/oslc/services/provider/adapter/resources/3"/>
+    <rdfs:member rdf:resource="/oslc/services/provider/adapter/resources/4"/>
+    <dcterms:title rdf:parseType="Literal">Query Results for Requirements</dcterms:title>
+    <oslc:nextPage rdf:resource="http://127.0.0.1:5000/oslc/services/provider/adapter/resources?oslc.pageNo=2&amp;oslc.pageSize=50&amp;oslc.paging=true"/>
+    <rdfs:member rdf:resource="/oslc/services/provider/adapter/resources/1"/>
+  </oslc:ResponseInfo>
 </rdf:RDF>
 ```
 
