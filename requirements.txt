@@ -10,7 +10,7 @@ Flask-Login
 cachelib~=0.1.1
 
 RDFLib==5.0.0
-RDFLib-jsonld
+RDFLib-jsonld==0.6.1
 
 Authlib~=0.14.3
 
