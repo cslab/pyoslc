@@ -8,6 +8,7 @@ setup(
         'Werkzeug >= 1.0',
         'click >= 7.1',
         'RDFLib>=5.0.0',
+        'RDFLib-JSONLD==0.6.1',
     ],
     extras_require={
         'dotenv': ['python-dotenv'],

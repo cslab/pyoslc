@@ -1,3 +1,11 @@
+import six
+
+if six.PY3:
+    from urllib.parse import urlparse, parse_qsl, urlunparse, urlencode
+else:
+    from urllib import urlencode
+    from urlparse import urlparse, parse_qsl, urlunparse
+
 from .http import HTTPStatus
 
 
@@ -18,3 +26,12 @@ def unpack(response, default_code=HTTPStatus.OK):
         return data, code or default_code, headers
     else:
         raise ValueError("Too many response values")
+
+
+def get_url(url, params):
+    new_url = urlparse(url)
+    query = dict(parse_qsl(new_url.query))
+    query.update(params)
+    query_string = urlencode(query)
+    new_url = new_url._replace(query=query_string)
+    return urlunparse(new_url)

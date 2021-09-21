@@ -1,6 +1,7 @@
 from xml.sax import SAXParseException
 
 from rdflib import Graph
+from six import text_type
 from six.moves.urllib.parse import urlparse
 from werkzeug.exceptions import UnsupportedMediaType, BadRequest, NotImplemented, NotFound
 
@@ -12,6 +13,7 @@ from pyoslc.resources.domains.rm import Requirement
 from .resource import OSLCResource
 from .providers import ServiceProviderCatalogSingleton
 from .helpers import url_for, make_response
+from .utils import get_url
 from .wrappers import Response
 
 
@@ -68,16 +70,46 @@ class ResourceListOperation(OSLCResource):
     def get(self, provider_id):
         super(ResourceListOperation, self).get()
 
-        # select = request.args.get('oslc.select', '')
-        # where = request.args.get('oslc.where', '')
+        paging = request.args.get('oslc.paging', False)
+        if isinstance(paging, text_type):
+            paging = eval(paging.capitalize())
+
+        page_size = request.args.get('oslc.pageSize')
+        page_no = request.args.get('oslc.pageNo')
+        select = request.args.get('oslc.select', '')
+        where = request.args.get('oslc.where', '')
 
         endpoint_url = url_for('{}'.format(self.endpoint), provider_id=provider_id)
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
 
         rule = request.url_rule
-        data = self.api.app.adapter_functions[rule.endpoint]('query_capability', **request.view_args)
+        request.view_args.pop('provider_id')
 
-        # data = get_requirement_list(base_url, select, where)
+        next_url = ''
+        paging = paging if paging else page_size > 0
+        if paging:
+            page_size = page_size if page_size else 50
+            page_no = page_no if page_no else 1
+
+            params = {'oslc.paging': 'true'}
+            if page_size:
+                params['oslc.pageSize'] = page_size
+
+            if page_no:
+                params['oslc.pageNo'] = page_no
+
+            base_url = get_url(base_url, params)
+            params['oslc.pageNo'] = page_no + 1
+            next_url = get_url(base_url, params)
+
+        request.view_args.update({
+            'paging': paging,
+            'page_size': page_size,
+            'page_no': page_no,
+            'select': select,
+            'where': where
+        })
+        data = self.api.app.adapter_functions[rule.endpoint]('query_capability', **request.view_args)
         if len(data) == 0:
             return make_response('No resources form provider with ID {}'.format(provider_id), 404)
 
@@ -86,6 +118,7 @@ class ResourceListOperation(OSLCResource):
         response_info.title = 'Query Results for Requirements'
 
         response_info.members = data
+        response_info.next_page = next_url
         response_info.to_rdf(self.graph)
 
         return self.create_response(graph=self.graph)

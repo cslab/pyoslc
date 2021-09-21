@@ -29,9 +29,9 @@ class Provider(object):
     @classmethod
     def as_provider(cls, name, *class_args, **class_kwargs):
 
-        def provider(*args, **kwargs):
+        def provider(oslc_method, *args, **kwargs):
             self = provider.provider_class(*class_args, **class_kwargs)
-            return self.generate(*args, **kwargs)
+            return self.generate(oslc_method, *args, **kwargs)
 
         provider.provider_class = cls
         provider.__name__ = name
@@ -78,12 +78,9 @@ class ServiceResourceAdapter(ServiceResource):
     def __init__(self, api=None, *args, **kwargs):
         self.api = api
 
-    def generate(self, *args, **kwargs):
-        meth = getattr(self, args[0], None)
-        assert meth is not None, "Unimplemented method {} in {}".format(args[0].lower(), self.__class__.__name__)
-
-        if meth.__name__ == 'get_resource':
-            kwargs.pop('provider_id')
+    def generate(self, oslc_method, *args, **kwargs):
+        meth = getattr(self, oslc_method, None)
+        assert meth is not None, "Unimplemented method {} in {}".format(oslc_method.lower(), self.__class__.__name__)
 
         resp = meth(**kwargs)
 

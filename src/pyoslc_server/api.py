@@ -95,8 +95,8 @@ class API(object):
     def output_provider(self, resource):
 
         @wraps(resource)
-        def wrapper(*args, **kwargs):
-            resp = resource(*args, **kwargs)
+        def wrapper(oslc_method, *args, **kwargs):
+            resp = resource(oslc_method, *args, **kwargs)
             return resp
             # if isinstance(resp, BaseResponse):
             #     return resp

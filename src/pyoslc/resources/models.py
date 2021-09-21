@@ -1,8 +1,14 @@
 import hashlib
 import logging
+import six
+
 from datetime import date
 
-import six
+if six.PY3:
+    from urllib.parse import urlparse
+else:
+    from urlparse import urlparse
+
 from rdflib import URIRef, Literal, RDF, XSD, BNode
 from rdflib.extras.describer import Describer
 from rdflib.namespace import DCTERMS, RDFS, ClosedNamespace
@@ -1208,6 +1214,14 @@ class ResponseInfo(FilteredResource):
     def members(self, members):
         self.__members = members
 
+    @property
+    def next_page(self):
+        return self.__next_page
+
+    @next_page.setter
+    def next_page(self, next_page):
+        self.__next_page = next_page
+
     def to_rdf(self, graph):
         super(ResponseInfo, self).to_rdf(graph)
 
@@ -1219,13 +1233,17 @@ class ResponseInfo(FilteredResource):
             ri.add(DCTERMS.title, Literal(self.title, datatype=RDF.XMLLiteral))
 
         if self.members:
+            new_url = urlparse(uri)
             for item in self.members:
-                item_url = uri + '/' + item.identifier
+                item_url = new_url.path + '/' + item.identifier
                 member = Resource(graph, URIRef(item_url))
                 ri.add(RDFS.member, member)
 
         if self.total_count and self.total_count > 0:
             ri.add(OSLC.totalCount, Literal(self.total_count))
+
+        if self.__next_page and self.__next_page != '':
+            ri.add(OSLC.nextPage, URIRef(self.__next_page))
 
         return ri
 
