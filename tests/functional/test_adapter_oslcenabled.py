@@ -55,8 +55,11 @@ def test_service_provider_catalog(pyoslc_enabled):
         assert g is not None, 'The response should be an RDF Graph'
 
         spc = URIRef('http://localhost/oslc/services/catalog')
+        url = 'http://localhost/oslc/services/provider/{provider_id}'.format(provider_id='adapter')
+        sp = URIRef(url)
 
         assert (spc, RDF.type, OSLC.ServiceProviderCatalog) in g, 'The ServiceProviderCatalog was not generated'
+        assert sp in g.objects(), 'The ServiceProvider URI is not in the graph'
         assert (spc, OSLC.serviceProvider, None) in g, 'The response does not contain a ServiceProvider'
         assert (spc, OSLC.domain, URIRef(OSLC_RM.uri) if isinstance(OSLC_RM.uri,
                                                                     str) else OSLC_RM.uri) in g, 'The ServiceProvider is not on RM domain'
@@ -119,6 +122,7 @@ def test_service_provider(pyoslc_enabled):
 
     assert (None, RDF.type, OSLC.ServiceProviderCatalog) not in g, 'The ServiceProviderCatalog should not be generated'
     assert (sp, RDF.type, OSLC.ServiceProvider) in g, 'The ServiceProvider was not generated'
+    assert sp in g.subjects(), 'The ServiceProvider URI is not in the graph'
     assert (sp, OSLC.service, None) in g, 'The response does not contain a Service'
     assert (sp, DCTERMS.identifier, None) in g, 'The ServiceProvider should have a identifier'
 

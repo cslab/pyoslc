@@ -111,7 +111,7 @@ class ResourceListOperation(OSLCResource):
         })
         data = self.api.app.adapter_functions[rule.endpoint]('query_capability', **request.view_args)
         if len(data) == 0:
-            return make_response('No resources form provider with ID {}'.format(provider_id), 404)
+            raise NotFound('No resources form provider with ID {}'.format(provider_id))
 
         response_info = ResponseInfo(base_url)
         response_info.total_count = len(data)
