@@ -21,8 +21,6 @@ class ContactServiceProviderFactory(object):
         sp = ServiceProviderFactory.create_service_provider(base_uri, title, description, publisher, classes,
                                                             parameters)
 
-        sp.add_detail(base_uri)
-
         prefix_definitions = list()
         # prefix_definitions.append(PrefixDefinition(prefix='dcterms', prefix_base=DCTERMS))
         # prefix_definitions.append(PrefixDefinition(prefix='oslc', prefix_base=OSLC))

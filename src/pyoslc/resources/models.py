@@ -411,7 +411,7 @@ class ServiceProviderCatalog(BaseResource):
 
         if self.service_provider:
             for sp in self.service_provider:
-                uri = self.about if self.about.__contains__(sp.identifier) \
+                uri = sp.about if sp.about.__contains__(sp.identifier) \
                     else self.about.replace('/catalog', '') + '/{}'.format(sp.identifier) if sp.identifier else ''
 
                 spc.add(OSLC.serviceProvider, URIRef(uri))
