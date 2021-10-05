@@ -74,13 +74,19 @@ class ResourceListOperation(OSLCResource):
         if isinstance(paging, text_type):
             paging = eval(paging.capitalize())
 
-        page_size = request.args.get('oslc.pageSize')
+        page_size = request.args.get('oslc.pageSize', 0)
         page_no = request.args.get('oslc.pageNo')
+        # prefix = request.args.get('oslc.prefix', '')
         select = request.args.get('oslc.select', '')
         where = request.args.get('oslc.where', '')
 
         endpoint_url = url_for('{}'.format(self.endpoint), provider_id=provider_id)
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
+
+        provider = ServiceProviderCatalogSingleton.get_provider(base_url, provider_id,
+                                                                adapters=self.adapters)
+        if not provider:
+            raise NotFound('The Service Provider with ID {}, was not found.'.format(provider_id))
 
         rule = request.url_rule
         request.view_args.pop('provider_id')
@@ -110,8 +116,8 @@ class ResourceListOperation(OSLCResource):
             'where': where
         })
         data = self.api.app.adapter_functions[rule.endpoint]('query_capability', **request.view_args)
-        if len(data) == 0:
-            raise NotFound('No resources form provider with ID {}'.format(provider_id))
+        if not data:
+            raise NotFound('No resources from provider with ID {}'.format(provider_id))
 
         response_info = ResponseInfo(base_url)
         response_info.total_count = len(data)
@@ -141,7 +147,6 @@ class ResourceListOperation(OSLCResource):
             try:
                 data = Graph().parse(data=request.data, format='xml')
                 req = Requirement()
-
                 req.from_rdf(data, attributes=REQ_TO_RDF)
             except SAXParseException:
                 raise BadRequest()
@@ -172,48 +177,55 @@ class ResourceItemOperation(OSLCResource):
 
         endpoint_url = url_for('{}'.format(self.endpoint), provider_id=provider_id, resource_id=resource_id)
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
+        service_provider_url = urlparse(base_url).geturl()
 
-        rule = request.url_rule
-        try:
-            data = self.api.app.adapter_functions[rule.endpoint]('get_resource', **request.view_args)
-            # requirement = get_requirement(base_url, requirement_id)
-            resource = BaseResource()
-            if data:
-                resource.about = base_url
-                attributes = [a['mapping'] for a in self.adapters if a['identifier'] == provider_id][0]
+        provider = ServiceProviderCatalogSingleton.get_provider(service_provider_url, provider_id,
+                                                                adapters=self.adapters)
+        if provider:
+            rule = request.url_rule
+            try:
+                request.view_args.pop('provider_id')
+                data = self.api.app.adapter_functions[rule.endpoint]('get_resource', **request.view_args)
+                resource = BaseResource()
+                if data:
+                    resource.about = base_url
+                    attributes = [a['mapping'] for a in self.adapters if a['identifier'] == provider_id][0]
 
-                r = Requirement()
-                r.about = base_url
-                # r.update()
-                resource.update(data, attributes)
-                resource.to_rdf_base(self.graph, base_url, attributes)
+                    r = Requirement()
+                    r.about = base_url
+                    # r.update()
+                    resource.update(data, attributes)
+                    resource.to_rdf_base(self.graph, base_url, attributes)
 
-            if 'application/x-oslc-compact+xml' in accept or ', application/x-jazz-compact-rendering' in accept:
-                compact = Compact(about=base_url)
-                compact.title = resource.identifier if resource else 'REQ Not Found'
-                compact.icon = url_for('oslc.static', filename='pyicon24.ico', _external=True)
+                if 'application/x-oslc-compact+xml' in accept or ', application/x-jazz-compact-rendering' in accept:
+                    compact = Compact(about=base_url)
+                    compact.title = resource.identifier if resource else 'REQ Not Found'
+                    compact.icon = url_for('oslc.static', filename='pyicon24.ico', _external=True)
 
-                small_preview = Preview()
-                small_preview.document = base_url + '/smallPreview'
-                small_preview.hint_width = '45em'
-                small_preview.hint_height = '10em'
+                    small_preview = Preview()
+                    small_preview.document = base_url + '/smallPreview'
+                    small_preview.hint_width = '45em'
+                    small_preview.hint_height = '10em'
 
-                large_preview = Preview()
-                large_preview.document = base_url + '/largePreview'
-                large_preview.hint_width = '45em'
-                large_preview.hint_height = '20em'
+                    large_preview = Preview()
+                    large_preview.document = base_url + '/largePreview'
+                    large_preview.hint_width = '45em'
+                    large_preview.hint_height = '20em'
 
-                compact.small_preview = small_preview
-                compact.large_preview = large_preview
+                    compact.small_preview = small_preview
+                    compact.large_preview = large_preview
 
-                compact.to_rdf(self.graph)
+                    compact.to_rdf(self.graph)
 
-            return self.create_response(graph=self.graph,
-                                        accept='application/x-oslc-compact+xml',
-                                        rdf_format='pretty-xml',
-                                        etag=True)
-        except AssertionError as e:
-            return NotImplemented(e)
+                return self.create_response(graph=self.graph,
+                                            accept='application/x-oslc-compact+xml',
+                                            rdf_format='pretty-xml',
+                                            etag=True)
+            except AssertionError as e:
+                return NotImplemented(e)
+
+        else:
+            raise NotFound('The Service Provider with ID {}, was not found.'.format(provider_id))
 
     # def put(self, provider_id, resource_id):
     #     accept = request.headers.get('accept')

@@ -1,3 +1,7 @@
+import pytest
+
+
+@pytest.mark.skip(reason="Migrating to OSLCAPP")
 def test_index(pyoslc):
     """
     GIVEN The PyOSLC API
@@ -13,6 +17,7 @@ def test_index(pyoslc):
     assert b'href="/oslc/"' in response.data
 
 
+@pytest.mark.skip(reason="Migrating to OSLCAPP")
 def test_oslc(pyoslc):
     """
     GIVEN The PyOSLC API that includes the swagger library
@@ -24,6 +29,7 @@ def test_oslc(pyoslc):
     assert b'swagger.json' in response.data
 
 
+@pytest.mark.skip(reason="Migrating to OSLCAPP")
 def test_list_requirement(client):
     """
     Testing the feature for listing of the requirements
@@ -38,6 +44,7 @@ def test_list_requirement(client):
     assert b'http://localhost/oslc/rm/requirement/X1C2V3B4' in response.data
 
 
+@pytest.mark.skip(reason="Migrating to OSLCAPP")
 def test_requirement(client):
     """
     Testing the information showed for a specific requirement

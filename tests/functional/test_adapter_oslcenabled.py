@@ -1,4 +1,4 @@
-from rdflib import Graph, RDF, URIRef, DCTERMS, Literal
+from rdflib import Graph, RDF, URIRef, DCTERMS, Literal, RDFS
 from six import PY3
 
 from pyoslc.vocabularies.core import OSLC
@@ -129,48 +129,41 @@ def test_service_provider(pyoslc_enabled):
     assert provider_id in [t for t in g.objects(sp, DCTERMS.identifier)][0]
 
 
-# def test_query_capability(pyoslc_enabled):
-#     """
-#     GIVEN the PyOSLC API
-#     WHEN requesting the query capability endpoint for getting the
-#          list of Requirements with a specific project id
-#     THEN
-#         validating the status code of the response
-#         parsing the response content into a graph in the application/rdf+xml format
-#         validating whether the ResponseInfo statement is within the graph
-#         validating that the member attribute is present on the graph
-#         validating that at least the first three records from the csv file are present
-#     """
-#
-#     response = pyoslc.get_query_capability('Project-1')
-#     assert response is not None
-#     assert response.status_code == 200
-#
-#     g = Graph()
-#     g.parse(data=response.data, format='application/rdf+xml')
-#
-#     assert g is not None
-#
-#     ri = URIRef('http://localhost/oslc/services/provider/Project-1/resources/requirement')
-#
-#     assert (None, RDF.type, OSLC.ResponseInfo) in g, 'The ResponseInfo should be generated'
-#
-#     assert (ri, RDFS.member, None) in g, 'The response does not contain a member'
-#     assert (ri, OSLC.totalCount, None) in g, 'The response does not contain the totalCount'
-#     assert (ri, DCTERMS.title, None) in g, 'The ResponseInfo should have a title'
-#
-#     members = [m for m in g.objects(ri, RDFS.member)]
-#     assert members is not None, 'The ResponseInfo should have members'
-#
-#     m1 = URIRef(ri + '/X1C2V3B1')
-#     m2 = URIRef(ri + '/X1C2V3B2')
-#     m3 = URIRef(ri + '/X1C2V3B3')
-#
-#     assert m1 in members, 'The ResponseInfo does not contain the member X1C2V3B1'
-#     assert m2 in members, 'The ResponseInfo does not contain the member X1C2V3B1'
-#     assert m3 in members, 'The ResponseInfo does not contain the member X1C2V3B1'
-#
-#
+def test_query_capability(pyoslc_enabled):
+    """
+    GIVEN the PyOSLC API
+    WHEN requesting the query capability endpoint for getting the
+         list of Requirements with a specific project id
+    THEN
+        validating the status code of the response
+        parsing the response content into a graph in the application/rdf+xml format
+        validating whether the ResponseInfo statement is within the graph
+        validating that the member attribute is present on the graph
+        validating that at least the first three records from the csv file are present
+    """
+
+    response = pyoslc_enabled.get_query_capability('adapter')
+    assert response is not None
+    assert response.status_code == 200
+
+    g = Graph()
+    g.parse(data=response.data, format='application/rdf+xml')
+
+    assert g is not None
+
+    ri = URIRef('http://localhost/oslc/services/provider/adapter/resources')
+
+    assert (None, RDF.type, OSLC.ResponseInfo) in g, 'The ResponseInfo should be generated'
+
+    assert (ri, RDFS.member, None) in g, 'The response does not contain a member'
+    assert (ri, OSLC.totalCount, None) in g, 'The response does not contain the totalCount'
+    assert (ri, DCTERMS.title, None) in g, 'The ResponseInfo should have a title'
+
+    members = [m for m in g.objects(ri, RDFS.member)]
+    assert members is not None, 'The ResponseInfo should have members'
+    assert len(members) > 0, 'The members should contain at least one element'
+
+
 # def test_creation_factory(pyoslc_enabled):
 #     """
 #     GIVEN the PyOSLC API

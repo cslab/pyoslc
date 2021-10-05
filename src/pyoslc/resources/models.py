@@ -1242,8 +1242,8 @@ class ResponseInfo(FilteredResource):
         if self.total_count and self.total_count > 0:
             ri.add(OSLC.totalCount, Literal(self.total_count))
 
-        if self.__next_page and self.__next_page != '':
-            ri.add(OSLC.nextPage, URIRef(self.__next_page))
+            if self.__next_page and self.__next_page != '':
+                ri.add(OSLC.nextPage, URIRef(self.__next_page))
 
         return ri
 

@@ -1,9 +1,12 @@
 import json
 import logging
 
+import pytest
+
 logger = logging.getLogger(__name__)
 
 
+@pytest.mark.skip(reason="Migrating to OSLCAPP")
 def test_get_list_requirement(pyoslc):
     """
     Testing the REST API for listing the requirements
@@ -17,6 +20,7 @@ def test_get_list_requirement(pyoslc):
     assert b'http://localhost/oslc/rm/requirement/X1C2V3B5' in response.data
 
 
+@pytest.mark.skip(reason="Migrating to OSLCAPP")
 def test_get_item_requirement(pyoslc):
     """
     Retrieving the information for a specific requirement
@@ -32,6 +36,7 @@ def test_get_item_requirement(pyoslc):
     assert b'The ACRV shall provide medical life-support accommodations for one crew member' in response.data
 
 
+@pytest.mark.skip(reason="Migrating to OSLCAPP")
 def test_insert_requirement(client):
     """
     Testing the method for posting information
@@ -61,6 +66,7 @@ def test_insert_requirement(client):
     assert response.status_code == 200
 
 
+@pytest.mark.skip(reason="Migrating to OSLCAPP")
 def test_update_requirement(client):
     """
     Testing the method for sending the specification
@@ -111,6 +117,7 @@ def test_update_requirement(client):
     assert response.status_code == 200
 
 
+@pytest.mark.skip(reason="Migrating to OSLCAPP")
 def test_update_not_modified_requirement(client):
     """
     Testing the method for sending the specification
@@ -159,6 +166,7 @@ def test_update_not_modified_requirement(client):
     assert response.status_code == 200
 
 
+@pytest.mark.skip(reason="Migrating to OSLCAPP")
 def test_delete_requirement(client):
     """
     Testing the method for deleting requirements from the store
@@ -189,6 +197,7 @@ def test_delete_requirement(client):
     assert response.status_code == 200
 
 
+@pytest.mark.skip(reason="Migrating to OSLCAPP")
 def test_delete_not_modified_requirement(client):
     response = client.delete('oslc/rm/requirement/X1C2V3B8',
                              content_type='application/json')

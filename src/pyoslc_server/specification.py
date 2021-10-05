@@ -1,5 +1,3 @@
-from werkzeug.exceptions import NotFound
-
 from .globals import request
 from .utils import unpack
 
@@ -87,9 +85,6 @@ class ServiceResourceAdapter(ServiceResource):
         resp = meth(**kwargs)
 
         if isinstance(resp, list) or isinstance(resp, object) or isinstance(resp, dict):
-            if len(resp) == 0:
-                raise NotFound('No resources from {}'.format(oslc_method))
-
             return resp
 
         representations = self.representations or {}
