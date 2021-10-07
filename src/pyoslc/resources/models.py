@@ -16,7 +16,6 @@ from rdflib.resource import Resource
 
 from pyoslc.helpers import build_uri
 from pyoslc.vocabularies.core import OSLC
-from pyoslc.vocabularies.jazz import JAZZ_PROCESS
 from pyoslc.vocabularies.jfs import JFS
 
 logger = logging.getLogger(__name__)
@@ -423,7 +422,7 @@ class ServiceProviderCatalog(BaseResource):
         if self.oauth_configuration:
             spc.add(OSLC.oauthConfiguration, URIRef(self.oauth_configuration.about))
 
-        spc.add(OSLC.domain, URIRef(JAZZ_PROCESS.uri) if isinstance(JAZZ_PROCESS.uri, str) else JAZZ_PROCESS.uri)
+        # spc.add(OSLC.domain, URIRef(JAZZ_PROCESS.uri) if isinstance(JAZZ_PROCESS.uri, str) else JAZZ_PROCESS.uri)
 
         return spc
 
@@ -1233,10 +1232,9 @@ class ResponseInfo(FilteredResource):
             ri.add(DCTERMS.title, Literal(self.title, datatype=RDF.XMLLiteral))
 
         if self.members:
-            new_url = urlparse(uri)
             for item in self.members:
-                item_url = new_url.path + '/' + item.identifier
-                member = Resource(graph, URIRef(item_url))
+                item_url = urlparse(uri + '/' + item.identifier)
+                member = Resource(graph, URIRef(item_url.geturl()))
                 ri.add(RDFS.member, member)
 
         if self.total_count and self.total_count > 0:

@@ -38,6 +38,8 @@ class ServiceProviderCatalogSingleton(object):
     def get_provider(cls, service_provider_url, identifier, adapters=None):
         if not cls.instance:
             sp = 'provider/{}'.format(identifier)
+            if 'resources' in service_provider_url:
+                sp += '/resources'
             catalog_url = service_provider_url.replace(sp, 'catalog')
             cls.get_catalog(catalog_url, adapters=adapters)
 

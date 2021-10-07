@@ -70,6 +70,7 @@ class ServiceResource(with_metaclass(ProviderResource, Provider)):
 
 
 class ServiceResourceAdapter(ServiceResource):
+    identifier = None
     representations = None
     domain = None
     type = None

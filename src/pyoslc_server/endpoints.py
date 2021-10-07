@@ -83,8 +83,7 @@ class ResourceListOperation(OSLCResource):
         endpoint_url = url_for('{}'.format(self.endpoint), provider_id=provider_id)
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
 
-        provider = ServiceProviderCatalogSingleton.get_provider(base_url, provider_id,
-                                                                adapters=self.adapters)
+        provider = ServiceProviderCatalogSingleton.get_provider(base_url, provider_id, adapters=self.adapters)
         if not provider:
             raise NotFound('The Service Provider with ID {}, was not found.'.format(provider_id))
 
