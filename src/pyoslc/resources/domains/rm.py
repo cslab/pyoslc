@@ -52,10 +52,6 @@ class Requirement(BaseResource):
                     else:
                         setattr(self, attribute_name, data[k])
 
-    @staticmethod
-    def get_absolute_url(base_url, identifier):
-        return base_url + "/" + identifier
-
     def to_rdf(self, graph, base_url=None, attributes=None):
         assert attributes is not None, 'The mapping for attributes is required'
 

@@ -24,7 +24,7 @@ class ServiceProviderCatalog(OSLCResource):
         self.title = kwargs.get('title', None)
         self.description = kwargs.get('description', None)
         adapter = kwargs.get('adapter', None)
-        if not(adapter in self.adapters):
+        if adapter and not(adapter in self.adapters):
             self.adapters.append(adapter)
 
     def get(self):
@@ -34,7 +34,8 @@ class ServiceProviderCatalog(OSLCResource):
 
         catalog_url = urlparse(base_url).geturl()
 
-        catalog = ServiceProviderCatalogSingleton.get_catalog(catalog_url, self.title, self.description, self.adapters)
+        catalog = ServiceProviderCatalogSingleton.get_catalog(catalog_url, self.title, self.description,
+                                                              self.api.default_namespace.adapters)
         catalog.to_rdf(self.graph)
 
         return self.create_response(graph=self.graph)
@@ -56,8 +57,7 @@ class ServiceProvider(OSLCResource):
         service_provider_url = urlparse(base_url).geturl()
 
         provider = ServiceProviderCatalogSingleton.get_provider(service_provider_url, provider_id,
-                                                                adapters=self.adapters)
-
+                                                                adapters=self.api.default_namespace.adapters)
         if not provider:
             raise NotFound('The Service Provider with ID {}, was not found.'.format(provider_id))
 
@@ -83,11 +83,11 @@ class ResourceListOperation(OSLCResource):
         endpoint_url = url_for('{}'.format(self.endpoint), provider_id=provider_id)
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
 
-        provider = ServiceProviderCatalogSingleton.get_provider(base_url, provider_id, adapters=self.adapters)
+        provider = ServiceProviderCatalogSingleton.get_provider(base_url, provider_id,
+                                                                adapters=self.api.default_namespace.adapters)
         if not provider:
             raise NotFound('The Service Provider with ID {}, was not found.'.format(provider_id))
 
-        rule = request.url_rule
         request.view_args.pop('provider_id')
 
         next_url = ''
@@ -103,9 +103,9 @@ class ResourceListOperation(OSLCResource):
             if page_no:
                 params['oslc.pageNo'] = page_no
 
-            base_url = get_url(base_url, params)
+            base_url_with_query = get_url(base_url, params)
             params['oslc.pageNo'] = page_no + 1
-            next_url = get_url(base_url, params)
+            next_url = get_url(base_url_with_query, params)
 
         request.view_args.update({
             'paging': paging,
@@ -114,12 +114,17 @@ class ResourceListOperation(OSLCResource):
             'select': select,
             'where': where
         })
-        data = self.api.app.adapter_functions[rule.endpoint]('query_capability', **request.view_args)
+        data = None
+        total_count = 0
+        adapter = self.get_adapter(provider_id)
+        if adapter:
+            total_count, data = adapter.query_capability(**request.view_args)
+
         if not data:
             raise NotFound('No resources from provider with ID {}'.format(provider_id))
 
         response_info = ResponseInfo(base_url)
-        response_info.total_count = len(data)
+        response_info.total_count = total_count
         response_info.title = 'Query Results for Requirements'
 
         response_info.members = data
@@ -137,34 +142,40 @@ class ResourceListOperation(OSLCResource):
         endpoint_url = url_for('{}'.format(self.endpoint), provider_id=provider_id)
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
 
-        from apposlc.adapter import REQ_TO_RDF
-        req = None
+        provider = ServiceProviderCatalogSingleton.get_provider(base_url, provider_id,
+                                                                adapters=self.api.default_namespace.adapters)
+        if not provider:
+            raise NotFound('The Service Provider with ID {}, was not found.'.format(provider_id))
+
         if accept == 'application/json':
             # data = specification_parser.parse_args()
             pass
         else:
             try:
                 data = Graph().parse(data=request.data, format='xml')
-                req = Requirement()
-                req.from_rdf(data, attributes=REQ_TO_RDF)
+                adapter = self.get_adapter(provider_id)
+                if adapter:
+                    req = BaseResource()
+                    req.from_rdf(data, adapter.types[0], attributes=adapter.mapping)
+
+                    if isinstance(req, BaseResource):
+                        req.to_rdf_base(self.graph, base_url=base_url, attributes=adapter.mapping)
+                        data = self.graph.serialize(format='turtle')
+
+                        # Sending the response to the client
+                        response = Response(data.decode('utf-8') if not isinstance(data, str) else data, 201)
+                        response.headers['Content-Type'] = 'application/rdf+xml; charset=UTF-8'
+                        response.headers['OSLC-Core-Version'] = "2.0"
+                        response.headers['Location'] = base_url + '/' + req.identifier
+                        response.set_etag(req.digestion())
+                        # response.headers['Last-Modified'] = http_date(datetime.now())
+
+                        return response
+                    else:
+                        return make_response(req.description, req.code)
+
             except SAXParseException:
                 raise BadRequest()
-
-        if isinstance(req, Requirement):
-            req.to_rdf(self.graph, base_url=base_url, attributes=REQ_TO_RDF)
-            data = self.graph.serialize(format='pretty-xml')
-
-            # Sending the response to the client
-            response = Response(data.decode('utf-8') if not isinstance(data, str) else data, 201)
-            response.headers['Content-Type'] = 'application/rdf+xml; charset=UTF-8'
-            response.headers['OSLC-Core-Version'] = "2.0"
-            response.headers['Location'] = base_url + '/' + req.identifier
-            response.set_etag(req.digestion())
-            # response.headers['Last-Modified'] = http_date(datetime.now())
-
-            return response
-        else:
-            return make_response(req.description, req.code)
 
 
 class ResourceItemOperation(OSLCResource):
@@ -179,16 +190,21 @@ class ResourceItemOperation(OSLCResource):
         service_provider_url = urlparse(base_url).geturl()
 
         provider = ServiceProviderCatalogSingleton.get_provider(service_provider_url, provider_id,
-                                                                adapters=self.adapters)
+                                                                adapters=self.api.default_namespace.adapters)
         if provider:
-            rule = request.url_rule
             try:
                 request.view_args.pop('provider_id')
-                data = self.api.app.adapter_functions[rule.endpoint]('get_resource', **request.view_args)
+
+                data = None
+                adapter = self.get_adapter(provider_id)
+                if adapter:
+                    data = adapter.get_resource(**request.view_args)
+
+                # data = self.api.app.adapter_functions[rule.endpoint]('get_resource', **request.view_args)
                 resource = BaseResource()
                 if data:
                     resource.about = base_url
-                    attributes = [a['mapping'] for a in self.adapters if a['identifier'] == provider_id][0]
+                    attributes = adapter.mapping
 
                     r = Requirement()
                     r.about = base_url

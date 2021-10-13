@@ -1,4 +1,5 @@
-import logging
+from __future__ import absolute_import
+
 import sys
 
 from six import reraise, text_type
@@ -16,11 +17,7 @@ from .wrappers import Response
 from .globals import _request_ctx_stack, request
 from .rdf import to_rdf
 from .exceptions import OSLCException
-
-stream_handler = logging.StreamHandler()
-stream_handler.setLevel(logging.DEBUG)
-stream_handler.setFormatter(logging.Formatter('%(asctime)s '
-                                              '%(levelname)s: %(message)s '))
+from .logging import create_logger
 
 
 class OSLCAPP:
@@ -38,13 +35,19 @@ class OSLCAPP:
         self.url_map = Map()
         self.rdf_format = 'text/turtle'
         self.accept = 'text/turtle'
+        self._debug = True
 
-        self.logger = logging.getLogger(self.name)
-        self.logger.setLevel(logging.DEBUG)
-        self.logger.addHandler(stream_handler)
+        self.logger = create_logger(self)
 
         self.logger.debug('Initializing OSLC APP: <name: {name}> <prefix: {prefix}>'.format(name=name, prefix=prefix))
         self.api = API(self, '/services')
+
+    @property
+    def debug(self):
+        return self._debug
+
+    def logger(self):
+        return create_logger(self)
 
     def test_client(self, use_cookies=True, **kwargs):
         from .testing import OSLCAPPClient

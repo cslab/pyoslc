@@ -53,13 +53,14 @@ class ServiceProviderCatalogSingleton(object):
     @classmethod
     def initialize_providers(cls, catalog_url, adapters=None):
         for sp in adapters:
-            identifier = sp.get('identifier')
+            identifier = sp.identifier
             if identifier not in list(cls.providers.keys()):
-                title = sp.get('title', 'Service Provider')
-                description = sp.get('description', 'Service Provider')
+                title = sp.title if hasattr(sp, 'title') else 'Service Provider'
+                description = sp.description if hasattr(sp, 'description') else 'Service Provider'
                 publisher = None
                 parameters = {'id': identifier}
-                sp = ContactServiceProviderFactory.create_service_provider(catalog_url, title, description, publisher,
+                sp = ContactServiceProviderFactory.create_service_provider(sp, catalog_url, title, description,
+                                                                           publisher,
                                                                            parameters)
                 cls.register_service_provider(catalog_url, identifier, sp)
 

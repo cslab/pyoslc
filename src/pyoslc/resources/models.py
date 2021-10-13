@@ -68,6 +68,10 @@ class AbstractResource(object):
         if extended_property:
             self.__extended_properties.append(extended_property)
 
+    @staticmethod
+    def get_absolute_url(base_url, identifier):
+        return base_url + "/" + identifier
+
     def update(self, data, attributes):
         assert attributes is not None, 'The mapping for attributes is required'
         if isinstance(data, object):
@@ -328,6 +332,51 @@ class BaseResource(AbstractResource):
 
     def to_rdf(self, graph):
         super(BaseResource, self).to_rdf(graph)
+
+    def from_rdf(self, g, resource_type, attributes):
+
+        for r in g.subjects(RDF.type, resource_type):
+            setattr(self, '_AbstractResource__about', str(r))
+
+            reviewed = list()
+
+            for k, v in six.iteritems(attributes):
+                reviewed.append(k)
+
+                for i in g.objects(r, predicate=v):
+                    attribute_name = k
+                    if hasattr(self, attribute_name):
+                        attribute_value = getattr(self, attribute_name)
+                        if isinstance(attribute_value, set):
+                            at = getattr(self, attribute_name)
+                            if isinstance(i, Literal):
+                                i = i.value
+                            at.add(i)
+                        elif isinstance(attribute_value, str):
+                            if isinstance(i, Literal):
+                                i = i.value
+                            setattr(self, attribute_name, i if isinstance(i, str) else i.encode('utf-8'))
+                        else:
+                            if isinstance(i, Literal):
+                                setattr(self, attribute_name, i.value)
+                            else:
+                                setattr(self, attribute_name, i)
+
+            no_reviewed = [a.split('__')[1].lower() for a in self.__dict__.keys() if
+                           a.split('__')[1].lower() not in reviewed]
+
+            for attr in no_reviewed:
+                item = {attr: v for k, v in six.iteritems(attributes) if k.lower() == attr.lower()}
+                if item:
+                    for i in g.objects(r, eval(item.get(attr)['oslc_property'])):
+                        attribute_name = item.get(attr)['attribute']
+                        if hasattr(self, attribute_name):
+                            attribute_value = getattr(self, attribute_name)
+                            if isinstance(attribute_value, set):
+                                attribute_value.clear()
+                                # attribute_value.add(data[key])
+                            else:
+                                setattr(self, attribute_name, i)
 
 
 class ServiceProviderCatalog(BaseResource):

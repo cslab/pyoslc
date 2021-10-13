@@ -8,15 +8,14 @@ else:
     from urlparse import urlparse
 
 from pyoslc.resources.models import ServiceProvider, Service, QueryCapability, CreationFactory, Dialog
-from .resource_service import get_service_resources
-from .specification import ServiceResource
 
 
 class ContactServiceProviderFactory(object):
 
     @classmethod
-    def create_service_provider(cls, base_uri, title, description, publisher, parameters):
-        classes = get_service_resources(parameters.get('id'), ServiceResource)
+    def create_service_provider(cls, sp, base_uri, title, description, publisher, parameters):
+        classes = [sp.__class__]  # get_service_resources(parameters.get('id'), ServiceResource)
+        # classes = get_service_resources(parameters.get('id'), ServiceResource)
 
         sp = ServiceProviderFactory.create_service_provider(base_uri, title, description, publisher, classes,
                                                             parameters)
@@ -46,8 +45,8 @@ class ServiceProviderFactory(object):
     def initialize(cls, service_provider, base_uri, title, description, publisher, resource_classes,
                    parameters):
 
-        service_provider.title = title
-        service_provider.description = description
+        service_provider.title = title if title else 'Service Provider'
+        service_provider.description = description if description else 'Service Provider Description'
         service_provider.publisher = publisher
 
         services = dict()
@@ -57,10 +56,9 @@ class ServiceProviderFactory(object):
 
                 service = services.get(class_.__name__)
                 if not service:
-                    assert class_.type, 'The OSLC Resource Type attribute is required in the {}'.format(class_.__name__)
-                    assert class_.domain, 'The OSLC Domain attribute is required in the {}'.format(class_.__name__)
-                    assert class_.service_path, 'The Service Path attribute is required in the {}'.format(
-                        class_.__name__)
+                    assert class_.types, 'The OSLC Resource Type attribute is required in {}'.format(class_.__name__)
+                    assert class_.domain, 'The OSLC Domain attribute is required in {}'.format(class_.__name__)
+                    assert class_.service_path, 'The Service Path attribute is required in {}'.format(class_.__name__)
                     service = Service(domain=class_.domain)
                     services[class_.domain] = service
 
@@ -84,7 +82,7 @@ class ServiceProviderFactory(object):
                         'title': 'Query Capability',
                         'label': 'Query Capability',
                         'resource_shape': 'resourceShapes/requirement',
-                        'resource_type': klass.type,
+                        'resource_type': klass.types,
                         'usages': []
                     }
                     query_capability = cls.create_query_capability(base_uri, path, resource_attributes, parameters)
@@ -96,7 +94,7 @@ class ServiceProviderFactory(object):
                         'title': 'Creation Factory',
                         'label': 'Creation Factory',
                         'resource_shape': ['resourceShapes/requirement'],
-                        'resource_type': klass.type,
+                        'resource_type': klass.types,
                         'usages': []
                     }
                     creation_factory = cls.create_creation_factory(base_uri, resource_attributes, parameters)
@@ -110,7 +108,7 @@ class ServiceProviderFactory(object):
                         'uri': '{}/selector'.format(path),
                         'hint_width': '525px',
                         'hint_height': '325px',
-                        'resource_type': klass.type,
+                        'resource_type': klass.types,
                         'usages': ['http://open-services.net/ns/am#PyOSLCSelectionDialog']
                     }
                     dialog = cls.create_selection_dialog(base_uri, resource_attributes, parameters)
@@ -124,7 +122,7 @@ class ServiceProviderFactory(object):
                         'hint_width': '525px',
                         'hint_height': '325px',
                         'resource_shape': 'resourceShapes/eventType',
-                        'resource_type': klass.type,
+                        'resource_type': klass.types,
                         'usages': ['http://open-services.net/ns/am#PyOSLCCreationDialog']
                     }
                     dialog = cls.create_creation_dialog(base_uri, resource_attributes, parameters)
@@ -168,7 +166,7 @@ class ServiceProviderFactory(object):
     @classmethod
     def create_creation_factory(cls, base_uri, attributes, parameters):
         class_path = 'provider/{id}/resources'
-        method_path = 'requirement'
+        method_path = ''
         creation_factory = cls.creation_factory(base_uri, attributes, parameters, class_path, method_path)
         return creation_factory
 

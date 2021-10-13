@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import logging
 
 from rdflib import Graph, RDF, RDFS, DCTERMS
@@ -17,7 +19,7 @@ class OSLCResource(OSLCResourceView):
 
     title = ''
     description = ''
-    adapters = []
+    adapters = list()
 
     def __init__(self, *args, **kwargs):
         super(OSLCResource, self).__init__(*args, **kwargs)
@@ -104,3 +106,8 @@ class OSLCResource(OSLCResourceView):
             response.add_etag()
 
         return response
+
+    def get_adapter(self, identifier):
+        _adapters = [adapter for adapter in self.api.default_namespace.adapters if adapter.identifier == identifier]
+        if _adapters:
+            return _adapters[0]

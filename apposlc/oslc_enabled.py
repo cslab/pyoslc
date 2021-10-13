@@ -9,10 +9,45 @@ class OSLCEnabled:
 
     def __init__(self):
         self.app = OSLCAPP(prefix='/oslc')
+
+        cdb_adapters = [
+            {
+                "identifier": "part",
+                "title": "Part Adapter",
+                "description": "Part Adapter for OSLC",
+            },
+            {
+                "identifier": "cdbrqm_spec_object",
+                "title": "Requirements Adapter",
+                "description": "Requirements Adapter for OSLC",
+            },
+            {
+                "identifier": "project",
+                "title": "Project Adapter",
+                "description": "Project Adapter for OSLC",
+            },
+        ]
+
+        for adpt in cdb_adapters:
+            self.app.api.add_adapter(
+                identifier=adpt["identifier"],
+                title=adpt["title"],
+                description=adpt["description"],
+                instance=RequirementAdapter(identifier=adpt['identifier'], title=adpt['title']),
+                mapping=REQ_TO_RDF,
+            )
+
+        requirement_adapter = RequirementAdapter(
+            identifier='adapter',
+            title='Requirement Adapter',
+            description='Requirement Adapter for OSLC',
+        )
+
         self.app.api.add_adapter(
             identifier='adapter',
             title='Requirement Adapter',
             description='Requirement Adapter for OSLC',
+            instance=requirement_adapter,
             klass=RequirementAdapter,
             mapping=REQ_TO_RDF,
         )
@@ -21,7 +56,7 @@ class OSLCEnabled:
             'tests',
             'test cases',
             'test cases',
-            TestCaseAdapter,
+            TestCaseAdapter(identifier='tests'),
             {
                 "identifier": DCTERMS.identifier,
                 "title": DCTERMS.title,

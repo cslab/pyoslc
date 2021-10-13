@@ -15,14 +15,19 @@ REQ_TO_RDF = {
 class RequirementAdapter(ServiceResourceAdapter):
 
     domain = OSLC_RM
-    type = [OSLC_RM.Requirement]
+    types = [OSLC_RM.Requirement]
     items = REQSTORE
+    mapping = REQ_TO_RDF
+
+    def __init__(self, *args, **kwargs):
+        super(RequirementAdapter, self).__init__(*args, **kwargs)
+        self.types = [OSLC_RM.Requirement]
 
     def set(self, data_items):
         self.items = data_items
 
     def query_capability(self, paging=False, page_no=1, *args, **kwargs):
-        return self.items
+        return len(self.items), self.items
 
     def creation_factory(self):
         return self.items
@@ -34,13 +39,10 @@ class RequirementAdapter(ServiceResourceAdapter):
 
         return None
 
-    def item_keys(self, item):
-        return item.identifier
-
 
 class TestCaseAdapter(ServiceResourceAdapter):
     domain = OSLC_QM
-    type = [OSLC_QM.TestCase]
+    types = [OSLC_QM.TestCase]
 
     def selection_dialog(self):
         pass

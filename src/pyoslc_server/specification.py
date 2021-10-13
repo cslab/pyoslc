@@ -71,13 +71,23 @@ class ServiceResource(with_metaclass(ProviderResource, Provider)):
 
 class ServiceResourceAdapter(ServiceResource):
     identifier = None
+    title = None
+    description = None
     representations = None
     domain = None
-    type = None
+    types = None
     service_path = 'provider/{id}/resources'
 
-    def __init__(self, api=None, *args, **kwargs):
+    def __init__(self, api=None, identifier=None, title=None, description=None, *args, **kwargs):
+        assert identifier is not None, "Identifier is required for the Adapter"
         self.api = api
+        self.identifier = identifier
+        self.title = title
+        self.description = description
+
+    def add_type(self, resource_type):
+        if resource_type:
+            self.types.append(resource_type)
 
     def generate(self, oslc_method, *args, **kwargs):
         meth = getattr(self, oslc_method, None)

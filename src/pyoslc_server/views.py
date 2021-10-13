@@ -1,7 +1,13 @@
+from __future__ import absolute_import
+
+import logging
+
 from werkzeug.wrappers import BaseResponse
 
 from .globals import request
 from .utils import unpack
+
+log = logging.getLogger(__name__)
 
 
 def with_metaclass(meta, *bases):
@@ -65,12 +71,14 @@ class View(object):
         """
 
         def view(*args, **kwargs):
+            print("{class_args} {class_kwargs}".format(class_args=class_args, class_kwargs=class_kwargs))
             self = view.view_class(*class_args, **class_kwargs)
             return self.dispatch_request(*args, **kwargs)
 
         if hasattr(cls, 'adapters'):
             adapter = class_kwargs.get('adapter', None)
-            if not(adapter in cls.adapters):
+            if adapter and not(adapter in cls.adapters):
+                print("Adding {adapter} to {cls}".format(adapter=adapter, cls=cls))
                 cls.adapters.append(adapter)
 
         # We attach the view class to the view function for two reasons:
