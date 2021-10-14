@@ -8,7 +8,6 @@ from werkzeug.exceptions import UnsupportedMediaType, BadRequest, NotImplemented
 from pyoslc_server import request
 
 from pyoslc.resources.models import ResponseInfo, BaseResource, Compact, Preview
-from pyoslc.resources.domains.rm import Requirement
 
 from .resource import OSLCResource
 from .providers import ServiceProviderCatalogSingleton
@@ -77,6 +76,8 @@ class ResourceListOperation(OSLCResource):
         page_size = request.args.get('oslc.pageSize', 0)
         page_no = request.args.get('oslc.pageNo')
         # prefix = request.args.get('oslc.prefix', '')
+        # where =
+        # select =
         select = request.args.get('oslc.select', '')
         where = request.args.get('oslc.where', '')
 
@@ -119,6 +120,13 @@ class ResourceListOperation(OSLCResource):
         adapter = self.get_adapter(provider_id)
         if adapter:
             total_count, data = adapter.query_capability(**request.view_args)
+
+            result = list()
+            for item in data:
+                br = BaseResource()
+                br.update(item, adapter.mapping)
+                result.append(br)
+            data = result
 
         if not data:
             raise NotFound('No resources from provider with ID {}'.format(provider_id))
@@ -204,13 +212,8 @@ class ResourceItemOperation(OSLCResource):
                 resource = BaseResource()
                 if data:
                     resource.about = base_url
-                    attributes = adapter.mapping
-
-                    r = Requirement()
-                    r.about = base_url
-                    # r.update()
-                    resource.update(data, attributes)
-                    resource.to_rdf_base(self.graph, base_url, attributes)
+                    resource.update(data, adapter.mapping)
+                    resource.to_rdf_base(self.graph, base_url, adapter.mapping)
 
                 if 'application/x-oslc-compact+xml' in accept or ', application/x-jazz-compact-rendering' in accept:
                     compact = Compact(about=base_url)

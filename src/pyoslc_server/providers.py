@@ -1,5 +1,12 @@
 from datetime import datetime
 
+import six
+
+if six.PY3:
+    from urllib.parse import urlparse
+else:
+    from urlparse import urlparse
+
 from pyoslc.resources.models import ServiceProviderCatalog
 from pyoslc_server.factories import ContactServiceProviderFactory
 
@@ -40,6 +47,10 @@ class ServiceProviderCatalogSingleton(object):
             sp = 'provider/{}'.format(identifier)
             if 'resources' in service_provider_url:
                 sp += '/resources'
+                resource_id = urlparse(service_provider_url).path.split('/')[-1]
+                if resource_id in service_provider_url:
+                    sp += '/{resource_id}'.format(resource_id=resource_id)
+
             catalog_url = service_provider_url.replace(sp, 'catalog')
             cls.get_catalog(catalog_url, adapters=adapters)
 

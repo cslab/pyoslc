@@ -18,14 +18,10 @@ class Namespace(object):
     def path(self):
         return (self._path or ("/" + self.title)).rstrip("/")
 
-    def add_resource(self, resource, adapter, *urls, **kwargs):
+    def add_resource(self, resource, *urls, **kwargs):
         r = ResourceRoute(resource, urls, kwargs)
         if r not in self.resources:
-            self.api.app.logger.debug(
-                "Adding Resource: <resource: {resource}> <namespace: {namespace}> <adapter: {adapter}>".format(
-                    resource=resource.__name__, namespace=self.title,
-                    adapter=adapter)
-            )
+            self.api.app.logger.debug("Adding Resource: <resource: {resource}>".format(resource=resource.__name__))
             self.resources.append(ResourceRoute(resource, urls, kwargs))
             if self.api is not None:
                 ns_urls = self.api.ns_urls(self, urls)

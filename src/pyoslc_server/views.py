@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import logging
 
-from werkzeug.wrappers import BaseResponse
+from werkzeug.wrappers import Response
 
 from .globals import request
 from .utils import unpack
@@ -160,7 +160,7 @@ class OSLCResourceView(MethodView):
 
         resp = meth(*args, **kwargs)
 
-        if isinstance(resp, BaseResponse):
+        if isinstance(resp, Response):
             return resp
 
         representations = self.representations or {}

@@ -75,7 +75,7 @@ class AbstractResource(object):
     def update(self, data, attributes):
         assert attributes is not None, 'The mapping for attributes is required'
         if isinstance(data, object):
-            data = data.__dict__
+            data = data.__dict__ if hasattr(data, '__dict__') else data
 
         for k, v in data.items():
             if k in attributes:

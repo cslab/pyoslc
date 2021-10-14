@@ -30,38 +30,36 @@ class OSLCEnabled:
 
         for adpt in cdb_adapters:
             self.app.api.add_adapter(
-                identifier=adpt["identifier"],
-                title=adpt["title"],
-                description=adpt["description"],
-                instance=RequirementAdapter(identifier=adpt['identifier'], title=adpt['title']),
-                mapping=REQ_TO_RDF,
+                adapter=RequirementAdapter(
+                    identifier=adpt['identifier'],
+                    title=adpt['title'],
+                    description=adpt["description"],
+                    mapping=REQ_TO_RDF,
+                )
             )
 
         requirement_adapter = RequirementAdapter(
             identifier='adapter',
             title='Requirement Adapter',
             description='Requirement Adapter for OSLC',
+            mapping=REQ_TO_RDF
+
         )
 
         self.app.api.add_adapter(
-            identifier='adapter',
-            title='Requirement Adapter',
-            description='Requirement Adapter for OSLC',
-            instance=requirement_adapter,
-            klass=RequirementAdapter,
-            mapping=REQ_TO_RDF,
+            adapter=requirement_adapter
         )
 
         self.app.api.add_adapter(
-            'tests',
-            'test cases',
-            'test cases',
-            TestCaseAdapter(identifier='tests'),
-            {
-                "identifier": DCTERMS.identifier,
-                "title": DCTERMS.title,
-                "description": DCTERMS.description,
-            },
+            TestCaseAdapter(
+                identifier='tests',
+                title='test case',
+                mapping={
+                    "identifier": DCTERMS.identifier,
+                    "title": DCTERMS.title,
+                    "description": DCTERMS.description,
+                },
+                description='test case'),
         )
 
     def __call__(self, environ, start_response):

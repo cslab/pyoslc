@@ -4,7 +4,7 @@ from collections import OrderedDict
 from functools import wraps
 
 from werkzeug.exceptions import NotAcceptable, InternalServerError
-from werkzeug.wrappers import BaseResponse
+from werkzeug.wrappers import Response
 
 from .namespace import Namespace
 from .endpoints import ServiceProviderCatalog, ServiceProvider, ResourceListOperation, ResourceItemOperation
@@ -35,7 +35,7 @@ class API(object):
         )
 
         self.default_namespace = self._namespace(title='catalog', description='Service Provider Catalog')
-        self.default_namespace.add_resource(ServiceProviderCatalog, None, '/catalog')
+        self.default_namespace.add_resource(ServiceProviderCatalog, '/catalog')
 
     def _complete_url(self, url_part, registration_prefix):
         parts = (registration_prefix, self.prefix, url_part)
@@ -80,17 +80,11 @@ class API(object):
 
         resource.endpoint = endpoint
 
-        adapter = resource_class_kwargs.get('adapter', None)
-
         resource_func = self.output(
             resource.as_view(
                 endpoint, self, namespace=namespace, *resource_class_args, **resource_class_kwargs
             )
         )
-        adapter_func = self.output_provider(
-            adapter.as_provider(endpoint, self, namespace=namespace, *resource_class_args, **resource_class_kwargs)
-        ) if adapter else None
-        # adapter_func = None
 
         for url in urls:
             rule = self._complete_url(url, "")
@@ -99,7 +93,7 @@ class API(object):
                 "Adding <rule: {rule}> <view_func: {resource_func}>".format(
                     rule=rule, resource_func=resource_func.__name__)
             )
-            app.add_url_rule(rule, view_func=resource_func, adapter_func=adapter_func,  **kwargs)
+            app.add_url_rule(rule, view_func=resource_func,  **kwargs)
 
     def _register_oslc_adapter(self):
         pass
@@ -109,7 +103,7 @@ class API(object):
         @wraps(resource)
         def wrapper(*args, **kwargs):
             resp = resource(*args, **kwargs)
-            if isinstance(resp, BaseResponse):
+            if isinstance(resp, Response):
                 return resp
             data, code, headers = unpack(resp)
             return self.make_response(data, code, headers=headers)
@@ -182,24 +176,10 @@ class API(object):
         self._add_namespace(ns)
         return ns
 
-    def add_adapter(self, identifier, title, description, instance, mapping, *args, **kwargs):
-        # config_service_resource(identifier, ServiceResource, klass.__module__, klass.__name__)
-
-        self.app.logger.debug("Adding adapter: <{adapter}>".format(adapter=identifier))
-
-        # resource_class_kwargs = {'adapter': instance}
-        self.default_namespace.add_resource(
-            ServiceProvider, instance, '/provider/<string:provider_id>',
-            # resource_class_kwargs=resource_class_kwargs
-        )
-        self.default_namespace.add_resource(
-            ResourceListOperation, instance, '/provider/<string:provider_id>/resources',
-            # resource_class_kwargs=resource_class_kwargs
-        )
-        self.default_namespace.add_resource(
-            ResourceItemOperation, instance,
-            '/provider/<string:provider_id>/resources/<string:resource_id>',
-            # resource_class_kwargs=resource_class_kwargs
-        )
-
-        self.default_namespace.add_adapter(instance)
+    def add_adapter(self, adapter):
+        self.app.logger.debug("Adding adapter: <{adapter}>".format(adapter=adapter.identifier))
+        self.default_namespace.add_resource(ServiceProvider, '/provider/<string:provider_id>')
+        self.default_namespace.add_resource(ResourceListOperation, '/provider/<string:provider_id>/resources')
+        self.default_namespace.add_resource(ResourceItemOperation,
+                                            '/provider/<string:provider_id>/resources/<string:resource_id>')
+        self.default_namespace.add_adapter(adapter)

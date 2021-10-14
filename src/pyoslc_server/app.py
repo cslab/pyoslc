@@ -6,13 +6,12 @@ from six import reraise, text_type
 from werkzeug.datastructures import Headers
 from werkzeug.exceptions import HTTPException, InternalServerError, BadRequestKeyError, NotFound, \
     UnsupportedMediaType, NotImplemented
-from werkzeug.routing import Map
+from werkzeug.routing import Map, Rule
 from werkzeug.routing import RoutingException
 from werkzeug.wrappers import BaseResponse
 
 from .api import API
 from .context import Context, AppContext
-from .routing import OSLCRule
 from .wrappers import Response
 from .globals import _request_ctx_stack, request
 from .rdf import to_rdf
@@ -28,7 +27,7 @@ class OSLCAPP:
         self.name = name
         self.prefix = prefix
         self.view_functions = {}
-        self.adapter_functions = {}
+        # self.adapter_functions = {}
         self.view_mappings = {}
         self.rdf_type = {}
         self.oslc_domain = {}
@@ -53,7 +52,7 @@ class OSLCAPP:
         from .testing import OSLCAPPClient
         return OSLCAPPClient(self, Response, use_cookies=use_cookies, **kwargs)
 
-    def add_url_rule(self, rule, endpoint=None, view_func=None, adapter_func=None, **options):
+    def add_url_rule(self, rule, endpoint=None, view_func=None, **options):
         if endpoint is None:
             assert view_func is not None, 'expected view func if endpoint ' \
                                           'is not provided.'
@@ -78,10 +77,7 @@ class OSLCAPP:
         # Add the required methods now.
         methods |= required_methods
 
-        oslc_methods = getattr(adapter_func, 'methods', None) or ('QUERY_CAPABILITY',)
-
-        # rule = Rule(self.prefix + rule, methods=methods, **options)
-        rule = OSLCRule(self.prefix + rule, methods=methods, oslc_methods=oslc_methods, **options)
+        rule = Rule(self.prefix + rule, methods=methods, **options)
 
         self.url_map.add(rule)
         if view_func is not None:
@@ -90,7 +86,7 @@ class OSLCAPP:
                 raise AssertionError('View function mapping is overwriting an '
                                      'existing endpoint function: %s' % endpoint)
             self.view_functions[endpoint] = view_func
-            self.adapter_functions[endpoint] = adapter_func
+            # self.adapter_functions[endpoint] = adapter_func
 
     def handle_http_exception(self, error):
         if error.code is None:

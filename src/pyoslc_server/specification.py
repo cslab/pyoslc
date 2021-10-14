@@ -75,15 +75,23 @@ class ServiceResourceAdapter(ServiceResource):
     description = None
     representations = None
     domain = None
-    types = None
+    # types = None
     service_path = 'provider/{id}/resources'
 
-    def __init__(self, api=None, identifier=None, title=None, description=None, *args, **kwargs):
-        assert identifier is not None, "Identifier is required for the Adapter"
-        self.api = api
+    def __init__(self, identifier, title, mapping, **kwargs):
         self.identifier = identifier
         self.title = title
-        self.description = description
+        self.description = kwargs.get('description', '')
+        self.mapping = mapping
+        self.types = None
+
+    @property
+    def types(self):
+        return self.__types
+
+    @types.setter
+    def types(self, types):
+        self.__types = types
 
     def add_type(self, resource_type):
         if resource_type:

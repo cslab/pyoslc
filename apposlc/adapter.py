@@ -19,15 +19,16 @@ class RequirementAdapter(ServiceResourceAdapter):
     items = REQSTORE
     mapping = REQ_TO_RDF
 
-    def __init__(self, *args, **kwargs):
-        super(RequirementAdapter, self).__init__(*args, **kwargs)
+    def __init__(self, **kwargs):
+        super(RequirementAdapter, self).__init__(**kwargs)
         self.types = [OSLC_RM.Requirement]
 
     def set(self, data_items):
         self.items = data_items
 
     def query_capability(self, paging=False, page_no=1, *args, **kwargs):
-        return len(self.items), self.items
+        # name parameters for query parameters
+        return len(self.items), [vars(item) for item in self.items]
 
     def creation_factory(self):
         return self.items
