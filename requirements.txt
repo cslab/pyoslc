@@ -1,21 +1,21 @@
 python-dotenv
 
-Flask==1.0.2
-Flask-CORS
-Flask-RESTx
-Flask-WTF
-Flask-Bootstrap
-Flask-SQLAlchemy
-Flask-Login
-cachelib~=0.1.1
+# Flask==1.0.2
+# Flask-CORS
+# Flask-RESTx
+# Flask-WTF
+# Flask-Bootstrap
+# Flask-SQLAlchemy
+# Flask-Login
+# cachelib~=0.1.1
 
 RDFLib==5.0.0
 RDFLib-jsonld==0.6.1
 
-Authlib~=0.14.3
+# Authlib~=0.14.3
 
 Werkzeug
-requests
+# requests
 pytest
 
 #Sphinx==1.8.5

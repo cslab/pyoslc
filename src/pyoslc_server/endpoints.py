@@ -1,3 +1,4 @@
+from math import ceil
 from xml.sax import SAXParseException
 
 from rdflib import Graph
@@ -5,6 +6,7 @@ from six import text_type
 from six.moves.urllib.parse import urlparse
 from werkzeug.exceptions import UnsupportedMediaType, BadRequest, NotImplemented, NotFound
 
+from pyoslc.resources.query import Criteria
 from pyoslc_server import request
 
 from pyoslc.resources.models import ResponseInfo, BaseResource, Compact, Preview
@@ -75,11 +77,14 @@ class ResourceListOperation(OSLCResource):
 
         page_size = request.args.get('oslc.pageSize', 0)
         page_no = request.args.get('oslc.pageNo')
-        # prefix = request.args.get('oslc.prefix', '')
-        # where =
-        # select =
-        select = request.args.get('oslc.select', '')
+        prefix = request.args.get('oslc.prefix', '')
         where = request.args.get('oslc.where', '')
+        select = request.args.get('oslc.select', '')
+
+        criteria = Criteria()
+        criteria.prefix(prefix)
+        criteria.where(where)
+        criteria.select(select)
 
         endpoint_url = url_for('{}'.format(self.endpoint), provider_id=provider_id)
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
@@ -94,32 +99,26 @@ class ResourceListOperation(OSLCResource):
         next_url = ''
         paging = paging if paging else page_size > 0
         if paging:
-            page_size = page_size if page_size else 50
-            page_no = page_no if page_no else 1
+            page_size = int(page_size) if page_size else 50
+            page_no = int(page_no) if page_no else 1
 
             params = {'oslc.paging': 'true'}
             if page_size:
-                params['oslc.pageSize'] = page_size
+                params['oslc.pageSize'] = int(page_size)
 
             if page_no:
-                params['oslc.pageNo'] = page_no
+                params['oslc.pageNo'] = int(page_no)
 
             base_url_with_query = get_url(base_url, params)
-            params['oslc.pageNo'] = page_no + 1
-            next_url = get_url(base_url_with_query, params)
 
-        request.view_args.update({
-            'paging': paging,
-            'page_size': page_size,
-            'page_no': page_no,
-            'select': select,
-            'where': where
-        })
         data = None
         total_count = 0
         adapter = self.get_adapter(provider_id)
         if adapter:
-            total_count, data = adapter.query_capability(**request.view_args)
+            total_count, data = adapter.query_capability(paging=paging, page_size=page_size, page_no=page_no,
+                                                         prefix=criteria.prefixes, where=criteria.conditions,
+                                                         select=criteria.properties,
+                                                         **request.view_args)
 
             result = list()
             for item in data:
@@ -127,6 +126,12 @@ class ResourceListOperation(OSLCResource):
                 br.update(item, adapter.mapping)
                 result.append(br)
             data = result
+
+            if page_size:
+                pages = ceil(total_count / page_size)
+                if int(page_no) <= pages:
+                    params['oslc.pageNo'] = int(page_no) + 1
+                    next_url = get_url(base_url_with_query, params)
 
         if not data:
             raise NotFound('No resources from provider with ID {}'.format(provider_id))

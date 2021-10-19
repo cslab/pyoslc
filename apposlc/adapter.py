@@ -26,9 +26,18 @@ class RequirementAdapter(ServiceResourceAdapter):
     def set(self, data_items):
         self.items = data_items
 
-    def query_capability(self, paging=False, page_no=1, *args, **kwargs):
-        # name parameters for query parameters
-        return len(self.items), [vars(item) for item in self.items]
+    def query_capability(self, paging=False, page_size=50, page_no=1,
+                         prefix=None, where=None, select=None,
+                         *args, **kwargs):
+
+        if paging:
+            offset = ((page_no - 1) * page_size)
+            end = (offset + page_size)
+            result = [vars(item) for item in self.items][offset:end]
+        else:
+            result = [vars(item) for item in self.items]
+
+        return len(self.items), result
 
     def creation_factory(self):
         return self.items
