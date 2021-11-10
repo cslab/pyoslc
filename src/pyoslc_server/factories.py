@@ -1,6 +1,7 @@
 import inspect
 
 from six import PY3
+from werkzeug.exceptions import InternalServerError
 
 if PY3:
     from urllib.parse import urlparse
@@ -14,9 +15,7 @@ class ContactServiceProviderFactory(object):
 
     @classmethod
     def create_service_provider(cls, sp, base_uri, title, description, publisher, parameters):
-        classes = [sp.__class__]  # get_service_resources(parameters.get('id'), ServiceResource)
-        # classes = get_service_resources(parameters.get('id'), ServiceResource)
-
+        classes = [sp]
         sp = ServiceProviderFactory.create_service_provider(base_uri, title, description, publisher, classes,
                                                             parameters)
 
@@ -54,11 +53,23 @@ class ServiceProviderFactory(object):
         for class_ in resource_classes:
             if class_.methods:
 
-                service = services.get(class_.__name__)
+                service = services.get(class_.__class__.__name__)
                 if not service:
-                    assert class_.types, 'The OSLC Resource Type attribute is required in {}'.format(class_.__name__)
-                    assert class_.domain, 'The OSLC Domain attribute is required in {}'.format(class_.__name__)
-                    assert class_.service_path, 'The Service Path attribute is required in {}'.format(class_.__name__)
+                    if not class_.types or not isinstance(class_.types, list):
+                        raise InternalServerError(
+                            'The OSLC Resource Type attribute is required in {}'.format(class_.__name__)
+                        )
+
+                    if not class_.domain:
+                        raise InternalServerError(
+                            'The OSLC Domain attribute is required in {}'.format(class_.__name__)
+                        )
+
+                    if not class_.service_path:
+                        raise InternalServerError(
+                            'The Service Path attribute is required in {}'.format(class_.__name__)
+                        )
+
                     service = Service(domain=class_.domain)
                     services[class_.domain] = service
 
@@ -74,8 +85,8 @@ class ServiceProviderFactory(object):
     @classmethod
     def handle_resource_class(cls, base_uri, klass, service, parameters, path):
 
-        for item in inspect.classify_class_attrs(klass):
-            if item.kind.__contains__('method') and item.defining_class == klass and item.name != '__init__':
+        for item in inspect.classify_class_attrs(klass.__class__):
+            if item.kind.__contains__('method') and item.defining_class == klass.__class__ and item.name != '__init__':
 
                 if item.name == 'query_capability':
                     resource_attributes = {

@@ -15,7 +15,7 @@ REQ_TO_RDF = {
 class RequirementAdapter(ServiceResourceAdapter):
 
     domain = OSLC_RM
-    types = [OSLC_RM.Requirement]
+    # types = [OSLC_RM.Requirement]
     items = REQSTORE
     mapping = REQ_TO_RDF
 
