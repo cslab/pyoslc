@@ -2,6 +2,7 @@ import pytest
 
 # from app import create_app
 # from app.config import Config
+from apposlc.adapter import RequirementAdapter, TestCaseAdapter
 from tests.functional.oslc import PyOSLC
 
 from apposlc import create_oslc_app
@@ -23,6 +24,7 @@ from apposlc import create_oslc_app
 #         # Establish an application context
 #         with app.app_context():
 #             yield client  # this is where the testing happens!
+from tests.unit.adapter import RMAdapter, BaseAdapter
 
 
 @pytest.fixture(scope='session')
@@ -42,3 +44,18 @@ def pyoslc(client):
 @pytest.fixture
 def pyoslc_enabled(client_oslc):
     return PyOSLC(client_oslc)
+
+
+@pytest.fixture
+def base_adapter():
+    return BaseAdapter()
+
+
+@pytest.fixture
+def rm_adapter():
+    return RequirementAdapter(identifier='rmtest', title='RM Test', mapping=None)
+
+
+@pytest.fixture
+def tc_adapter():
+    return TestCaseAdapter(identifier='tctest', title='QM Test', mapping=None)
