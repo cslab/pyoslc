@@ -57,17 +57,17 @@ class ServiceProviderFactory(object):
                 if not service:
                     if not class_.types or not isinstance(class_.types, list):
                         raise InternalServerError(
-                            'The OSLC Resource Type attribute is required in {}'.format(class_.__name__)
+                            'The OSLC Resource Type attribute is required in {}'.format(class_.__class__.__name__)
                         )
 
                     if not class_.domain:
                         raise InternalServerError(
-                            'The OSLC Domain attribute is required in {}'.format(class_.__name__)
+                            'The OSLC Domain attribute is required in {}'.format(class_.__class__.__name__)
                         )
 
                     if not class_.service_path:
                         raise InternalServerError(
-                            'The Service Path attribute is required in {}'.format(class_.__name__)
+                            'The Service Path attribute is required in {}'.format(class_.__class__.__name__)
                         )
 
                     service = Service(domain=class_.domain)

@@ -88,6 +88,7 @@ class ResourceListOperation(OSLCResource):
 
         endpoint_url = url_for('{}'.format(self.endpoint), provider_id=provider_id)
         base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
+        base_url_with_query = base_url
 
         provider = ServiceProviderCatalogSingleton.get_provider(base_url, provider_id,
                                                                 adapters=self.api.default_namespace.adapters)
@@ -141,6 +142,7 @@ class ResourceListOperation(OSLCResource):
         response_info.title = 'Query Results for Requirements'
 
         response_info.members = data
+        response_info.current_page = base_url_with_query
         response_info.next_page = next_url
         response_info.to_rdf(self.graph)
 

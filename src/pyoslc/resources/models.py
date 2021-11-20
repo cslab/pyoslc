@@ -226,10 +226,7 @@ class BaseResource(AbstractResource):
 
     @title.setter
     def title(self, title):
-        if isinstance(title, str):
-            self.__title = title
-        else:
-            raise ValueError('The title must be an instance of str')
+        self.__title = title
 
     @property
     def contributor(self):
@@ -1220,7 +1217,7 @@ class FilteredResource(AbstractResource):
 
 class ResponseInfo(FilteredResource):
 
-    def __init__(self, about=None, title=None,
+    def __init__(self, about=None, title=None, description=None,
                  types=None, properties=None,
                  resource=None, total_count=None, next_page=None,
                  container=None):
@@ -1231,6 +1228,9 @@ class ResponseInfo(FilteredResource):
         self.__members = list()
 
         self.__title = title if title is not None else ''
+        self.__description = description if description is not None else ''
+
+        self.__current_page = ''
 
     @property
     def title(self):
@@ -1242,6 +1242,14 @@ class ResponseInfo(FilteredResource):
             self.__title = title
         else:
             raise ValueError('The title must be an instance of str')
+
+    @property
+    def description(self):
+        return self.__description
+
+    @description.setter
+    def description(self, description):
+        self.__description = description
 
     @property
     def total_count(self):
@@ -1263,6 +1271,14 @@ class ResponseInfo(FilteredResource):
         self.__members = members
 
     @property
+    def current_page(self):
+        return self.__current_page
+
+    @current_page.setter
+    def current_page(self, current_page):
+        self.__current_page = current_page
+
+    @property
     def next_page(self):
         return self.__next_page
 
@@ -1275,10 +1291,6 @@ class ResponseInfo(FilteredResource):
 
         uri = self.about
         ri = Resource(graph, URIRef(uri))
-        ri.add(RDF.type, OSLC.ResponseInfo)
-
-        if self.title:
-            ri.add(DCTERMS.title, Literal(self.title, datatype=RDF.XMLLiteral))
 
         if self.members:
             for item in self.members:
@@ -1286,11 +1298,17 @@ class ResponseInfo(FilteredResource):
                 member = Resource(graph, URIRef(item_url.geturl()))
                 ri.add(RDFS.member, member)
 
+        rx = Resource(graph, URIRef(self.current_page))
+        rx.add(RDF.type, OSLC.ResponseInfo)
+
+        if self.title:
+            rx.add(DCTERMS.title, Literal(self.title, datatype=RDF.XMLLiteral))
+
         if self.total_count and self.total_count > 0:
-            ri.add(OSLC.totalCount, Literal(self.total_count))
+            rx.add(OSLC.totalCount, Literal(self.total_count))
 
             if self.__next_page and self.__next_page != '':
-                ri.add(OSLC.nextPage, URIRef(self.__next_page))
+                rx.add(OSLC.nextPage, URIRef(self.__next_page))
 
         return ri
 

@@ -52,7 +52,10 @@ class RequirementAdapter(ServiceResourceAdapter):
 
 class TestCaseAdapter(ServiceResourceAdapter):
     domain = OSLC_QM
-    types = [OSLC_QM.TestCase]
+
+    def __init__(self, identifier, title, mapping, **kwargs):
+        super(TestCaseAdapter, self).__init__(identifier, title, mapping, **kwargs)
+        self.types = [OSLC_QM.TestCase]
 
     def selection_dialog(self):
         pass

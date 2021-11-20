@@ -238,3 +238,18 @@ for the deployment of the OSLC API.
 
 The execution of this application should be managed as defined in the web framework used
 for the existent web api.
+
+### RDF Representation Format supported
+
+Since PyOSLC is using `RDFLib` it supports the formats available
+in this library and they are listed here:
+
+- TriX
+- [N-Quads](https://www.w3.org/TR/n-quads/)
+- [TriG](http://www.w3.org/TR/trig/)
+- [N3](https://www.w3.org/TeamSubmission/n3/)
+- [N-Triples](http://www.w3.org/TR/rdf-testcases/#ntriples)
+- [XML](https://www.w3.org/TR/rdf-syntax-grammar/)
+- [Turtle](https://www.w3.org/TR/turtle/)
+- [JSON-LD](https://json-ld.org)
+
