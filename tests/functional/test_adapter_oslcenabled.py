@@ -1,5 +1,11 @@
+import six
+
+if six.PY3:
+    from urllib.parse import urlparse, parse_qsl, unquote
+else:
+    from urlparse import urlparse, parse_qsl, unquote
+
 from rdflib import Graph, RDF, URIRef, DCTERMS, Literal, RDFS
-from six import PY3
 
 from pyoslc.vocabularies.core import OSLC
 from pyoslc.vocabularies.rm import OSLC_RM
@@ -86,7 +92,7 @@ def test_bad_service_provider(pyoslc_enabled):
 
     assert (subject, RDF.type, OSLC.Error) in g, 'The Error was not generated'
     assert (subject, OSLC.statusCode, Literal(404)) in g, 'The status code it should be 404'
-    if PY3:
+    if six.PY3:
         message = str(next(g.objects(subject, OSLC.message)))
     else:
         message = str(g.objects(subject, OSLC.message).next())
@@ -190,6 +196,51 @@ def test_paging(pyoslc_enabled):
     assert members is not None, 'The ResponseInfo should have members'
     assert len(members) == 2, 'The members should contain at least one element'
 
+
+def test_next_page(pyoslc_enabled):
+    response = pyoslc_enabled.get_query_capability('adapter', paging=True, page_size=2, page_number=2)
+
+    assert response is not None
+    assert response.status_code == 200
+
+    g = Graph()
+    g.parse(data=response.data, format='application/rdf+xml')
+
+    assert g is not None
+
+    ri = URIRef('http://localhost/oslc/services/provider/adapter/resources')
+
+    assert (None, RDF.type, OSLC.ResponseInfo) in g, 'The ResponseInfo should be generated'
+
+    ril = [a for a in g.subjects(RDF.type, OSLC.ResponseInfo)][0]
+
+    np = [a for a in g.objects(ril, OSLC.nextPage)][0]
+
+    url = urlparse(unquote(np))
+    qs = dict(parse_qsl(url.query.replace('&amp;', '&')))
+
+    paging = qs.get('oslc.paging', 0)
+    page_size = qs.get('oslc.pageSize', 0)
+    page_no = qs.get('oslc.pageNo', 0)
+
+    res = pyoslc_enabled.get_query_capability('adapter', paging=paging, page_size=page_size, page_number=page_no)
+
+    assert res is not None
+    assert res.status_code == 200
+
+    g = Graph()
+    g.parse(data=res.data, format='application/rdf+xml')
+
+    ri = URIRef('http://localhost/oslc/services/provider/adapter/resources')
+    ril = [a for a in g.subjects(RDF.type, OSLC.ResponseInfo)][0]
+
+    assert (ri, RDFS.member, None) in g, 'The response does not contain a member'
+    assert (ril, OSLC.totalCount, None) in g, 'The response does not contain the totalCount'
+    assert (ril, DCTERMS.title, None) in g, 'The ResponseInfo should have a title'
+
+    members = [m for m in g.objects(ri, RDFS.member)]
+    assert members is not None, 'The ResponseInfo should have members'
+    assert len(members) == 1, 'The members should contain at least one element'
 
 # def test_creation_factory(pyoslc_enabled):
 #     """

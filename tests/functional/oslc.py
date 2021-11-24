@@ -29,12 +29,14 @@ class PyOSLC:
             headers=self.headers
         )
 
-    def get_query_capability(self, service_provider, paging=False, page_size=None):
+    def get_query_capability(self, service_provider, paging=False, page_size=None, page_number=None):
         query = '/oslc/services/provider/{}/resources'.format(service_provider)
         if paging:
             query += '?oslc.paging=True'
         if page_size:
             query += '&oslc.pageSize={size}'.format(size=page_size)
+        if page_number:
+            query += '&oslc.pageNo={number}'.format(number=page_number)
 
         return self._client.get(
             query,

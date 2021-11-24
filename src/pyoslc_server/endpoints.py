@@ -1,3 +1,10 @@
+import six
+
+if six.PY3:
+    from urllib.parse import parse_qsl, unquote
+else:
+    from urlparse import parse_qsl, unquote
+
 from math import ceil
 from xml.sax import SAXParseException
 
@@ -71,15 +78,18 @@ class ResourceListOperation(OSLCResource):
     def get(self, provider_id):
         super(ResourceListOperation, self).get()
 
-        paging = request.args.get('oslc.paging', False)
+        url = urlparse(unquote(request.url))
+        qs = dict(parse_qsl(url.query.replace('&amp;', '&')))
+
+        paging = qs.get('oslc.paging', False)
         if isinstance(paging, text_type):
             paging = eval(paging.capitalize())
 
-        page_size = request.args.get('oslc.pageSize', 0)
-        page_no = request.args.get('oslc.pageNo')
-        prefix = request.args.get('oslc.prefix', '')
-        where = request.args.get('oslc.where', '')
-        select = request.args.get('oslc.select', '')
+        page_size = qs.get('oslc.pageSize', 0)
+        page_no = qs.get('oslc.pageNo', 0)
+        prefix = qs.get('oslc.prefix', '')
+        where = qs.get('oslc.where', '')
+        select = qs.get('oslc.select', '')
 
         criteria = Criteria()
         criteria.prefix(prefix)
@@ -98,10 +108,10 @@ class ResourceListOperation(OSLCResource):
         request.view_args.pop('provider_id')
 
         next_url = ''
-        paging = paging if paging else page_size > 0
+        paging = paging if paging else int(page_size) > 0
         if paging:
-            page_size = int(page_size) if page_size else 50
-            page_no = int(page_no) if page_no else 1
+            page_size = int(page_size) if int(page_size) else 50
+            page_no = int(page_no) if int(page_no) else 1
 
             params = {'oslc.paging': 'true'}
             if page_size:
