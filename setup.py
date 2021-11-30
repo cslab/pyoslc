@@ -13,7 +13,7 @@ setup(
         "pytest == 4.6 ; python_version <= '2.7'",
         "itsdangerous == 1.1.0 ; python_version <= '2.7'",
         "jsonschema == 3.2.0 ; python_version <= '2.7'",
-        "check-manifest == 0.42 ; python_version <= '2.7'",
+        "check-manifest == 0.41 ; python_version <= '2.7'",
         "pyrsistent == 0.15.7 ; python_version <= '2.7'",
         "importlib-metadata == 2.1.1 ; python_version <= '2.7'",
         "zipp == 1.2.0 ; python_version <= '2.7'",
