@@ -127,28 +127,29 @@ class OSLCAPP:
         request = _request_ctx_stack.top.request
 
         if not(request.accept_mimetypes.best in ('*/*', 'text/html')):
-            accept = request.accept_mimetypes.best
-        else:
-            accept = self.accept
+            self.accept = request.accept_mimetypes.best
+            self.rdf_format = self.accept
 
-        if not (accept in ('application/rdf+xml', 'application/json',
-                           'application/ld+json', 'application/json-ld',
-                           'application/xml', 'application/atom+xml',
-                           'text/turtle',
-                           'application/xml, application/x-oslc-cm-service-description+xml',
-                           'application/x-oslc-compact+xml, application/x-jazz-compact-rendering; q=0.5',
-                           'application/rdf+xml,application/x-turtle,application/ntriples,application/json')):
+        if not (self.accept in ('application/rdf+xml', 'application/json',
+                                'application/ld+json', 'application/json-ld',
+                                'application/xml', 'application/atom+xml',
+                                'text/turtle',
+                                'application/xml, application/x-oslc-cm-service-description+xml',
+                                'application/x-oslc-compact+xml, application/x-jazz-compact-rendering; q=0.5',
+                                'application/rdf+xml,application/x-turtle,application/ntriples,application/json')):
+            self.rdf_format = request.content_type
+            self.accept = request.content_type
             raise UnsupportedMediaType
 
         if not request.content_type:
-            request.content_type = accept
+            request.content_type = self.accept
 
-        if accept in ('application/json-ld', 'application/ld+json', 'application/json'):
+        if self.accept in ('application/json-ld', 'application/ld+json', 'application/json'):
             # If the content-type is any kind of json,
             # we will use the json-ld format for the response.
             self.rdf_format = 'json-ld'
 
-        if accept in ('application/xml', 'application/rdf+xml', 'application/atom+xml'):
+        if self.accept in ('application/xml', 'application/rdf+xml', 'application/atom+xml'):
             self.rdf_format = 'pretty-xml'
 
     def dispatch_request(self):
@@ -189,6 +190,7 @@ class OSLCAPP:
             response = error.to_rdf()
             response = Response(response.serialize(format=self.rdf_format),
                                 status=error.status_code,
+                                content_type=self.accept,
                                 mimetype=self.accept)
             status = headers = None
         elif not isinstance(response, Response):

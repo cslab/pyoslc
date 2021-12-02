@@ -242,38 +242,62 @@ def test_next_page(pyoslc_enabled):
     assert members is not None, 'The ResponseInfo should have members'
     assert len(members) == 1, 'The members should contain at least one element'
 
-# def test_creation_factory(pyoslc_enabled):
-#     """
-#     GIVEN the PyOSLC API
-#     WHEN requesting the creation factory endpoint to create a new
-#          resource on the graph within a specific project id
-#     THEN
-#         validating the status code of the response
-#         parsing the response content into a graph in the application/rdf+xml format
-#         validating whether the resource has the Requirement type
-#         validating that the resource has the identifier attribute
-#     """
-#
-#     response = pyoslc.create('Project-1')
-#     assert response is not None
-#     assert response.status_code == 201
-#
-#     assert response.headers.get('location') is not None
-#     assert response.headers.get('etag') is not None
-#
-#     g = Graph()
-#     g.parse(data=response.data, format='application/rdf+xml')
-#
-#     assert g is not None
-#
-#     ri = URIRef('http://localhost/oslc/services/provider/Project-1/resources/requirement/X1C2V3B6')
-#
-#     assert (None, RDF.type, OSLC_RM.Requirement) in g, 'The Requirement should be generated'
-#     assert (ri, DCTERMS.identifier, Literal('X1C2V3B6')) in g, 'The response does not contain a identifier'
-#
-#     response = pyoslc.delete('Project-1', 'X1C2V3B6')
-#     assert response is not None
-#     assert response.status_code == 200
+
+def test_query_select(pyoslc_enabled):
+    response = pyoslc_enabled.get_query_capability('adapter', paging=True, page_size=2, page_number=2,
+                                                   select="dcterms:title")
+
+    assert response is not None
+    assert response.status_code == 200
+
+    g = Graph()
+    g.parse(data=response.data, format='application/rdf+xml')
+
+    assert g is not None
+
+    ri = URIRef('http://localhost/oslc/services/provider/adapter/resources')
+
+    assert (None, RDF.type, OSLC.ResponseInfo) in g, 'The ResponseInfo should be generated'
+
+    assert (ri, RDFS.member, None) in g, 'The response does not contain a member'
+
+    members = [m for m in g.objects(ri, RDFS.member)]
+    assert members is not None, 'The ResponseInfo should have members'
+    assert len(members) > 0, 'The members should contain at least one element'
+
+    for member in members:
+        assert len([o for o in g.objects(member, DCTERMS.title)]) == 1, 'Title should be in the resource description'
+
+
+def test_creation_factory(pyoslc_enabled):
+    """
+    GIVEN the PyOSLC API
+    WHEN requesting the creation factory endpoint to create a new
+         resource on the graph within a specific project id
+    THEN
+        validating the status code of the response
+        parsing the response content into a graph in the application/rdf+xml format
+        validating whether the resource has the Requirement type
+        validating that the resource has the identifier attribute
+    """
+
+    response = pyoslc_enabled.create('adapter')
+    assert response is not None
+    assert response.status_code == 201
+
+    assert response.headers.get('location') is not None
+    assert response.headers.get('etag') is not None
+
+    g = Graph()
+    g.parse(data=response.data, format='text/turtle')
+
+    assert g is not None
+
+    ri = URIRef('http://localhost/oslc/services/provider/adapter/resources/X1C2V3B6')
+
+    assert (None, RDF.type, OSLC_RM.Requirement) in g, 'The Requirement should be generated'
+    assert (ri, DCTERMS.identifier, Literal('X1C2V3B6')) in g, 'The response does not contain a identifier'
+
 #
 #
 # @pytest.mark.skip(reason="GET Resource method has not been implemented with the new PyOSLC OSLCAPP framework")
