@@ -89,7 +89,7 @@ class AbstractResource(object):
                 else:
                     setattr(self, k, v)
 
-    def to_rdf_base(self, graph, base_url=None, attributes=None):
+    def to_rdf_base(self, graph, base_url=None, oslc_types=None, attributes=None):
         assert attributes is not None, 'The mapping for attributes is required'
 
         # graph.bind('oslc_rm', OSLC_RM)
@@ -104,7 +104,9 @@ class AbstractResource(object):
             base_url = self.get_absolute_url(base_url, identifier)
 
         d.about(base_url)
-        # d.rdftype(OSLC_RM.Requirement)
+        if oslc_types:
+            for t in oslc_types:
+                d.rdftype(t)
 
         for attribute_key in self.__dict__.keys():
             item = {k: v for k, v in six.iteritems(attributes) if attribute_key.split('__')[1] == k}
@@ -137,6 +139,15 @@ class AbstractResource(object):
 
         if not self.about:
             raise Exception("The about property is missing")
+
+    def get_dict(self, attributes):
+        result = dict()
+        for k, v in six.iteritems(attributes):
+            if hasattr(self, k):
+                attribute_value = getattr(self, k)
+                result[k] = attribute_value
+
+        return result
 
     def digestion(self):
         state = ''   # str(self.__about)
@@ -173,7 +184,7 @@ class BaseResource(AbstractResource):
 
     def __init__(self, about=None, types=None, properties=None, description=None,
                  identifier=None, short_title=None, title=None, contributor=None,
-                 creator=None, subject=None, created=None, modified=None, type=None,
+                 creator=None, subject=None, created=None, modified=None,
                  discussed_by=None, instance_shape=None, service_provider=None,
                  relation=None):
         """
@@ -190,7 +201,6 @@ class BaseResource(AbstractResource):
         self.__subject = subject if subject is not None else set()
         self.__created = created if created is not None else None
         self.__modified = modified if modified is not None else None
-        self.__type = type if type is not None else set()
         self.__discussed_by = discussed_by if discussed_by is not None else None
         self.__instance_shape = instance_shape if instance_shape is not None else None
         self.__service_provider = service_provider if service_provider is not None else list()
@@ -279,18 +289,6 @@ class BaseResource(AbstractResource):
     @modified.setter
     def modified(self, modified):
         self.__modified = modified
-
-    @property
-    def type(self):
-        return self.__type
-
-    @type.setter
-    def type(self, type_):
-        self.__type = type_
-
-    def add_type(self, type_):
-        if type_:
-            self.__type.append(type_)
 
     @property
     def discussed_by(self):
@@ -387,9 +385,8 @@ class ServiceProviderCatalog(BaseResource):
 
         super(ServiceProviderCatalog, self).__init__(about, types, properties, description,
                                                      identifier, short_title, title, contributor,
-                                                     creator, subject, created, modified, type,
-                                                     discussed_by, instance_shape, service_provider,
-                                                     relation)
+                                                     creator, subject, created, modified, discussed_by,
+                                                     instance_shape, service_provider, relation)
 
         self.__uri = uri if uri is not None else build_uri(default_uri, 'serviceProviderCatalog')
         self.__publisher = publisher
@@ -485,7 +482,7 @@ class ServiceProvider(BaseResource):
         Initialize ServiceProvider
         """
         super(ServiceProvider, self).__init__(about, types, properties, description, identifier, short_title, title,
-                                              contributor, creator, subject, created, modified, type, discussed_by,
+                                              contributor, creator, subject, created, modified, discussed_by,
                                               instance_shape, service_provider, relation)
         self.__publisher = publisher
         self.__service = service if service is not None else list()
@@ -603,7 +600,7 @@ class Service(BaseResource):
         """
         super(Service, self).__init__(about, types, properties, description,
                                       identifier, short_title, title, contributor,
-                                      creator, subject, created, modified, type,
+                                      creator, subject, created, modified,
                                       discussed_by, instance_shape, service_provider,
                                       relation)
 
@@ -718,7 +715,7 @@ class QueryCapability(BaseResource):
 
         super(QueryCapability, self).__init__(about, types, properties, description,
                                               identifier, short_title, title, contributor,
-                                              creator, subject, created, modified, type,
+                                              creator, subject, created, modified,
                                               discussed_by, instance_shape, service_provider,
                                               relation)
 
@@ -822,7 +819,7 @@ class CreationFactory(BaseResource):
         """
         super(CreationFactory, self).__init__(about, types, properties, description,
                                               identifier, short_title, title, contributor,
-                                              creator, subject, created, modified, type,
+                                              creator, subject, created, modified,
                                               discussed_by, instance_shape, service_provider,
                                               relation)
 
@@ -922,7 +919,7 @@ class Dialog(BaseResource):
 
         super(Dialog, self).__init__(about, types, properties, description,
                                      identifier, short_title, title, contributor,
-                                     creator, subject, created, modified, type,
+                                     creator, subject, created, modified,
                                      discussed_by, instance_shape, service_provider,
                                      relation)
 
@@ -1029,7 +1026,7 @@ class PrefixDefinition(BaseResource):
 
         super(PrefixDefinition, self).__init__(about, types, properties, description,
                                                identifier, short_title, title, contributor,
-                                               creator, subject, created, modified, type,
+                                               creator, subject, created, modified,
                                                discussed_by, instance_shape, service_provider,
                                                relation)
         self.__prefix = prefix if prefix is not None else None
@@ -1158,7 +1155,7 @@ class OAuthConfiguration(BaseResource):
 
         super(OAuthConfiguration, self).__init__(about, types, properties, description,
                                                  identifier, short_title, title, contributor,
-                                                 creator, subject, created, modified, type,
+                                                 creator, subject, created, modified,
                                                  discussed_by, instance_shape, service_provider,
                                                  relation)
         self.__authorization_uri = authorization_uri if authorization_uri is not None else None
@@ -1286,7 +1283,7 @@ class ResponseInfo(FilteredResource):
     def next_page(self, next_page):
         self.__next_page = next_page
 
-    def to_rdf(self, graph):
+    def to_rdf(self, graph, base_url=None, oslc_types=None, attributes=None):
         super(ResponseInfo, self).to_rdf(graph)
 
         uri = self.about
@@ -1297,6 +1294,13 @@ class ResponseInfo(FilteredResource):
                 item_url = urlparse(uri + '/' + item.identifier)
                 member = Resource(graph, URIRef(item_url.geturl()))
                 ri.add(RDFS.member, member)
+
+                resource = Resource(graph, URIRef(item_url.geturl()))
+                for key in attributes:
+                    attr = attributes.get(key)
+                    val = getattr(item, key)
+                    if val:
+                        resource.add(attr, Literal(val))
 
         rx = Resource(graph, URIRef(self.current_page))
         rx.add(RDF.type, OSLC.ResponseInfo)

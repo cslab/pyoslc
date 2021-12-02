@@ -135,6 +135,8 @@ class ResourceListOperation(OSLCResource):
             for item in data:
                 br = BaseResource()
                 br.update(item, adapter.mapping)
+                for t in adapter.types:
+                    br.types.append(t)
                 result.append(br)
             data = result
 
@@ -154,7 +156,7 @@ class ResourceListOperation(OSLCResource):
         response_info.members = data
         response_info.current_page = base_url_with_query
         response_info.next_page = next_url
-        response_info.to_rdf(self.graph)
+        response_info.to_rdf(self.graph, base_url=base_url, attributes=adapter.mapping)
 
         return self.create_response(graph=self.graph)
 
@@ -180,16 +182,19 @@ class ResourceListOperation(OSLCResource):
                 data = Graph().parse(data=request.data, format='xml')
                 adapter = self.get_adapter(provider_id)
                 if adapter:
+
                     req = BaseResource()
                     req.from_rdf(data, adapter.types[0], attributes=adapter.mapping)
 
+                    adapter.creation_factory(req.get_dict(attributes=adapter.mapping))
                     if isinstance(req, BaseResource):
-                        req.to_rdf_base(self.graph, base_url=base_url, attributes=adapter.mapping)
+                        req.to_rdf_base(self.graph, base_url=base_url, oslc_types=adapter.types,
+                                        attributes=adapter.mapping)
                         data = self.graph.serialize(format='turtle')
 
                         # Sending the response to the client
                         response = Response(data.decode('utf-8') if not isinstance(data, str) else data, 201)
-                        response.headers['Content-Type'] = 'application/rdf+xml; charset=UTF-8'
+                        response.headers['Content-Type'] = request.content_type  # 'application/rdf+xml; charset=UTF-8'
                         response.headers['OSLC-Core-Version'] = "2.0"
                         response.headers['Location'] = base_url + '/' + req.identifier
                         response.set_etag(req.digestion())
@@ -230,7 +235,7 @@ class ResourceItemOperation(OSLCResource):
                 if data:
                     resource.about = base_url
                     resource.update(data, adapter.mapping)
-                    resource.to_rdf_base(self.graph, base_url, adapter.mapping)
+                    resource.to_rdf_base(self.graph, base_url, adapter.types, adapter.mapping)
 
                 if 'application/x-oslc-compact+xml' in accept or ', application/x-jazz-compact-rendering' in accept:
                     compact = Compact(about=base_url)

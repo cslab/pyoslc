@@ -3,7 +3,7 @@ from pyoslc.vocabularies.qm import OSLC_QM
 from rdflib import DCTERMS
 
 from pyoslc_server.specification import ServiceResourceAdapter
-from .resource import REQSTORE
+from .resource import REQSTORE, Requirement
 
 REQ_TO_RDF = {
     "identifier": DCTERMS.identifier,
@@ -15,7 +15,6 @@ REQ_TO_RDF = {
 class RequirementAdapter(ServiceResourceAdapter):
 
     domain = OSLC_RM
-    # types = [OSLC_RM.Requirement]
     items = REQSTORE
     mapping = REQ_TO_RDF
 
@@ -37,10 +36,26 @@ class RequirementAdapter(ServiceResourceAdapter):
         else:
             result = [vars(item) for item in self.items]
 
-        return len(self.items), result
+        # This is just an example, the code could be improved
+        if select:
+            final_result = []
+            sel = [p.prop.split(":")[1] for p in select]
+            sel.append('identifier')
+            for r in result:
+                final_result.append({k: v for k, v in r.items() if k in sel})
+        else:
+            final_result = result
 
-    def creation_factory(self):
-        return self.items
+        return len(self.items), final_result
+
+    def creation_factory(self, item):
+        r = Requirement(
+            identifier=item.get('identifier'),
+            title=item.get('title'),
+            description=item.get('description'),
+        )
+        self.items.append(r)
+        return r
 
     def get_resource(self, resource_id):
         for item in self.items:

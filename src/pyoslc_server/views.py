@@ -71,7 +71,6 @@ class View(object):
         """
 
         def view(*args, **kwargs):
-            print("{class_args} {class_kwargs}".format(class_args=class_args, class_kwargs=class_kwargs))
             self = view.view_class(*class_args, **class_kwargs)
             return self.dispatch_request(*args, **kwargs)
 

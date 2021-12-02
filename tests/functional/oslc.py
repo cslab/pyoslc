@@ -29,7 +29,8 @@ class PyOSLC:
             headers=self.headers
         )
 
-    def get_query_capability(self, service_provider, paging=False, page_size=None, page_number=None):
+    def get_query_capability(self, service_provider, paging=False, page_size=None, page_number=None, prefixes=None,
+                             where=None, select=None):
         query = '/oslc/services/provider/{}/resources'.format(service_provider)
         if paging:
             query += '?oslc.paging=True'
@@ -37,6 +38,11 @@ class PyOSLC:
             query += '&oslc.pageSize={size}'.format(size=page_size)
         if page_number:
             query += '&oslc.pageNo={number}'.format(number=page_number)
+
+        query += '?' if not query.__contains__('?') else '&'
+
+        if select:
+            query += 'oslc.select={attr}'.format(attr=select)
 
         return self._client.get(
             query,
@@ -80,7 +86,7 @@ class PyOSLC:
                 xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
 
                 <oslc_rm:Requirement
-                    rdf:about="http://localhost/oslc/services/provider/Project-1/resources/requirement/X1C2V3B6">
+                    rdf:about="http://localhost/oslc/services/provider/{project_id}/resources/X1C2V3B6">
                     <oslc_rm:satisfiedBy>Software Development</oslc_rm:satisfiedBy>
                     <dcterms:description>The OSLC RM Specification needs to be awesome 3</dcterms:description>
                     <oslc_rm:constrainedBy>Customer Requirement</oslc_rm:constrainedBy>
@@ -96,7 +102,7 @@ class PyOSLC:
                     <oslc_rm:decomposedBy>Draft</oslc_rm:decomposedBy>
                 </oslc_rm:Requirement>
             </rdf:RDF>
-            """
+            """.format(project_id=project_id)
 
         return self.post_creation_factory(project_id, payload)
 
