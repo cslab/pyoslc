@@ -70,6 +70,9 @@ def test_service_provider_catalog(pyoslc_enabled):
         assert (spc, OSLC.domain, URIRef(OSLC_RM.uri) if isinstance(OSLC_RM.uri,
                                                                     str) else OSLC_RM.uri) in g, 'The ServiceProvider is not on RM domain'
 
+        assert 'Service Provider Catalog' in [t for t in g.objects(spc, DCTERMS.title)][0]
+        assert sp in [t for t in g.objects(spc, OSLC.serviceProvider)]
+
 
 def test_bad_service_provider(pyoslc_enabled):
     """
@@ -82,6 +85,8 @@ def test_bad_service_provider(pyoslc_enabled):
 
     response = pyoslc_enabled.get_service_provider('Project-1a')
     assert response is not None
+    assert response.status_code == 404
+    assert b'The Service Provider with ID {}, was not found.'.format('Project-1a') in response.data
 
     g = Graph()
     g.parse(data=response.data, format='application/rdf+xml')

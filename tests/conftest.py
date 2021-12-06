@@ -37,8 +37,8 @@ def client_oslc():
 
 
 @pytest.fixture
-def pyoslc(client):
-    return PyOSLC(client)
+def pyoslc(client_oslc):
+    return PyOSLC(client_oslc)
 
 
 @pytest.fixture
