@@ -1,4 +1,11 @@
+from __future__ import absolute_import
+from __future__ import division
+
+import logging
+
 import six
+
+from .logging import default_handler
 
 if six.PY3:
     from urllib.parse import parse_qsl, unquote
@@ -23,6 +30,10 @@ from .providers import ServiceProviderCatalogSingleton
 from .helpers import url_for, make_response
 from .utils import get_url
 from .wrappers import Response
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+logger.addHandler(default_handler)
 
 
 class ServiceProviderCatalog(OSLCResource):
@@ -130,6 +141,9 @@ class ResourceListOperation(OSLCResource):
                                                          prefix=criteria.prefixes, where=criteria.conditions,
                                                          select=criteria.properties,
                                                          **request.view_args)
+            logger.debug(
+                "{} QueryCapability returns: <total_count: {}> - <len(data): {}>".format(adapter.identifier,
+                                                                                         total_count, len(data)))
 
             result = list()
             for item in data:
@@ -140,9 +154,11 @@ class ResourceListOperation(OSLCResource):
                 result.append(br)
             data = result
 
+            logger.debug("QueryCapability: <pageSize: {}>".format(page_size))
             if page_size:
                 pages = ceil(total_count / page_size)
-                if int(page_no) <= pages:
+                logger.debug("QueryCapability: <pages: {}>".format(pages))
+                if int(page_no) < pages:
                     params['oslc.pageNo'] = int(page_no) + 1
                     next_url = get_url(base_url_with_query, params)
 
@@ -156,6 +172,8 @@ class ResourceListOperation(OSLCResource):
         response_info.members = data
         response_info.current_page = base_url_with_query
         response_info.next_page = next_url
+
+        # Create a list of elements directly when not using the Paging
         response_info.to_rdf(self.graph, base_url=base_url, attributes=adapter.mapping)
 
         return self.create_response(graph=self.graph)
