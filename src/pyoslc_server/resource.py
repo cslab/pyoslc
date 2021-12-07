@@ -73,8 +73,8 @@ class OSLCResource(OSLCResourceView):
         # else:
         #     rdf_format = 'pretty-xml'
 
-        if rdf_format in ('application/xml', 'application/rdf+xml'):
-            rdf_format = 'pretty-xml'
+        # if rdf_format in ('application/xml', 'application/rdf+xml'):
+        #     rdf_format = 'pretty-xml'
 
         if rdf_format.__contains__('rootservices-xml') and (not accept.__contains__('xml')):
             rdf_format = accept

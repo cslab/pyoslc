@@ -1290,29 +1290,33 @@ class ResponseInfo(FilteredResource):
         ri = Resource(graph, URIRef(uri))
 
         if self.members:
+            member = Resource(graph, URIRef(uri))
             for item in self.members:
                 item_url = urlparse(uri + '/' + item.identifier)
-                member = Resource(graph, URIRef(item_url.geturl()))
-                ri.add(RDFS.member, member)
+                r = Resource(graph, URIRef(item_url.geturl()))
+                for t in item.types:
+                    r.add(RDF.type, t)
 
-                resource = Resource(graph, URIRef(item_url.geturl()))
+                member.add(RDFS.member, r)
+
                 for key in attributes:
                     attr = attributes.get(key)
                     val = getattr(item, key)
                     if val:
-                        resource.add(attr, Literal(val))
+                        r.add(attr, Literal(val))
 
-        rx = Resource(graph, URIRef(self.current_page))
-        rx.add(RDF.type, OSLC.ResponseInfo)
+        if self.total_count > len(self.members):
+            rx = Resource(graph, URIRef(self.current_page))
+            rx.add(RDF.type, OSLC.ResponseInfo)
 
-        if self.title:
-            rx.add(DCTERMS.title, Literal(self.title, datatype=RDF.XMLLiteral))
+            if self.title:
+                rx.add(DCTERMS.title, Literal(self.title, datatype=RDF.XMLLiteral))
 
-        if self.total_count and self.total_count > 0:
-            rx.add(OSLC.totalCount, Literal(self.total_count))
+            if self.total_count and self.total_count > 0:
+                rx.add(OSLC.totalCount, Literal(self.total_count))
 
-            if self.__next_page and self.__next_page != '':
-                rx.add(OSLC.nextPage, URIRef(self.__next_page))
+                if self.__next_page and self.__next_page != '':
+                    rx.add(OSLC.nextPage, URIRef(self.__next_page))
 
         return ri
 

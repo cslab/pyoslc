@@ -70,6 +70,9 @@ def test_service_provider_catalog(pyoslc_enabled):
         assert (spc, OSLC.domain, URIRef(OSLC_RM.uri) if isinstance(OSLC_RM.uri,
                                                                     str) else OSLC_RM.uri) in g, 'The ServiceProvider is not on RM domain'
 
+        assert 'Service Provider Catalog' in [t for t in g.objects(spc, DCTERMS.title)][0]
+        assert sp in [t for t in g.objects(spc, OSLC.serviceProvider)]
+
 
 def test_bad_service_provider(pyoslc_enabled):
     """
@@ -82,6 +85,8 @@ def test_bad_service_provider(pyoslc_enabled):
 
     response = pyoslc_enabled.get_service_provider('Project-1a')
     assert response is not None
+    assert response.status_code == 404
+    assert b'The Service Provider with ID Project-1a, was not found.' in response.data
 
     g = Graph()
     g.parse(data=response.data, format='application/rdf+xml')
@@ -135,7 +140,7 @@ def test_service_provider(pyoslc_enabled):
     assert provider_id in [t for t in g.objects(sp, DCTERMS.identifier)][0]
 
 
-def test_query_capability(pyoslc_enabled):
+def test_query_capability_basic(pyoslc_enabled):
     """
     GIVEN the PyOSLC API
     WHEN requesting the query capability endpoint for getting the
@@ -159,18 +164,18 @@ def test_query_capability(pyoslc_enabled):
 
     ri = URIRef('http://localhost/oslc/services/provider/adapter/resources')
 
-    assert (None, RDF.type, OSLC.ResponseInfo) in g, 'The ResponseInfo should be generated'
+    assert not (None, RDF.type, OSLC.ResponseInfo) in g, 'The ResponseInfo was generated and should not'
 
     assert (ri, RDFS.member, None) in g, 'The response does not contain a member'
-    assert (ri, OSLC.totalCount, None) in g, 'The response does not contain the totalCount'
-    assert (ri, DCTERMS.title, None) in g, 'The ResponseInfo should have a title'
+    assert not (ri, OSLC.totalCount, None) in g, 'The response contains the totalCount and should not'
+    assert not (ri, DCTERMS.title, None) in g, 'The ResponseInfo should not be part of the response'
 
     members = [m for m in g.objects(ri, RDFS.member)]
     assert members is not None, 'The ResponseInfo should have members'
-    assert len(members) > 0, 'The members should contain at least one element'
+    assert len(members) == 5, 'The members should contain at least one element'
 
 
-def test_paging(pyoslc_enabled):
+def test_query_capability_paging(pyoslc_enabled):
     response = pyoslc_enabled.get_query_capability('adapter', paging=True, page_size=2)
 
     assert response is not None
@@ -189,6 +194,7 @@ def test_paging(pyoslc_enabled):
 
     assert (ri, RDFS.member, None) in g, 'The response does not contain a member'
     assert (ril, OSLC.totalCount, None) in g, 'The response does not contain the totalCount'
+    assert int([o for o in g.objects(ril, OSLC.totalCount)][0]) == 5, 'The response does not contain the totalCount'
     assert (ril, DCTERMS.title, None) in g, 'The ResponseInfo should have a title'
     assert (ril, OSLC.nextPage, None) in g, 'The ResponseInfo should have a nextPage attribute'
 
@@ -197,7 +203,7 @@ def test_paging(pyoslc_enabled):
     assert len(members) == 2, 'The members should contain at least one element'
 
 
-def test_next_page(pyoslc_enabled):
+def test_query_capability_next_page(pyoslc_enabled):
     response = pyoslc_enabled.get_query_capability('adapter', paging=True, page_size=2, page_number=2)
 
     assert response is not None
@@ -213,6 +219,20 @@ def test_next_page(pyoslc_enabled):
     assert (None, RDF.type, OSLC.ResponseInfo) in g, 'The ResponseInfo should be generated'
 
     ril = [a for a in g.subjects(RDF.type, OSLC.ResponseInfo)][0]
+
+    assert (ri, RDFS.member, None) in g, 'The response does not contain a member'
+    assert (ril, OSLC.totalCount, None) in g, 'The response does not contain the totalCount'
+    assert int([o for o in g.objects(ril, OSLC.totalCount)][0]) == 5, 'The response does not contain the totalCount'
+
+    members = [m for m in g.objects(ri, RDFS.member)]
+    assert members is not None, 'The ResponseInfo should have members'
+    assert len(members) == 2, 'The members should contain at least one element'
+
+    r3 = URIRef('http://localhost/oslc/services/provider/adapter/resources/3')
+    r4 = URIRef('http://localhost/oslc/services/provider/adapter/resources/4')
+
+    assert r3 in members, 'The first resource does not correspond in the response'
+    assert r4 in members, 'The second resource does not correspond in the response'
 
     np = [a for a in g.objects(ril, OSLC.nextPage)][0]
 
@@ -236,14 +256,47 @@ def test_next_page(pyoslc_enabled):
 
     assert (ri, RDFS.member, None) in g, 'The response does not contain a member'
     assert (ril, OSLC.totalCount, None) in g, 'The response does not contain the totalCount'
-    assert (ril, DCTERMS.title, None) in g, 'The ResponseInfo should have a title'
+    assert int([o for o in g.objects(ril, OSLC.totalCount)][0]) == 5, 'The response does not contain the totalCount'
 
     members = [m for m in g.objects(ri, RDFS.member)]
     assert members is not None, 'The ResponseInfo should have members'
     assert len(members) == 1, 'The members should contain at least one element'
 
+    r5 = URIRef('http://localhost/oslc/services/provider/adapter/resources/5')
 
-def test_query_select(pyoslc_enabled):
+    assert r5 in members, 'The first resource does not correspond in the response'
+
+    # np = [o for o in g.objects(ril, OSLC.nextPage)]
+    # assert len(np) == 0, 'The response should not have a next_page'
+    assert not (ril, OSLC.nextPage, None) in g, 'The response should not have a next_page'
+
+
+def test_query_capability_select(pyoslc_enabled):
+    response = pyoslc_enabled.get_query_capability('adapter', select="dcterms:title")
+
+    assert response is not None
+    assert response.status_code == 200
+
+    g = Graph()
+    g.parse(data=response.data, format='application/rdf+xml')
+
+    assert g is not None
+
+    ri = URIRef('http://localhost/oslc/services/provider/adapter/resources')
+
+    assert not (None, RDF.type, OSLC.ResponseInfo) in g, 'The ResponseInfo should not be generated'
+
+    assert (ri, RDFS.member, None) in g, 'The response does not contain a member'
+
+    members = [m for m in g.objects(ri, RDFS.member)]
+    assert members is not None, 'The ResponseInfo should have members'
+    assert len(members) > 0, 'The members should contain at least one element'
+
+    for member in members:
+        assert len([o for o in g.objects(member, DCTERMS.title)]) == 1, 'Title should be in the resource description'
+
+
+def test_query_capability_paging_select(pyoslc_enabled):
     response = pyoslc_enabled.get_query_capability('adapter', paging=True, page_size=2, page_number=2,
                                                    select="dcterms:title")
 
