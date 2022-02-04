@@ -45,6 +45,10 @@ class OSLCAPP:
     def debug(self):
         return self._debug
 
+    @debug.setter
+    def debug(self, value):
+        self._debug = value
+
     def logger(self):
         return create_logger(self)
 
