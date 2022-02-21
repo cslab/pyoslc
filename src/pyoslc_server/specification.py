@@ -75,14 +75,12 @@ class ServiceResourceAdapter(ServiceResource):
     description = None
     representations = None
     domain = None
-    # types = None
     service_path = 'provider/{id}/resources'
 
-    def __init__(self, identifier, title, mapping, **kwargs):
+    def __init__(self, identifier, title, mapping=None, **kwargs):
         self.identifier = identifier
         self.title = title
         self.description = kwargs.get('description', '')
-        self.mapping = mapping
         self.types = None
 
     @property

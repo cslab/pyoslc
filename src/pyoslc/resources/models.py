@@ -182,11 +182,11 @@ class AbstractResource(object):
 
 class BaseResource(AbstractResource):
 
-    def __init__(self, about=None, types=None, properties=None, description=None,
-                 identifier=None, short_title=None, title=None, contributor=None,
-                 creator=None, subject=None, created=None, modified=None,
-                 discussed_by=None, instance_shape=None, service_provider=None,
-                 relation=None):
+    def __init__(self, about=None, types=None, properties=None, 
+                 description=None, identifier=None, short_title=None,
+                 title=None, contributor=None, creator=None, subject=None,
+                 created=None, modified=None, discussed_by=None, instance_shape=None,
+                 service_provider=None, relation=None):
         """
         Initialize the generic resource with the about property
         """
@@ -393,6 +393,14 @@ class ServiceProviderCatalog(BaseResource):
         self.__domain = domain if domain is not None else list()
         self.__service_provider_catalog = service_provider_catalog if service_provider_catalog is not None else set()
         self.__oauth_configuration = oauth_configuration
+
+    @property
+    def uri(self):
+        return self.__uri
+
+    @uri.setter
+    def uri(self, uri):
+        self.__uri = uri
 
     @property
     def publisher(self):
@@ -662,6 +670,14 @@ class Service(BaseResource):
 
     def add_creation_dialog(self, creation_dialog):
         self.__creation_dialog.append(creation_dialog)
+
+    @property
+    def usage(self):
+        return self.__usage
+
+    @usage.setter
+    def usage(self, usage):
+        self.__usage = usage
 
     def to_rdf(self, graph):
         super(Service, self).to_rdf(graph)

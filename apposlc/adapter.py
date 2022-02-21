@@ -5,18 +5,10 @@ from rdflib import DCTERMS
 from pyoslc_server.specification import ServiceResourceAdapter
 from .resource import REQSTORE, Requirement
 
-REQ_TO_RDF = {
-    "identifier": DCTERMS.identifier,
-    "title": DCTERMS.title,
-    "description": DCTERMS.description,
-}
-
-
 class RequirementAdapter(ServiceResourceAdapter):
 
     domain = OSLC_RM
-    items = REQSTORE
-    mapping = REQ_TO_RDF
+    items = REQSTORE    
 
     def __init__(self, **kwargs):
         super(RequirementAdapter, self).__init__(**kwargs)
@@ -46,7 +38,7 @@ class RequirementAdapter(ServiceResourceAdapter):
         else:
             final_result = result
 
-        return len(self.items), final_result
+        return len(self.items), final_result, 
 
     def creation_factory(self, item):
         r = Requirement(
@@ -68,9 +60,6 @@ class RequirementAdapter(ServiceResourceAdapter):
 class TestCaseAdapter(ServiceResourceAdapter):
     domain = OSLC_QM
 
-    def __init__(self, identifier, title, mapping, **kwargs):
-        super(TestCaseAdapter, self).__init__(identifier, title, mapping, **kwargs)
+    def __init__(self, identifier, title, mapping=None, **kwargs):
+        super(TestCaseAdapter, self).__init__(identifier, title, mapping=None, **kwargs)
         self.types = [OSLC_QM.TestCase]
-
-    def selection_dialog(self):
-        pass

@@ -137,6 +137,7 @@ class ResourceListOperation(OSLCResource):
         total_count = 0
         adapter = self.get_adapter(provider_id)
         if adapter:
+            # get mapping - prefix // - some cases prefix, 
             total_count, data = adapter.query_capability(paging=paging, page_size=page_size, page_no=page_no,
                                                          prefix=criteria.prefixes, where=criteria.conditions,
                                                          select=criteria.properties,
@@ -148,6 +149,7 @@ class ResourceListOperation(OSLCResource):
             result = list()
             for item in data:
                 br = BaseResource()
+                # use the mapping generated before to call the qc
                 br.update(item, adapter.mapping)
                 for t in adapter.types:
                     br.types.append(t)

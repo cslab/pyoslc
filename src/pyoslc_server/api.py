@@ -95,9 +95,6 @@ class API(object):
             )
             app.add_url_rule(rule, view_func=resource_func,  **kwargs)
 
-    def _register_oslc_adapter(self):
-        pass
-
     def output(self, resource):
 
         @wraps(resource)

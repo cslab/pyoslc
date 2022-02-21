@@ -21,19 +21,20 @@ from .logging import create_logger
 
 class OSLCAPP:
 
+    DEFAULT_FORMAT = "text/turtle"
+
     testing = False
 
     def __init__(self, name="oslc-app", prefix="/oslc", **kwargs):
         self.name = name
         self.prefix = prefix
         self.view_functions = {}
-        # self.adapter_functions = {}
         self.view_mappings = {}
         self.rdf_type = {}
         self.oslc_domain = {}
         self.url_map = Map()
-        self.rdf_format = 'text/turtle'
-        self.accept = 'text/turtle'
+        self.rdf_format = self.DEFAULT_FORMAT
+        self.accept = self.DEFAULT_FORMAT
         self._debug = True
 
         self.logger = create_logger(self)
@@ -90,7 +91,6 @@ class OSLCAPP:
                 raise AssertionError('View function mapping is overwriting an '
                                      'existing endpoint function: %s' % endpoint)
             self.view_functions[endpoint] = view_func
-            # self.adapter_functions[endpoint] = adapter_func
 
     def handle_http_exception(self, error):
         if error.code is None:
@@ -255,10 +255,7 @@ class OSLCAPP:
         .. versionadded:: 0.9
         """
         if exc is object():
-            exc = sys.exc_info()[1]
-        # for func in reversed(self.teardown_appcontext_funcs):
-        #     func(exc)
-        # appcontext_tearing_down.send(self, exc=exc)
+            exc = sys.exc_info()[1]        
 
     def app_context(self):
         return AppContext(self)
