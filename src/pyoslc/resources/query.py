@@ -1,6 +1,10 @@
 import re
+import logging
 
 from pyoslc.resources.ebnf_grammar import TERM, VALUE, PROPERTY, PREFIX_DEF
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 class Property(object):
@@ -118,6 +122,13 @@ class Criteria:
 
             for matcher in matchers:
                 prop = matcher.group(1)
+
+                if (prop.__contains__(":")):
+                    # prfx = prop.split(":")[0]
+                    prop = self.prefixes.get(prop.split(":")[0]) + prop.split(":")[1]
+
+                # prop = matcher.group(1).split(":")[0] if matcher.group(1).__contains__(":") else matcher.group(1)
+
                 if matcher.group(6) is None:
                     local_properties.append(Property(prop))
                 else:
@@ -136,7 +147,8 @@ class Criteria:
             matchers = pattern.finditer(parameter)
 
             for matcher in matchers:
-                prfxs.update({matcher.group(3): matcher.group(1)})
+                prfxs.update({matcher.group(1): matcher.group(3)})
+                logger.debug("[+] PREFIX {}=<{}>".format(matcher.group(1), matcher.group(3)))
 
         self.__prefixes = prfxs
 

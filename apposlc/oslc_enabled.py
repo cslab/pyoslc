@@ -1,8 +1,7 @@
-from rdflib import DCTERMS
-
 from pyoslc_server import OSLCAPP
 
 from apposlc.adapter import RequirementAdapter, TestCaseAdapter
+
 
 class OSLCEnabled:
 

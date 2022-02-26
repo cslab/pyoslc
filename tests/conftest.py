@@ -1,3 +1,4 @@
+import logging
 import pytest
 
 # from app import create_app
@@ -7,24 +8,11 @@ from tests.functional.oslc import PyOSLC
 
 from apposlc import create_oslc_app
 
-
-# @pytest.fixture(scope='session')
-# def client():
-#     """
-#     Getting the test_client instance for the Flask application
-#     for executing and validating the tests
-#
-#     :param app: Flask application
-#     :return: client: Client with test configuration
-#     """
-#     # Create a test client using the Flask application configured for testing
-#     app = create_app(Config)
-#     app.testing = True
-#     with app.test_client() as client:
-#         # Establish an application context
-#         with app.app_context():
-#             yield client  # this is where the testing happens!
 from tests.unit.adapter import RMAdapter, BaseAdapter
+
+
+logging.basicConfig(level=logging.DEBUG)
+logging.getLogger(__name__)
 
 
 @pytest.fixture(scope='session')
@@ -38,6 +26,7 @@ def client_oslc():
 
 @pytest.fixture
 def pyoslc(client_oslc):
+    logger.debug("Initializing OSLC Client")
     return PyOSLC(client_oslc)
 
 

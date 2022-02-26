@@ -30,6 +30,14 @@ class OSLCResource(OSLCResourceView):
         self.graph.bind('rdfs', RDFS)
         self.graph.bind('dcterms', DCTERMS)
         # self.graph.bind('j.0', JAZZ_PROCESS)
+        # prefix_definitions.append(PrefixDefinition(prefix='dcterms', prefix_base=DCTERMS))
+        # prefix_definitions.append(PrefixDefinition(prefix='oslc', prefix_base=OSLC))
+        # prefix_definitions.append(PrefixDefinition(prefix='oslc_data', prefix_base=OSLCData))
+        # prefix_definitions.append(PrefixDefinition(prefix='rdf', prefix_base=RDF))
+        # prefix_definitions.append(PrefixDefinition(prefix='rdfs', prefix_base=RDFS))
+        # prefix_definitions.append(PrefixDefinition(prefix='oslc_am', prefix_base=OSLC_AM))
+        # prefix_definitions.append(PrefixDefinition(prefix='oslc_cm', prefix_base=OSLC_CM))
+        # prefix_definitions.append(PrefixDefinition(prefix='oslc_rm', prefix_base=OSLC_RM))
 
     def get(self, *args, **kwargs):
         accept = request.headers.get('accept')

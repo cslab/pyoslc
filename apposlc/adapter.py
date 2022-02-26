@@ -1,14 +1,14 @@
 from pyoslc.vocabularies.rm import OSLC_RM
 from pyoslc.vocabularies.qm import OSLC_QM
-from rdflib import DCTERMS
 
 from pyoslc_server.specification import ServiceResourceAdapter
 from .resource import REQSTORE, Requirement
 
+
 class RequirementAdapter(ServiceResourceAdapter):
 
     domain = OSLC_RM
-    items = REQSTORE    
+    items = REQSTORE
 
     def __init__(self, **kwargs):
         super(RequirementAdapter, self).__init__(**kwargs)
@@ -24,21 +24,21 @@ class RequirementAdapter(ServiceResourceAdapter):
         if paging:
             offset = ((page_no - 1) * page_size)
             end = (offset + page_size)
-            result = [vars(item) for item in self.items][offset:end]
+            result = self.get_data()[offset:end]
         else:
-            result = [vars(item) for item in self.items]
+            result = self.get_data()
 
         # This is just an example, the code could be improved
         if select:
             final_result = []
-            sel = [p.prop.split(":")[1] for p in select]
-            sel.append('identifier')
+            sel = [p.prop for p in select]
+            sel.append("http://purl.org/dc/terms/identifier")
             for r in result:
                 final_result.append({k: v for k, v in r.items() if k in sel})
         else:
             final_result = result
 
-        return len(self.items), final_result, 
+        return len(self.items), final_result,
 
     def creation_factory(self, item):
         r = Requirement(
@@ -55,6 +55,18 @@ class RequirementAdapter(ServiceResourceAdapter):
                 return item
 
         return None
+
+    def get_data(self):
+        result = list()
+        for item in self.items:
+            data = {
+                "http://purl.org/dc/terms/identifier": item.identifier,
+                "http://purl.org/dc/terms/description": item.description,
+                "http://purl.org/dc/terms/title": item.title
+            }
+            result.append(data)
+
+        return result
 
 
 class TestCaseAdapter(ServiceResourceAdapter):

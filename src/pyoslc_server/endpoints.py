@@ -89,8 +89,7 @@ class ResourceListOperation(OSLCResource):
     def get(self, provider_id):
         super(ResourceListOperation, self).get()
 
-        url = urlparse(unquote(request.url))
-        qs = dict(parse_qsl(url.query.replace('&amp;', '&')))
+        qs = dict(parse_qsl(unquote(str(request.query_string))))
 
         paging = qs.get('oslc.paging', False)
         if isinstance(paging, text_type):
@@ -101,6 +100,10 @@ class ResourceListOperation(OSLCResource):
         prefix = qs.get('oslc.prefix', '')
         where = qs.get('oslc.where', '')
         select = qs.get('oslc.select', '')
+
+        pfx = ["{}=<{}>".format(ns[0], ns[1]) for ns in self.graph.namespaces()]
+        pfx = ', '.join(pfx)
+        prefix += pfx
 
         criteria = Criteria()
         criteria.prefix(prefix)
@@ -137,7 +140,8 @@ class ResourceListOperation(OSLCResource):
         total_count = 0
         adapter = self.get_adapter(provider_id)
         if adapter:
-            # get mapping - prefix // - some cases prefix, 
+            # get mapping - prefix // - some cases prefix,
+            adapter.namespaces = criteria.prefixes
             total_count, data = adapter.query_capability(paging=paging, page_size=page_size, page_no=page_no,
                                                          prefix=criteria.prefixes, where=criteria.conditions,
                                                          select=criteria.properties,
@@ -150,7 +154,7 @@ class ResourceListOperation(OSLCResource):
             for item in data:
                 br = BaseResource()
                 # use the mapping generated before to call the qc
-                br.update(item, adapter.mapping)
+                br.update(item, adapter)
                 for t in adapter.types:
                     br.types.append(t)
                 result.append(br)
@@ -176,7 +180,7 @@ class ResourceListOperation(OSLCResource):
         response_info.next_page = next_url
 
         # Create a list of elements directly when not using the Paging
-        response_info.to_rdf(self.graph, base_url=base_url, attributes=adapter.mapping)
+        response_info.to_rdf(self.graph, base_url=base_url, attributes=adapter)
 
         return self.create_response(graph=self.graph)
 
@@ -203,13 +207,19 @@ class ResourceListOperation(OSLCResource):
                 adapter = self.get_adapter(provider_id)
                 if adapter:
 
+                    pfx = ["{}=<{}>".format(ns[0], ns[1]) for ns in self.graph.namespaces()]
+                    pfx = ', '.join(pfx)
+                    criteria = Criteria()
+                    criteria.prefix(pfx)
+                    adapter.namespaces = criteria.prefixes
+
                     req = BaseResource()
-                    req.from_rdf(data, adapter.types[0], attributes=adapter.mapping)
+                    req.from_rdf(data, adapter.types[0], attributes=adapter)
 
                     adapter.creation_factory(req.get_dict(attributes=adapter.mapping))
                     if isinstance(req, BaseResource):
                         req.to_rdf_base(self.graph, base_url=base_url, oslc_types=adapter.types,
-                                        attributes=adapter.mapping)
+                                        attributes=adapter)
                         data = self.graph.serialize(format='turtle')
 
                         # Sending the response to the client

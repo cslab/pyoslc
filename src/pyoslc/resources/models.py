@@ -9,7 +9,7 @@ if six.PY3:
 else:
     from urlparse import urlparse
 
-from rdflib import URIRef, Literal, RDF, XSD, BNode
+from rdflib import Graph, URIRef, Literal, RDF, XSD, BNode
 from rdflib.extras.describer import Describer
 from rdflib.namespace import DCTERMS, RDFS, ClosedNamespace
 from rdflib.resource import Resource
@@ -77,8 +77,10 @@ class AbstractResource(object):
         if isinstance(data, object):
             data = data.__dict__ if hasattr(data, '__dict__') else data
 
+        g = Graph()
+        bn = BNode()
         for k, v in data.items():
-            if k in attributes:
+            if k in attributes.namespaces:
                 if hasattr(self, k):
                     attribute_value = getattr(self, k)
                     if isinstance(attribute_value, set):
@@ -88,6 +90,32 @@ class AbstractResource(object):
                         setattr(self, k, v)
                 else:
                     setattr(self, k, v)
+            else:
+                url = urlparse(k).path
+                if url.__contains__("#"):
+                    c = "#"
+                else:
+                    c = "/"
+
+                x = url.split(c)[-1]
+                attributes.mapping[x] = URIRef(k)
+
+                if hasattr(self, x):
+                    attribute_value = getattr(self, x)
+                    if isinstance(attribute_value, set):
+                        attribute_value.clear()
+                        attribute_value.add(v)
+                    else:
+                        setattr(self, x, v)
+                else:
+                    setattr(self, x, v)
+
+                uri = URIRef(k)
+                g.add((bn, uri, Literal(v)))
+
+        for ns in g.namespace_manager.namespaces():
+            # logger.debug("namepace: {} {}".format(ns[1], str(ns[0])))
+            attributes.namespaces[ns[1]] = str(ns[0])
 
     def to_rdf_base(self, graph, base_url=None, oslc_types=None, attributes=None):
         assert attributes is not None, 'The mapping for attributes is required'
@@ -109,7 +137,7 @@ class AbstractResource(object):
                 d.rdftype(t)
 
         for attribute_key in self.__dict__.keys():
-            item = {k: v for k, v in six.iteritems(attributes) if attribute_key.split('__')[1] == k}
+            item = {k: v for k, v in six.iteritems(attributes.mapping) if attribute_key.split('__')[1] == k}
 
             if item and attribute_key.split('__')[1] in item.keys():
                 predicate = item.get(attribute_key.split('__')[1])
@@ -182,7 +210,7 @@ class AbstractResource(object):
 
 class BaseResource(AbstractResource):
 
-    def __init__(self, about=None, types=None, properties=None, 
+    def __init__(self, about=None, types=None, properties=None,
                  description=None, identifier=None, short_title=None,
                  title=None, contributor=None, creator=None, subject=None,
                  created=None, modified=None, discussed_by=None, instance_shape=None,
@@ -335,43 +363,53 @@ class BaseResource(AbstractResource):
 
             reviewed = list()
 
-            for k, v in six.iteritems(attributes):
-                reviewed.append(k)
+            # for k, v in six.iteritems(attributes.namespaces):
 
-                for i in g.objects(r, predicate=v):
-                    attribute_name = k
-                    if hasattr(self, attribute_name):
-                        attribute_value = getattr(self, attribute_name)
-                        if isinstance(attribute_value, set):
-                            at = getattr(self, attribute_name)
-                            if isinstance(i, Literal):
-                                i = i.value
-                            at.add(i)
-                        elif isinstance(attribute_value, str):
-                            if isinstance(i, Literal):
-                                i = i.value
-                            setattr(self, attribute_name, i if isinstance(i, str) else i.encode('utf-8'))
+            for p, o in g.predicate_objects(r):
+
+                url = urlparse(p, allow_fragments=True)
+                url = url.fragment if url.fragment else url.path
+                if url.__contains__("#"):
+                    c = "#"
+                else:
+                    c = "/"
+
+                x = url.split(c)[-1]
+                attributes.mapping[x] = URIRef(p)
+                reviewed.append(x)
+                attribute_name = x
+                if hasattr(self, attribute_name):
+                    attribute_value = getattr(self, attribute_name)
+                    if isinstance(attribute_value, set):
+                        at = getattr(self, attribute_name)
+                        if isinstance(o, Literal):
+                            o = o.value
+                        at.add(o)
+                    elif isinstance(attribute_value, str):
+                        if isinstance(o, Literal):
+                            o = o.value
+                        setattr(self, attribute_name, o if isinstance(o, str) else o.encode('utf-8'))
+                    else:
+                        if isinstance(o, Literal):
+                            setattr(self, attribute_name, o.value)
                         else:
-                            if isinstance(i, Literal):
-                                setattr(self, attribute_name, i.value)
-                            else:
-                                setattr(self, attribute_name, i)
+                            setattr(self, attribute_name, o)
 
-            no_reviewed = [a.split('__')[1].lower() for a in self.__dict__.keys() if
-                           a.split('__')[1].lower() not in reviewed]
+            # no_reviewed = [a.split('__')[1].lower() for a in self.__dict__.keys() if
+            #                a.split('__')[1].lower() not in reviewed]
 
-            for attr in no_reviewed:
-                item = {attr: v for k, v in six.iteritems(attributes) if k.lower() == attr.lower()}
-                if item:
-                    for i in g.objects(r, eval(item.get(attr)['oslc_property'])):
-                        attribute_name = item.get(attr)['attribute']
-                        if hasattr(self, attribute_name):
-                            attribute_value = getattr(self, attribute_name)
-                            if isinstance(attribute_value, set):
-                                attribute_value.clear()
-                                # attribute_value.add(data[key])
-                            else:
-                                setattr(self, attribute_name, i)
+            # for attr in no_reviewed:
+            #     item = {attr: v for k, v in six.iteritems(attributes) if k.lower() == attr.lower()}
+            #     if item:
+            #         for i in g.objects(r, eval(item.get(attr)['oslc_property'])):
+            #             attribute_name = item.get(attr)['attribute']
+            #             if hasattr(self, attribute_name):
+            #                 attribute_value = getattr(self, attribute_name)
+            #                 if isinstance(attribute_value, set):
+            #                     attribute_value.clear()
+            #                     # attribute_value.add(data[key])
+            #                 else:
+            #                     setattr(self, attribute_name, i)
 
 
 class ServiceProviderCatalog(BaseResource):
@@ -1276,6 +1314,14 @@ class ResponseInfo(FilteredResource):
             raise ValueError('The total_count must be an instance of int')
 
     @property
+    def container(self):
+        return self.__container
+
+    @container.setter
+    def container(self, container):
+        self.__container = container
+
+    @property
     def members(self):
         return self.__members
 
@@ -1315,8 +1361,8 @@ class ResponseInfo(FilteredResource):
 
                 member.add(RDFS.member, r)
 
-                for key in attributes:
-                    attr = attributes.get(key)
+                for key in attributes.mapping:
+                    attr = attributes.mapping.get(key)
                     val = getattr(item, key)
                     if val:
                         r.add(attr, Literal(val))

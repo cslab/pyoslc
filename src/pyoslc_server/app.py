@@ -29,9 +29,9 @@ class OSLCAPP:
         self.name = name
         self.prefix = prefix
         self.view_functions = {}
-        self.view_mappings = {}
-        self.rdf_type = {}
-        self.oslc_domain = {}
+        # self.view_mappings = {}
+        # self.rdf_type = {}
+        # self.oslc_domain = {}
         self.url_map = Map()
         self.rdf_format = self.DEFAULT_FORMAT
         self.accept = self.DEFAULT_FORMAT
@@ -255,7 +255,7 @@ class OSLCAPP:
         .. versionadded:: 0.9
         """
         if exc is object():
-            exc = sys.exc_info()[1]        
+            exc = sys.exc_info()[1]
 
     def app_context(self):
         return AppContext(self)

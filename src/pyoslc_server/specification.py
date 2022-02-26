@@ -76,8 +76,10 @@ class ServiceResourceAdapter(ServiceResource):
     representations = None
     domain = None
     service_path = 'provider/{id}/resources'
+    namespaces = dict()
+    mapping = dict()
 
-    def __init__(self, identifier, title, mapping=None, **kwargs):
+    def __init__(self, identifier, title, **kwargs):
         self.identifier = identifier
         self.title = title
         self.description = kwargs.get('description', '')

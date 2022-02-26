@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-from collections import OrderedDict
 from functools import wraps
 
 from werkzeug.exceptions import NotAcceptable, InternalServerError
@@ -28,7 +27,7 @@ class API(object):
         self.default_mediatype = 'text/turtle'
 
         self.authorizations = authorizations
-        self.representations = OrderedDict(DEFAULT_REPRESENTATIONS)
+        # self.representations = OrderedDict(DEFAULT_REPRESENTATIONS)
 
         app.logger.debug(
             'Initializing OSLC API: <name: {name}> <prefix: {prefix}>'.format(name=app.name, prefix=self.prefix)

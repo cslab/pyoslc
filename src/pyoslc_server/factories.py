@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+
+import logging
 import inspect
 
 from six import PY3
@@ -10,10 +13,8 @@ else:
 
 from pyoslc.resources.models import ServiceProvider, Service, QueryCapability, CreationFactory, Dialog
 
-import logging
 
 logging.basicConfig(level=logging.DEBUG)
-
 logger = logging.getLogger(__name__)
 
 
@@ -92,7 +93,8 @@ class ServiceProviderFactory(object):
     @classmethod
     def handle_resource_class(cls, base_uri, klass, service, parameters, path):
 
-        items = [item for item in inspect.classify_class_attrs(klass.__class__) if item.kind.__contains__('method') and item.name != '__init__' and item.defining_class == klass.__class__]
+        items = [item for item in inspect.classify_class_attrs(klass.__class__) if item.kind.__contains__(
+            'method') and item.name != '__init__' and item.defining_class == klass.__class__]
         for item in items:
             logger.debug("Configuring: <{}>".format(item.name))
             if item.name == 'query_capability':
