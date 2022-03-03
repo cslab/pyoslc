@@ -130,7 +130,7 @@ class OSLCAPP:
     def preprocess_request(self):
         request = _request_ctx_stack.top.request
 
-        if not(request.accept_mimetypes.best in ('*/*', 'text/html')):
+        if request.accept_mimetypes.best and not(request.accept_mimetypes.best in ('*/*', 'text/html')):
             self.accept = request.accept_mimetypes.best
             self.rdf_format = self.accept
 

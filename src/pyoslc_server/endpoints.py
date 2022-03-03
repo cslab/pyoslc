@@ -89,7 +89,7 @@ class ResourceListOperation(OSLCResource):
     def get(self, provider_id):
         super(ResourceListOperation, self).get()
 
-        qs = dict(parse_qsl(unquote(str(request.query_string))))
+        qs = request.args
 
         paging = qs.get('oslc.paging', False)
         if isinstance(paging, text_type):
@@ -185,8 +185,12 @@ class ResourceListOperation(OSLCResource):
         return self.create_response(graph=self.graph)
 
     def post(self, provider_id):
-        accept = request.headers.get('accept')
-        if not (accept in ('text/turtle', 'application/rdf+xml', 'application/json', 'application/ld+json',
+
+        if request.accept_mimetypes.best and not(request.accept_mimetypes.best in ('*/*', 'text/html')):
+            accept = request.accept_mimetypes.best
+
+        if not (accept in ('text/turtle', 'application/rdf+xml',
+                           'application/ld+json',
                            'application/xml', 'application/atom+xml')):
             raise UnsupportedMediaType
 
@@ -264,8 +268,8 @@ class ResourceItemOperation(OSLCResource):
                 resource = BaseResource()
                 if data:
                     resource.about = base_url
-                    resource.update(data, adapter.mapping)
-                    resource.to_rdf_base(self.graph, base_url, adapter.types, adapter.mapping)
+                    resource.update(data, adapter)
+                    resource.to_rdf_base(self.graph, base_url, adapter.types, adapter)
 
                 if 'application/x-oslc-compact+xml' in accept or ', application/x-jazz-compact-rendering' in accept:
                     compact = Compact(about=base_url)
@@ -287,9 +291,18 @@ class ResourceItemOperation(OSLCResource):
 
                     compact.to_rdf(self.graph)
 
+                    accept = 'application/x-oslc-compact+xml'
+                    rdf_format = 'pretty-xml'
+                else:
+                    # accept = 'text/turtle'
+                    rdf_format = 'turtle'
+                    if accept in ('application/rdf+xml'):
+                        rdf_format = 'xml'
+                    
+
                 return self.create_response(graph=self.graph,
-                                            accept='application/x-oslc-compact+xml',
-                                            rdf_format='pretty-xml',
+                                            accept=accept,
+                                            rdf_format=rdf_format,
                                             etag=True)
             except AssertionError as e:
                 return NotImplemented(e)

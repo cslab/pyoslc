@@ -1,5 +1,6 @@
 import hashlib
 import logging
+import re
 import six
 
 from datetime import date
@@ -80,6 +81,7 @@ class AbstractResource(object):
         g = Graph()
         bn = BNode()
         for k, v in data.items():
+            logger.debug("Updating <{}: {}>".format(k, v))
             if k in attributes.namespaces:
                 if hasattr(self, k):
                     attribute_value = getattr(self, k)
@@ -137,6 +139,7 @@ class AbstractResource(object):
                 d.rdftype(t)
 
         for attribute_key in self.__dict__.keys():
+            logger.debug("Attribute: <{}>".format(attribute_key))
             item = {k: v for k, v in six.iteritems(attributes.mapping) if attribute_key.split('__')[1] == k}
 
             if item and attribute_key.split('__')[1] in item.keys():
@@ -364,6 +367,7 @@ class BaseResource(AbstractResource):
             reviewed = list()
 
             # for k, v in six.iteritems(attributes.namespaces):
+            pattern = re.compile(r'(?<!^)(?=[A-Z])')
 
             for p, o in g.predicate_objects(r):
 
@@ -377,7 +381,7 @@ class BaseResource(AbstractResource):
                 x = url.split(c)[-1]
                 attributes.mapping[x] = URIRef(p)
                 reviewed.append(x)
-                attribute_name = x
+                attribute_name = pattern.sub('_', x).lower()
                 if hasattr(self, attribute_name):
                     attribute_value = getattr(self, attribute_name)
                     if isinstance(attribute_value, set):
@@ -1356,16 +1360,16 @@ class ResponseInfo(FilteredResource):
             for item in self.members:
                 item_url = urlparse(uri + '/' + item.identifier)
                 r = Resource(graph, URIRef(item_url.geturl()))
-                for t in item.types:
-                    r.add(RDF.type, t)
+                # for t in item.types:
+                #     r.add(RDF.type, t)
 
                 member.add(RDFS.member, r)
 
-                for key in attributes.mapping:
-                    attr = attributes.mapping.get(key)
-                    val = getattr(item, key)
-                    if val:
-                        r.add(attr, Literal(val))
+                # for key in attributes.mapping:
+                #     attr = attributes.mapping.get(key)
+                #     val = getattr(item, key)
+                #     if val:
+                #         r.add(attr, Literal(val))
 
         if self.total_count > len(self.members):
             rx = Resource(graph, URIRef(self.current_page))

@@ -45,6 +45,7 @@ class RequirementAdapter(ServiceResourceAdapter):
             identifier=item.get('identifier'),
             title=item.get('title'),
             description=item.get('description'),
+            creator=item.get('creator', None)
         )
         self.items.append(r)
         return r
@@ -52,21 +53,25 @@ class RequirementAdapter(ServiceResourceAdapter):
     def get_resource(self, resource_id):
         for item in self.items:
             if item.identifier == resource_id:
-                return item
+                return self.convert_data(item)
 
         return None
 
     def get_data(self):
         result = list()
         for item in self.items:
-            data = {
-                "http://purl.org/dc/terms/identifier": item.identifier,
-                "http://purl.org/dc/terms/description": item.description,
-                "http://purl.org/dc/terms/title": item.title
-            }
+            data = self.convert_data(item)
             result.append(data)
 
         return result
+    
+    def convert_data(self, item):
+        return {
+            "http://purl.org/dc/terms/identifier": item.identifier,
+            "http://purl.org/dc/terms/description": item.description,
+            "http://purl.org/dc/terms/title": item.title,
+            "http://purl.org/dc/terms/creator": item.creator,
+        }
 
 
 class TestCaseAdapter(ServiceResourceAdapter):

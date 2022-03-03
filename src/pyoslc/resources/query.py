@@ -95,9 +95,10 @@ class Criteria:
 
             for matcher in matchers:
                 prop = matcher.group(2)
+                prop = self.qualified_name(prop)
                 if matcher.group(23):
                     local_conditions.append(
-                        Condition(prop=prop, nested_terms=compound_term(matcher.group(23)))
+                        Condition(prop=prop, nested_terms=self.compound_term(matcher.group(23)))
                     )
                 elif matcher.group(19):
                     local_conditions.append(
@@ -122,13 +123,7 @@ class Criteria:
 
             for matcher in matchers:
                 prop = matcher.group(1)
-
-                if (prop.__contains__(":")):
-                    # prfx = prop.split(":")[0]
-                    prop = self.prefixes.get(prop.split(":")[0]) + prop.split(":")[1]
-
-                # prop = matcher.group(1).split(":")[0] if matcher.group(1).__contains__(":") else matcher.group(1)
-
+                prop = self.qualified_name(prop)
                 if matcher.group(6) is None:
                     local_properties.append(Property(prop))
                 else:
@@ -148,7 +143,7 @@ class Criteria:
 
             for matcher in matchers:
                 prfxs.update({matcher.group(1): matcher.group(3)})
-                logger.debug("[+] PREFIX {}=<{}>".format(matcher.group(1), matcher.group(3)))
+                # logger.debug("[+] PREFIX {}=<{}>".format(matcher.group(1), matcher.group(3)))
 
         self.__prefixes = prfxs
 
@@ -161,6 +156,11 @@ class Criteria:
 
     def select(self, parameter):
         self.properties = self.props(parameter)
+
+    def qualified_name(self, parameter):
+        prefix = parameter.split(':')[0]
+        ns = self.prefixes.get(prefix, 'http://example.com/')
+        return ns + parameter.split(':')[1]
 
 
 if __name__ == "__main__":

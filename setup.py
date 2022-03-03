@@ -4,10 +4,12 @@ setup(
     name='PyOSLC',
     install_requires=[
         "python-dotenv == 0.18.0 ; python_version <= '2.7'",
+        "python-dotenv > 0.18.0 ; python_version > '2.7'",
         "enum34",
         "Werkzeug == 1.0.1 ; python_version <= '2.7'",
         "Werkzeug > 1.0.1 ; python_version > '2.7'",
         "click == 7.1.2 ; python_version <= '2.7'",
+        "click > 7.1.2 ; python_version > '2.7'",
         "RDFLib == 5.0.0 ; python_version <= '2.7'",
         "RDFLib-JSONLD == 0.6.1 ; python_version <= '2.7'",
         "RDFLib >= 6.0.0 ; python_version > '2.7'",

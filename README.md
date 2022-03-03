@@ -8,11 +8,11 @@ the interoperability of heterogeneous products and services.
 
 ## Getting Started
 
-The new version of `PyOSLC SDK` which is under development has two ways to deploy
-OSLC API:
+The new version of `PyOSLC SDK` which is under development, has two ways to deploy
+an OSLC API:
 
-- *Pluggable API*: The OSLC API will be added to an existent Web API such as a CE Application.
-- *Standalone API*: The OSLC API will be implemented and should be executed isolated.
+- *Pluggable API*: The OSLC API will be added to an existent Web API such as a CE Application or whichever REST API.
+- *Standalone API*: The OSLC API will be implemented and should be executed isolated, this means that a web app or REST API will be created and deployed independently using the PyOSLC library to manage the OSLC resources.
 
 ### Working with PyOSLC
 
@@ -59,7 +59,7 @@ to start working in the development of the API
 (myenv) $ pip install git+https://github.com/cslab/pyoslc.git@develop
 ```
 
-** Note: Keep your eyes in the `develop` tag of the installation
+** Note: Keep your eyes in the `develop` tag of the url in the installation command
 
 This command will download the `develop` branch of `PyOSLC SDK` from `GitHub` 
 repository and will build and install it in the current virtual environment
@@ -124,7 +124,7 @@ You will see a message like this:
 ```
 
 This is fine, this means that the OSLC API is working since the response is in RDF,
-but it does not have yet an Adapter or ServiceProvider to work with, that is because 
+but it does not have yet an `Adapter` or `ServiceProvider` to work with, that is because 
 it just returning the title and description for the Service Provider Catalog.
 
 #### Configuring the Environment variables
@@ -184,19 +184,22 @@ This module should define the resource type through a class to be used when exch
 information:
 
 ```python
+# -*- coding: utf-8 -*-
+
 class Requirement(object):
 
-    def __init__(self, identifier, title, description):
+    def __init__(self, identifier, title, description, creator):
         self.identifier = identifier
         self.title = title
         self.description = description
+        self.creator = creator
 
 REQSTORE = [
-    Requirement("1", "Provide WSGI implementation", "..."),
-    Requirement("2", "Capability to add resources", "..."),
-    Requirement("3", "Capability to paging", "..."),
-    Requirement("4", "Capability to select page", "..."),
-    Requirement("5", "Capability to specify page size", "..."),
+    Requirement("1", "Provide WSGI implementation", "...", "Yi"),
+    Requirement("2", "Capability to add resources", "...", "Jörg"),
+    Requirement("3", "Capability to manage paging", "...", "Christian"),
+    Requirement("4", "Capability to use select properties", "...", "Arne"),
+    Requirement("5", "Capability to specify page size", "...", "Torben"),
     # and so on ...
 ]
 ```
@@ -222,16 +225,9 @@ from pyoslc.vocabularies.rm import OSLC_RM
 from rdflib import DCTERMS
 from resource import REQSTORE
 
-REQ_TO_RDF = {
-    "identifier": DCTERMS.identifier,
-    "title": DCTERMS.title,
-    "description": DCTERMS.description,
-}
-
 class RequirementAdapter(ServiceResourceAdapter):
     
     domain = OSLC_RM
-    mapping = REQ_TO_RDF
     items = REQSTORE
     
     def __init__(self, **kwargs):
@@ -241,23 +237,28 @@ class RequirementAdapter(ServiceResourceAdapter):
     def query_capability(self, paging=False, page_size=50, page_no=1,
                          prefix=None, where=None, select=None,
                          *args, **kwargs):
-        return len(self.items), [vars(item) for item in self.items]
+        return len(self.items), [self.convert_data(item) for item in self.items]
+    
+    def convert_data(self, item):
+        return {
+            "http://purl.org/dc/terms/identifier": item.identifier,
+            "http://purl.org/dc/terms/description": item.description,
+            "http://purl.org/dc/terms/title": item.title,
+            "http://purl.org/dc/terms/creator": item.creator,
+        }
 ```
 
 This class it is importing some modules and classes from the RDFLib and
 from the vocabularies defined for the OSLC specification.
 
-For `RequimentAdapter` class a `mapping` was defined as `REQ_TO_RDF` which
-defines the attributes of the `Requirement` resource with the `RDF` attribute,
-this mapping will help in the serialization process.
-
-The OSLC resource type is also assigned in the initialization of the adapter in
-the `self.types` property.
+The OSLC resource type is assigned in the initialization of the adapter in
+the `self.types` property, for the demo purpose it will be `Requirement` from
+the `RM` specification.
 
 A domain also was assigned to the class to be managed in the process of generating the
 ServiceProvider
 
-And finally the `query_capability` method is implemented and defines some parameters
+And finally the `query_capability` method is implemented and defines some parameters,
 these parameters will be sent by the OSLC APP to the adapter to use them for the
 query operation.
 
@@ -272,7 +273,7 @@ Update the module with this content:
 
 ```python
 from pyoslc_server import OSLCAPP
-from adapter import RequirementAdapter, REQ_TO_RDF
+from adapter import RequirementAdapter
 
 app = OSLCAPP()
 
@@ -280,7 +281,6 @@ requirement_adapter = RequirementAdapter(
     identifier='adapter',
     title='Requirement Adapter',
     description='Requirement Adapter for OSLC',
-    mapping=REQ_TO_RDF
 )
 
 app.api.add_adapter(requirement_adapter)

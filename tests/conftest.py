@@ -1,8 +1,6 @@
 import logging
 import pytest
 
-# from app import create_app
-# from app.config import Config
 from apposlc.adapter import RequirementAdapter, TestCaseAdapter
 from tests.functional.oslc import PyOSLC
 
