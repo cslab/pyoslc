@@ -180,7 +180,7 @@ class ResourceListOperation(OSLCResource):
         response_info.next_page = next_url
 
         # Create a list of elements directly when not using the Paging
-        response_info.to_rdf(self.graph, base_url=base_url, attributes=adapter)
+        response_info.to_rdf(self.graph, base_url=base_url, attributes=adapter, criteria=criteria)
 
         return self.create_response(graph=self.graph)
 
@@ -298,7 +298,6 @@ class ResourceItemOperation(OSLCResource):
                     rdf_format = 'turtle'
                     if accept in ('application/rdf+xml'):
                         rdf_format = 'xml'
-                    
 
                 return self.create_response(graph=self.graph,
                                             accept=accept,
@@ -309,65 +308,3 @@ class ResourceItemOperation(OSLCResource):
 
         else:
             raise NotFound('The Service Provider with ID {}, was not found.'.format(provider_id))
-
-    # def put(self, provider_id, resource_id):
-    #     accept = request.headers.get('accept')
-    #     if not (accept in ('application/rdf+xml', 'application/json', 'application/ld+json',
-    #                        'application/xml', 'application/atom+xml')):
-    #         raise UnsupportedMediaType
-    #
-    #     content = request.headers.get('content-type')
-    #     if not (content in ('application/rdf+xml', 'application/json', 'application/ld+json',
-    #                         'application/xml', 'application/atom+xml')):
-    #         raise UnsupportedMediaType
-    #
-    #     endpoint_url = url_for('{}.{}'.format(request.blueprint, self.endpoint),
-    #                            service_provider_id=service_provider_id, requirement_id=requirement_id)
-    #     base_url = '{}{}'.format(request.url_root.rstrip('/'), endpoint_url)
-    #
-    #     etag = request.headers.get(key='If-Match', default=None, type=str)
-    #
-    #     rq = CsvRequirementRepository('specs')
-    #     r = rq.find(requirement_id)
-    #     r.about = base_url
-    #
-    #     if not r:
-    #         raise NotFound()
-    #     # elif r.identifier != requirement_id:
-    #     #     raise Conflict()
-    #     elif not etag:
-    #         raise BadRequest()
-    #     else:
-    #         dig = r.digestion()
-    #         if dig != etag.strip("\""):
-    #             raise PreconditionFailed()
-    #
-    #     g = Graph()
-    #     try:
-    #         data = g.parse(data=request.data, format='xml')
-    #     except SAXParseException:
-    #         raise NotAcceptable()
-    #
-    #     req = update_requirement(requirement_id, data)
-    #     if isinstance(req, Requirement):
-    #         req.to_rdf(self.graph, base_url, attributes)
-    #         return self.create_response(self.graph)
-    #     else:
-    #         return make_response(req.description, req.code)
-
-    # def delete(self, provider_id, resource_id):
-    #     rq = CsvRequirementRepository('specs')
-    #     r = rq.find(requirement_id)
-    #
-    #     if r:
-    #         req = delete_requirement(requirement_id)
-    #         if req:
-    #             response = make_response('Resource deleted.', 200)
-    #             # response.headers['Accept'] = 'application/rdf+xml'
-    #             # response.headers['Content-Type'] = 'application/rdf+xml'
-    #             # response.headers['OSLC-Core-Version'] = "2.0"
-    #             return response
-    #         else:
-    #             return make_response(req.description, req.code)
-    #     else:
-    #         return make_response('The resource was not found.', 404)

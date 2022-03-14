@@ -12,6 +12,7 @@ from pyoslc_server import request
 from .views import OSLCResourceView
 from .wrappers import Response
 
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 

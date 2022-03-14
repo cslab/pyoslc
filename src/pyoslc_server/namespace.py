@@ -14,6 +14,8 @@ class Namespace(object):
         self.adapters = set()
         self.authorizations = authorizations
 
+        self.api.app.logger.debug("Initializing Provider <title: {title}>".format(title=self.title))
+
     @property
     def path(self):
         return (self._path or ("/" + self.title)).rstrip("/")

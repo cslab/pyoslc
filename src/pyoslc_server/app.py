@@ -33,25 +33,14 @@ class OSLCAPP:
         # self.rdf_type = {}
         # self.oslc_domain = {}
         self.url_map = Map()
-        self.rdf_format = self.DEFAULT_FORMAT
+        # self.rdf_format = self.DEFAULT_FORMAT
         self.accept = self.DEFAULT_FORMAT
-        self._debug = True
+        self.debug = True
 
         self.logger = create_logger(self)
 
         self.logger.debug('Initializing OSLC APP: <name: {name}> <prefix: {prefix}>'.format(name=name, prefix=prefix))
         self.api = API(self, '/services')
-
-    @property
-    def debug(self):
-        return self._debug
-
-    @debug.setter
-    def debug(self, value):
-        self._debug = value
-
-    def logger(self):
-        return create_logger(self)
 
     def test_client(self, use_cookies=True, **kwargs):
         from .testing import OSLCAPPClient

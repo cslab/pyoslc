@@ -1,9 +1,10 @@
 import hashlib
 import logging
-import re
 import six
 
 from datetime import date
+
+from pyoslc_server.helpers import camel_to_dash
 
 if six.PY3:
     from urllib.parse import urlparse
@@ -74,6 +75,7 @@ class AbstractResource(object):
         return base_url + "/" + identifier
 
     def update(self, data, attributes):
+        logger.debug("<data: {}> <attributes: {}>".format(data, attributes))
         assert attributes is not None, 'The mapping for attributes is required'
         if isinstance(data, object):
             data = data.__dict__ if hasattr(data, '__dict__') else data
@@ -116,7 +118,7 @@ class AbstractResource(object):
                 g.add((bn, uri, Literal(v)))
 
         for ns in g.namespace_manager.namespaces():
-            # logger.debug("namepace: {} {}".format(ns[1], str(ns[0])))
+            logger.debug("namepace: {} {}".format(ns[1], str(ns[0])))
             attributes.namespaces[ns[1]] = str(ns[0])
 
     def to_rdf_base(self, graph, base_url=None, oslc_types=None, attributes=None):
@@ -228,7 +230,7 @@ class BaseResource(AbstractResource):
         self.__short_title = short_title if short_title is not None else ''
         self.__title = title if title is not None else ''
         self.__contributor = contributor if contributor is not None else set()
-        self.__creator = creator if creator is not None else set()
+        self.__creator = creator if creator is not None else ''
         self.__subject = subject if subject is not None else set()
         self.__created = created if created is not None else None
         self.__modified = modified if modified is not None else None
@@ -367,7 +369,6 @@ class BaseResource(AbstractResource):
             reviewed = list()
 
             # for k, v in six.iteritems(attributes.namespaces):
-            pattern = re.compile(r'(?<!^)(?=[A-Z])')
 
             for p, o in g.predicate_objects(r):
 
@@ -381,7 +382,7 @@ class BaseResource(AbstractResource):
                 x = url.split(c)[-1]
                 attributes.mapping[x] = URIRef(p)
                 reviewed.append(x)
-                attribute_name = pattern.sub('_', x).lower()
+                attribute_name = camel_to_dash(x)
                 if hasattr(self, attribute_name):
                     attribute_value = getattr(self, attribute_name)
                     if isinstance(attribute_value, set):
@@ -1349,7 +1350,7 @@ class ResponseInfo(FilteredResource):
     def next_page(self, next_page):
         self.__next_page = next_page
 
-    def to_rdf(self, graph, base_url=None, oslc_types=None, attributes=None):
+    def to_rdf(self, graph, base_url=None, oslc_types=None, attributes=None, criteria=None):
         super(ResponseInfo, self).to_rdf(graph)
 
         uri = self.about
@@ -1365,11 +1366,14 @@ class ResponseInfo(FilteredResource):
 
                 member.add(RDFS.member, r)
 
-                # for key in attributes.mapping:
-                #     attr = attributes.mapping.get(key)
-                #     val = getattr(item, key)
-                #     if val:
-                #         r.add(attr, Literal(val))
+                # where and select clauses validation
+                if criteria.properties:
+                    for key in attributes.mapping:
+                        attr = attributes.mapping.get(key)
+                        if str(attr) in [prop.prop for prop in criteria.properties]:
+                            val = getattr(item, key)
+                            if val:
+                                r.add(attr, Literal(val))
 
         if self.total_count > len(self.members):
             rx = Resource(graph, URIRef(self.current_page))
@@ -1572,48 +1576,3 @@ class Error(AbstractResource):
             error.add(OSLC.message, Literal(self.message, datatype=XSD.string))
 
         return error
-
-
-"""
-class ResourceShape(BaseResource):
-    def __init__(self, about, types, properties,
-                 describes, title):
-        BaseResource.__init__(self, about, types, properties)
-
-        self.__describes = describes if describes is not None else OrderedDict()
-        self.__properties = properties if properties is not None else OrderedDict()
-        self.__title = title if title is not None else None
-
-    @property
-    def describes(self):
-        return self.__describes
-
-    @describes.setter
-    def describes(self, describes):
-        self.__describes = describes
-
-    def add_describe(self, describe):
-        if describe:
-            self.__describes.append(describe)
-
-    @property
-    def properties(self):
-        return self.__properties
-
-    @properties.setter
-    def properties(self, properties):
-        self.__properties = properties
-
-    def add_propertie(self, propertie):
-        if propertie:
-            self.__properties.append(propertie)
-
-    @property
-    def title(self):
-        return self.__title
-
-    @title.setter
-    def title(self, title):
-        self.__title = title
-
-"""

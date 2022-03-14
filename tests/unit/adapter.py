@@ -8,7 +8,6 @@ class BaseAdapter(ServiceResourceAdapter):
         super(BaseAdapter, self).__init__(
             identifier='AdapterTest',
             title='RM Test Service',
-            mapping=None,
             **kwargs
         )
 

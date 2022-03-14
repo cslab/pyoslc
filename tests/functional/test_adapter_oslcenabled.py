@@ -289,7 +289,7 @@ def test_query_capability_select(pyoslc_enabled):
     assert (ri, RDFS.member, None) in g, 'The response does not contain a member'
 
     members = [m for m in g.objects(ri, RDFS.member)]
-    assert members is not None, 'The ResponseInfo should have members'
+    assert members, 'The ResponseInfo should have members'
     assert len(members) > 0, 'The members should contain at least one element'
 
     for member in members:

@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import logging
 import pytest
 
@@ -10,7 +12,7 @@ from tests.unit.adapter import RMAdapter, BaseAdapter
 
 
 logging.basicConfig(level=logging.DEBUG)
-logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope='session')
@@ -22,10 +24,10 @@ def client_oslc():
             yield client  # this is where the testing happens!
 
 
-@pytest.fixture
-def pyoslc(client_oslc):
-    logger.debug("Initializing OSLC Client")
-    return PyOSLC(client_oslc)
+# @pytest.fixture
+# def pyoslc(client_oslc):
+#     logger.debug("Initializing OSLC Client")
+#     return PyOSLC(client_oslc)
 
 
 @pytest.fixture
@@ -40,9 +42,9 @@ def base_adapter():
 
 @pytest.fixture
 def rm_adapter():
-    return RequirementAdapter(identifier='rmtest', title='RM Test', mapping=None)
+    return RequirementAdapter(identifier='rmtest', title='RM Test')
 
 
 @pytest.fixture
 def tc_adapter():
-    return TestCaseAdapter(identifier='tctest', title='QM Test', mapping=None)
+    return TestCaseAdapter(identifier='tctest', title='QM Test')

@@ -64,7 +64,7 @@ class RequirementAdapter(ServiceResourceAdapter):
             result.append(data)
 
         return result
-    
+
     def convert_data(self, item):
         return {
             "http://purl.org/dc/terms/identifier": item.identifier,
@@ -78,5 +78,5 @@ class TestCaseAdapter(ServiceResourceAdapter):
     domain = OSLC_QM
 
     def __init__(self, identifier, title, mapping=None, **kwargs):
-        super(TestCaseAdapter, self).__init__(identifier, title, mapping=None, **kwargs)
+        super(TestCaseAdapter, self).__init__(identifier, title, **kwargs)
         self.types = [OSLC_QM.TestCase]

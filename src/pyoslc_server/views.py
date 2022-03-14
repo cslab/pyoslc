@@ -7,7 +7,8 @@ from werkzeug.wrappers import Response
 from .globals import request
 from .utils import unpack
 
-log = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 def with_metaclass(meta, *bases):

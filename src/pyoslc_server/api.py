@@ -22,7 +22,7 @@ class API(object):
     def __init__(self, app=None, authorizations=None, prefix="/services", **kwargs):
         self.app = app
         self.namespaces = []
-        self.ns_paths = dict()
+        self.ns_paths = {}
         self.prefix = prefix
         self.endpoints = set()
         self.default_mediatype = 'text/turtle'
@@ -30,7 +30,7 @@ class API(object):
         self.authorizations = authorizations
         self.representations = OrderedDict(DEFAULT_REPRESENTATIONS)
 
-        app.logger.debug(
+        self.app.logger.debug(
             'Initializing OSLC API: <name: {name}> <prefix: {prefix}>'.format(name=app.name, prefix=self.prefix)
         )
 
@@ -56,13 +56,6 @@ class API(object):
             self._register_view(self.app, resource, namespace, *urls, **kwargs)
 
         return endpoint
-
-    def register_adapter(self, namespace, adapter, *urls, **kwargs):
-        endpoint = kwargs.pop("endpoint", None)
-        endpoint = str(endpoint or self.default_endpoint(adapter.__class__, namespace))
-        # if self.app is not None:
-        #     self._register_oslc_adapter(self.app, resource, namespace, *urls, **kwargs)
-        return True
 
     def _register_view(self, app, resource, namespace, *urls, **kwargs):
         endpoint = kwargs.pop("endpoint", None) or camel_to_dash(resource.__name__)
@@ -104,19 +97,6 @@ class API(object):
                 return resp
             data, code, headers = unpack(resp)
             return self.make_response(data, code, headers=headers)
-
-        return wrapper
-
-    def output_provider(self, resource):
-
-        @wraps(resource)
-        def wrapper(oslc_method, *args, **kwargs):
-            resp = resource(oslc_method, *args, **kwargs)
-            return resp
-            # if isinstance(resp, BaseResponse):
-            #     return resp
-            # data, code, headers = unpack(resp)
-            # return self.make_response(data, code, headers=headers)
 
         return wrapper
 
@@ -163,7 +143,7 @@ class API(object):
 
     def _add_namespace(self, ns, path=None):
         if ns not in self.namespaces:
-            self.app.logger.debug("Adding namespace: <{namespace}>".format(namespace=ns.title))
+            self.app.logger.debug("Adding provider: <{namespace}>".format(namespace=ns.title))
             self.namespaces.append(ns)
             if path is not None:
                 self.ns_paths[ns] = path
