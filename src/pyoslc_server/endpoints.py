@@ -152,9 +152,11 @@ class ResourceListOperation(OSLCResource):
 
             result = list()
             for item in data:
+                print(item)
                 br = BaseResource()
                 # use the mapping generated before to call the qc
-                br.update(item, adapter)
+                br.update(item, adapter, base_url)
+                br.about = br.get_absolute_url(base_url=base_url, identifier=br.identifier)
                 for t in adapter.types:
                     br.types.append(t)
                 result.append(br)

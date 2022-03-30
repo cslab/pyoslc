@@ -74,11 +74,18 @@ class AbstractResource(object):
     def get_absolute_url(base_url, identifier):
         return base_url + "/" + identifier
 
-    def update(self, data, attributes):
+    def update(self, data, attributes, base_url=None):
         logger.debug("<data: {}> <attributes: {}>".format(data, attributes))
         assert attributes is not None, 'The mapping for attributes is required'
         if isinstance(data, object):
             data = data.__dict__ if hasattr(data, '__dict__') else data
+
+        try:
+            import builtins
+        except ImportError:
+            import __builtin__ as builtins
+
+        type_custom = list(filter(lambda x: not x.startswith('_'), dir(builtins)))
 
         g = Graph()
         bn = BNode()
@@ -101,7 +108,7 @@ class AbstractResource(object):
                 else:
                     c = "/"
 
-                x = url.split(c)[-1]
+                x = camel_to_dash(url.split(c)[-1])
                 attributes.mapping[x] = URIRef(k)
 
                 if hasattr(self, x):
@@ -110,7 +117,22 @@ class AbstractResource(object):
                         attribute_value.clear()
                         attribute_value.add(v)
                     else:
-                        setattr(self, x, v)
+                        logger.debug("type<{}>".format(type(v).__name__))
+                        if type(v).__name__ in type_custom:
+                            if isinstance(v, dict):
+                                obj = BaseResource()
+                                obj.update(v, attributes=attributes)
+                                obj.about = obj.get_absolute_url(base_url=base_url.replace(attributes.identifier, x),
+                                                                 identifier=obj.identifier)
+                                setattr(self, x, obj)
+                            else:
+                                setattr(self, x, v)
+                        else:
+                            obj = BaseResource()
+                            obj.update(v, attributes=attributes)
+                            obj.about = obj.get_absolute_url(base_url=base_url.replace(attributes.identifier, x),
+                                                             identifier=obj.identifier)
+                            setattr(self, x, obj)
                 else:
                     setattr(self, x, v)
 
@@ -118,7 +140,7 @@ class AbstractResource(object):
                 g.add((bn, uri, Literal(v)))
 
         for ns in g.namespace_manager.namespaces():
-            logger.debug("namepace: {} {}".format(ns[1], str(ns[0])))
+            # logger.debug("namepace: {} {}".format(ns[1], str(ns[0])))
             attributes.namespaces[ns[1]] = str(ns[0])
 
     def to_rdf_base(self, graph, base_url=None, oslc_types=None, attributes=None):
@@ -230,7 +252,7 @@ class BaseResource(AbstractResource):
         self.__short_title = short_title if short_title is not None else ''
         self.__title = title if title is not None else ''
         self.__contributor = contributor if contributor is not None else set()
-        self.__creator = creator if creator is not None else ''
+        self.__creator = creator
         self.__subject = subject if subject is not None else set()
         self.__created = created if created is not None else None
         self.__modified = modified if modified is not None else None
@@ -399,22 +421,6 @@ class BaseResource(AbstractResource):
                             setattr(self, attribute_name, o.value)
                         else:
                             setattr(self, attribute_name, o)
-
-            # no_reviewed = [a.split('__')[1].lower() for a in self.__dict__.keys() if
-            #                a.split('__')[1].lower() not in reviewed]
-
-            # for attr in no_reviewed:
-            #     item = {attr: v for k, v in six.iteritems(attributes) if k.lower() == attr.lower()}
-            #     if item:
-            #         for i in g.objects(r, eval(item.get(attr)['oslc_property'])):
-            #             attribute_name = item.get(attr)['attribute']
-            #             if hasattr(self, attribute_name):
-            #                 attribute_value = getattr(self, attribute_name)
-            #                 if isinstance(attribute_value, set):
-            #                     attribute_value.clear()
-            #                     # attribute_value.add(data[key])
-            #                 else:
-            #                     setattr(self, attribute_name, i)
 
 
 class ServiceProviderCatalog(BaseResource):
@@ -1361,18 +1367,31 @@ class ResponseInfo(FilteredResource):
             for item in self.members:
                 item_url = urlparse(uri + '/' + item.identifier)
                 r = Resource(graph, URIRef(item_url.geturl()))
-                # for t in item.types:
-                #     r.add(RDF.type, t)
 
                 member.add(RDFS.member, r)
 
                 # where and select clauses validation
                 if criteria.properties:
+                    props = [prop.prop for prop in criteria.properties]
+                    props.append("http://purl.org/dc/terms/identifier")
                     for key in attributes.mapping:
                         attr = attributes.mapping.get(key)
-                        if str(attr) in [prop.prop for prop in criteria.properties]:
+                        if str(attr) in props:
                             val = getattr(item, key)
-                            if val:
+                            if val and isinstance(val, BaseResource):
+                                r2 = Resource(graph, URIRef(val.about))
+                                # d = Describer(graph, base=val.about)
+                                for ak in val.__dict__.keys():
+                                    ak = ak.split("__")[1] if ak.__contains__("__") else ak
+                                    item = {k: v for k, v in six.iteritems(attributes.mapping) if ak == k}
+                                    if item and ak in item.keys():
+                                        p = item.get(ak)
+                                        a = getattr(val, ak)
+                                        if a:
+                                            print(p)
+                                            r2.add(p, Literal(a))
+                                r.add(attr, r2)
+                            else:
                                 r.add(attr, Literal(val))
 
         if self.total_count > len(self.members):

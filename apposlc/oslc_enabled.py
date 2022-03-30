@@ -1,6 +1,6 @@
 from pyoslc_server import OSLCAPP
 
-from apposlc.adapter import RequirementAdapter, TestCaseAdapter
+from apposlc.adapter import CreatorAdapter, RequirementAdapter, TestCaseAdapter
 
 
 class OSLCEnabled:
@@ -51,6 +51,12 @@ class OSLCEnabled:
                 title='test case',
                 description='test case'),
         )
+
+        self.app.api.add_adapter(CreatorAdapter(
+            identifier='creator',
+            title='Creator Service',
+            description='Service Provider for Creators'
+        ))
 
     def __call__(self, environ, start_response):
         """

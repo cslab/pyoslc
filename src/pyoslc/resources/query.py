@@ -79,7 +79,7 @@ class Criteria:
         matchers = pattern.finditer(val)
 
         for matcher in matchers:
-            values.append(matcher.group(1))
+            values.append(eval(matcher.group(1)))
 
         return values
 
