@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import sys
 
-from six import reraise, text_type
+from six import reraise, text_type, PY3
 from werkzeug.datastructures import Headers
 from werkzeug.exceptions import (
     HTTPException,
@@ -14,7 +14,11 @@ from werkzeug.exceptions import (
 )
 from werkzeug.routing import Map, Rule
 from werkzeug.routing import RoutingException
-from werkzeug.wrappers import BaseResponse
+
+if PY3:
+    from werkzeug.wrappers import Response as BaseResponse
+else:
+    from werkzeug.wrappers import BaseResponse
 
 from .api import API
 from .context import Context, AppContext

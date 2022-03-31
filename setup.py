@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name='PyOSLC',
+    name="PyOSLC",
     install_requires=[
         "python-dotenv == 0.18.0 ; python_version <= '2.7'",
         "python-dotenv > 0.18.0 ; python_version > '2.7'",
@@ -13,7 +13,6 @@ setup(
         "RDFLib == 5.0.0 ; python_version <= '2.7'",
         "RDFLib-JSONLD == 0.6.1 ; python_version <= '2.7'",
         "RDFLib >= 6.0.0 ; python_version > '2.7'",
-        "pytest == 4.6 ; python_version <= '2.7'",
         "itsdangerous == 1.1.0 ; python_version <= '2.7'",
         "jsonschema == 3.2.0 ; python_version <= '2.7'",
         "check-manifest == 0.41 ; python_version <= '2.7'",
@@ -22,8 +21,8 @@ setup(
         "zipp == 1.2.0 ; python_version <= '2.7'",
     ],
     extras_require={
-        'dotenv': ['python-dotenv'],
-        'dev': ['check-manifest'],
-        'test': ['pytest', 'pytest-cov', 'pytest-html'],
+        "dotenv": ["python-dotenv"],
+        "dev": ["check-manifest"],
+        "test": ["pytest", "pytest-cov", "pytest-html"],
     },
 )
