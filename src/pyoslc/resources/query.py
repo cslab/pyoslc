@@ -1,6 +1,10 @@
 import re
+import logging
 
 from pyoslc.resources.ebnf_grammar import TERM, VALUE, PROPERTY, PREFIX_DEF
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 class Property(object):
@@ -75,7 +79,7 @@ class Criteria:
         matchers = pattern.finditer(val)
 
         for matcher in matchers:
-            values.append(matcher.group(1))
+            values.append(eval(matcher.group(1)))
 
         return values
 
@@ -91,9 +95,10 @@ class Criteria:
 
             for matcher in matchers:
                 prop = matcher.group(2)
+                prop = self.qualified_name(prop)
                 if matcher.group(23):
                     local_conditions.append(
-                        Condition(prop=prop, nested_terms=compound_term(matcher.group(23)))
+                        Condition(prop=prop, nested_terms=self.compound_term(matcher.group(23)))
                     )
                 elif matcher.group(19):
                     local_conditions.append(
@@ -118,6 +123,7 @@ class Criteria:
 
             for matcher in matchers:
                 prop = matcher.group(1)
+                prop = self.qualified_name(prop)
                 if matcher.group(6) is None:
                     local_properties.append(Property(prop))
                 else:
@@ -136,7 +142,8 @@ class Criteria:
             matchers = pattern.finditer(parameter)
 
             for matcher in matchers:
-                prfxs.update({matcher.group(3): matcher.group(1)})
+                prfxs.update({matcher.group(1): matcher.group(3)})
+                # logger.debug("[+] PREFIX {}=<{}>".format(matcher.group(1), matcher.group(3)))
 
         self.__prefixes = prfxs
 
@@ -149,6 +156,11 @@ class Criteria:
 
     def select(self, parameter):
         self.properties = self.props(parameter)
+
+    def qualified_name(self, parameter):
+        prefix = parameter.split(':')[0]
+        ns = self.prefixes.get(prefix, 'http://example.com/')
+        return ns + parameter.split(':')[1]
 
 
 if __name__ == "__main__":

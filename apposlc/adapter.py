@@ -1,22 +1,15 @@
+from rdflib import FOAF
 from pyoslc.vocabularies.rm import OSLC_RM
 from pyoslc.vocabularies.qm import OSLC_QM
-from rdflib import DCTERMS
 
 from pyoslc_server.specification import ServiceResourceAdapter
-from .resource import REQSTORE, Requirement
-
-REQ_TO_RDF = {
-    "identifier": DCTERMS.identifier,
-    "title": DCTERMS.title,
-    "description": DCTERMS.description,
-}
+from .resource import CREATORSTORE, REQSTORE, Creator, Requirement
 
 
 class RequirementAdapter(ServiceResourceAdapter):
 
     domain = OSLC_RM
     items = REQSTORE
-    mapping = REQ_TO_RDF
 
     def __init__(self, **kwargs):
         super(RequirementAdapter, self).__init__(**kwargs)
@@ -25,34 +18,46 @@ class RequirementAdapter(ServiceResourceAdapter):
     def set(self, data_items):
         self.items = data_items
 
-    def query_capability(self, paging=False, page_size=50, page_no=1,
-                         prefix=None, where=None, select=None,
-                         *args, **kwargs):
+    def query_capability(
+        self,
+        paging=False,
+        page_size=50,
+        page_no=1,
+        prefix=None,
+        where=None,
+        select=None,
+        *args,
+        **kwargs
+    ):
 
         if paging:
-            offset = ((page_no - 1) * page_size)
-            end = (offset + page_size)
-            result = [vars(item) for item in self.items][offset:end]
+            offset = (page_no - 1) * page_size
+            end = offset + page_size
+            result = self.get_data(where)[offset:end]
         else:
-            result = [vars(item) for item in self.items]
+            result = self.get_data(where)
 
         # This is just an example, the code could be improved
         if select:
             final_result = []
-            sel = [p.prop.split(":")[1] for p in select]
-            sel.append('identifier')
+            sel = self.get_select(select)
+            sel.append("http://purl.org/dc/terms/identifier")
             for r in result:
-                final_result.append({k: v for k, v in r.items() if k in sel})
+                final_result.append(self.select_attribute(r, sel))
         else:
             final_result = result
 
-        return len(self.items), final_result
+        return (
+            len(self.items),
+            final_result,
+        )
 
     def creation_factory(self, item):
         r = Requirement(
-            identifier=item.get('identifier'),
-            title=item.get('title'),
-            description=item.get('description'),
+            identifier=item.get("identifier"),
+            title=item.get("title"),
+            description=item.get("description"),
+            creator=item.get("creator", None),
         )
         self.items.append(r)
         return r
@@ -60,17 +65,123 @@ class RequirementAdapter(ServiceResourceAdapter):
     def get_resource(self, resource_id):
         for item in self.items:
             if item.identifier == resource_id:
-                return item
+                return self.convert_req_data(item)
 
         return None
+
+    def get_data(self, where=None):
+        result = list()
+        for item in self.items:
+            data = self.convert_req_data(item)
+            result.append(data)
+
+        return result
+
+    def convert_req_data(self, item):
+        return {
+            "http://purl.org/dc/terms/identifier": item.identifier,
+            "http://purl.org/dc/terms/description": item.description,
+            "http://purl.org/dc/terms/title": item.title,
+            "http://purl.org/dc/terms/creator": self.convert_creator_data(item.creator)
+            if isinstance(item.creator, Creator)
+            else item.creator,
+        }
+
+    def convert_creator_data(self, item):
+        return {
+            "http://purl.org/dc/terms/identifier": item.identifier,
+            "http://xmlns.com/foaf/0.1/firstName": item.first_name,
+            "http://xmlns.com/foaf/0.1/lastName": item.last_name,
+            "http://xmlns.com/foaf/0.1/birthday": item.birth_day,
+        }
+
+    def get_select(self, select):
+        result = []
+        for p in select:
+            if p.props:
+                result += self.get_select(p.props)
+            else:
+                result.append(p.prop)
+
+        return result
+
+    def select_attribute(self, item, select):
+        result = {}
+        for k, v in item.items():
+            print(k, v)
+
+            if k in select:
+                result[k] = v
+            else:
+                if type(v) is dict:
+                    value = self.select_attribute(v, select)
+                    result[k] = value
+
+        return result
 
 
 class TestCaseAdapter(ServiceResourceAdapter):
     domain = OSLC_QM
 
-    def __init__(self, identifier, title, mapping, **kwargs):
-        super(TestCaseAdapter, self).__init__(identifier, title, mapping, **kwargs)
+    def __init__(self, identifier, title, mapping=None, **kwargs):
+        super(TestCaseAdapter, self).__init__(identifier, title, **kwargs)
         self.types = [OSLC_QM.TestCase]
 
-    def selection_dialog(self):
-        pass
+
+class CreatorAdapter(ServiceResourceAdapter):
+    domain = FOAF
+    items = CREATORSTORE
+
+    def __init__(self, identifier, title, mapping=None, **kwargs):
+        super(CreatorAdapter, self).__init__(identifier, title, **kwargs)
+        self.types = [FOAF.Person]
+
+    def query_capability(
+        self,
+        paging=False,
+        page_size=50,
+        page_no=1,
+        prefix=None,
+        where=None,
+        select=None,
+        *args,
+        **kwargs
+    ):
+
+        if paging:
+            offset = (page_no - 1) * page_size
+            end = offset + page_size
+            result = self.get_data(where)[offset:end]
+        else:
+            result = self.get_data(where)
+
+        # This is just an example, the code could be improved
+        if select:
+            final_result = []
+            sel = self.get_select(select)
+            sel.append("http://purl.org/dc/terms/identifier")
+            for r in result:
+                final_result.append(self.select_attribute(r, sel))
+        else:
+            final_result = result
+
+        return (
+            len(self.items),
+            final_result,
+        )
+
+    def get_data(self, where=None):
+        result = list()
+        for item in self.items:
+            data = self.convert_creator_data(item)
+            result.append(data)
+
+        return result
+
+    def convert_creator_data(self, item):
+        return {
+            "http://purl.org/dc/terms/identifier": item.identifier,
+            "http://xmlns.com/foaf/0.1/firstName": item.first_name,
+            "http://xmlns.com/foaf/0.1/lastName": item.last_name,
+            "http://xmlns.com/foaf/0.1/birthday": item.birth_day,
+        }

@@ -1,8 +1,6 @@
-from rdflib import DCTERMS
-
 from pyoslc_server import OSLCAPP
 
-from apposlc.adapter import RequirementAdapter, TestCaseAdapter, REQ_TO_RDF
+from apposlc.adapter import CreatorAdapter, RequirementAdapter, TestCaseAdapter
 
 
 class OSLCEnabled:
@@ -34,7 +32,6 @@ class OSLCEnabled:
                     identifier=adpt['identifier'],
                     title=adpt['title'],
                     description=adpt["description"],
-                    mapping=REQ_TO_RDF,
                 )
             )
 
@@ -42,8 +39,6 @@ class OSLCEnabled:
             identifier='adapter',
             title='Requirement Adapter',
             description='Requirement Adapter for OSLC',
-            mapping=REQ_TO_RDF
-
         )
 
         self.app.api.add_adapter(
@@ -54,13 +49,14 @@ class OSLCEnabled:
             TestCaseAdapter(
                 identifier='tests',
                 title='test case',
-                mapping={
-                    "identifier": DCTERMS.identifier,
-                    "title": DCTERMS.title,
-                    "description": DCTERMS.description,
-                },
                 description='test case'),
         )
+
+        self.app.api.add_adapter(CreatorAdapter(
+            identifier='creator',
+            title='Creator Service',
+            description='Service Provider for Creators'
+        ))
 
     def __call__(self, environ, start_response):
         """

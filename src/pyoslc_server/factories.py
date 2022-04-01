@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+
+import logging
 import inspect
 
 from six import PY3
@@ -9,6 +12,10 @@ else:
     from urlparse import urlparse
 
 from pyoslc.resources.models import ServiceProvider, Service, QueryCapability, CreationFactory, Dialog
+
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 class ContactServiceProviderFactory(object):
@@ -51,6 +58,7 @@ class ServiceProviderFactory(object):
         services = dict()
 
         for class_ in resource_classes:
+            logger.debug("Initializing: <{} - {}>".format(class_.identifier, class_.__class__.__name__))
             if class_.methods:
 
                 service = services.get(class_.__class__.__name__)
@@ -85,59 +93,60 @@ class ServiceProviderFactory(object):
     @classmethod
     def handle_resource_class(cls, base_uri, klass, service, parameters, path):
 
-        for item in inspect.classify_class_attrs(klass.__class__):
-            if item.kind.__contains__('method') and item.defining_class == klass.__class__ and item.name != '__init__':
+        items = [item for item in inspect.classify_class_attrs(klass.__class__) if item.kind.__contains__(
+            'method') and item.name != '__init__' and item.defining_class == klass.__class__]
+        for item in items:
+            logger.debug("Configuring: <{}>".format(item.name))
+            if item.name == 'query_capability':
+                resource_attributes = {
+                    'title': 'Query Capability',
+                    'label': 'Query Capability',
+                    'resource_shape': 'resourceShapes/requirement',
+                    'resource_type': klass.types,
+                    'usages': []
+                }
+                query_capability = cls.create_query_capability(base_uri, path, resource_attributes, parameters)
+                service.add_query_capability(query_capability)
+                # resource_shape = query_capability.resource_shape
 
-                if item.name == 'query_capability':
-                    resource_attributes = {
-                        'title': 'Query Capability',
-                        'label': 'Query Capability',
-                        'resource_shape': 'resourceShapes/requirement',
-                        'resource_type': klass.types,
-                        'usages': []
-                    }
-                    query_capability = cls.create_query_capability(base_uri, path, resource_attributes, parameters)
-                    service.add_query_capability(query_capability)
-                    # resource_shape = query_capability.resource_shape
+            if item.name == 'creation_factory':
+                resource_attributes = {
+                    'title': 'Creation Factory',
+                    'label': 'Creation Factory',
+                    'resource_shape': ['resourceShapes/requirement'],
+                    'resource_type': klass.types,
+                    'usages': []
+                }
+                creation_factory = cls.create_creation_factory(base_uri, resource_attributes, parameters)
+                service.add_creation_factory(creation_factory)
+                # resource_shape = creation_factory.resource_shape
 
-                if item.name == 'creation_factory':
-                    resource_attributes = {
-                        'title': 'Creation Factory',
-                        'label': 'Creation Factory',
-                        'resource_shape': ['resourceShapes/requirement'],
-                        'resource_type': klass.types,
-                        'usages': []
-                    }
-                    creation_factory = cls.create_creation_factory(base_uri, resource_attributes, parameters)
-                    service.add_creation_factory(creation_factory)
-                    # resource_shape = creation_factory.resource_shape
+            if item.name == 'selection_dialog':
+                resource_attributes = {
+                    'title': 'Selection Dialog',
+                    'label': 'Selection Dialog Service',
+                    'uri': '{}/selector'.format(path),
+                    'hint_width': '525px',
+                    'hint_height': '325px',
+                    'resource_type': klass.types,
+                    'usages': ['http://open-services.net/ns/am#PyOSLCSelectionDialog']
+                }
+                dialog = cls.create_selection_dialog(base_uri, resource_attributes, parameters)
+                service.add_selection_dialog(dialog)
 
-                if item.name == 'selection_dialog':
-                    resource_attributes = {
-                        'title': 'Selection Dialog',
-                        'label': 'Selection Dialog Service',
-                        'uri': '{}/selector'.format(path),
-                        'hint_width': '525px',
-                        'hint_height': '325px',
-                        'resource_type': klass.types,
-                        'usages': ['http://open-services.net/ns/am#PyOSLCSelectionDialog']
-                    }
-                    dialog = cls.create_selection_dialog(base_uri, resource_attributes, parameters)
-                    service.add_selection_dialog(dialog)
-
-                if item.name == 'creation_dialog':
-                    resource_attributes = {
-                        'title': 'Creation Dialog',
-                        'label': 'Creation Dialog service',
-                        'uri': 'provider/{id}/resources/creator',
-                        'hint_width': '525px',
-                        'hint_height': '325px',
-                        'resource_shape': 'resourceShapes/eventType',
-                        'resource_type': klass.types,
-                        'usages': ['http://open-services.net/ns/am#PyOSLCCreationDialog']
-                    }
-                    dialog = cls.create_creation_dialog(base_uri, resource_attributes, parameters)
-                    service.add_creation_dialog(dialog)
+            if item.name == 'creation_dialog':
+                resource_attributes = {
+                    'title': 'Creation Dialog',
+                    'label': 'Creation Dialog service',
+                    'uri': 'provider/{id}/resources/creator',
+                    'hint_width': '525px',
+                    'hint_height': '325px',
+                    'resource_shape': 'resourceShapes/eventType',
+                    'resource_type': klass.types,
+                    'usages': ['http://open-services.net/ns/am#PyOSLCCreationDialog']
+                }
+                dialog = cls.create_creation_dialog(base_uri, resource_attributes, parameters)
+                service.add_creation_dialog(dialog)
 
         return True
 

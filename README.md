@@ -8,13 +8,13 @@ the interoperability of heterogeneous products and services.
 
 ## Getting Started
 
-The new version of `PyOSLC SDK` which is under development has two ways to deploy
-OSLC API:
+The new version of `PyOSLC SDK` which is under development, has two ways to deploy
+an OSLC API:
 
-- *Pluggable API*: The OSLC API will be added to an existent Web API such as a CE Application.
-- *Standalone API*: The OSLC API will be implemented and should be executed isolated.
+- *Pluggable API*: The OSLC API will be added to an existent Web API such as a CE Application or whichever REST API.
+- *Standalone API*: The OSLC API will be implemented and should be executed isolated, this means that a web app or REST API will be created and deployed independently using the PyOSLC library to manage the OSLC resources.
 
-### Working with PyOSLC
+## Working with PyOSLC
 
 There are two ways to install the `PyOSLC SDK` to use it in your projects, the first one
 is to download the code and install it in your local project, or the second one, to use
@@ -22,7 +22,7 @@ is to download the code and install it in your local project, or the second one,
 
 Let's create an example using the second approach.
 
-#### Creating a virtual environment
+### Creating a virtual environment
 
 To start using the `PyOSLC SDK` framework it should be installed, and it is
 recommended to use a virtual environment for working with it.
@@ -50,7 +50,7 @@ $ source myenv/bin/activate
 (myenv) $
 ```
 
-#### Installing PyOSLC
+### Installing PyOSLC
 
 Once the virtual environment has been created it is time to install the framework 
 to start working in the development of the API
@@ -59,7 +59,7 @@ to start working in the development of the API
 (myenv) $ pip install git+https://github.com/cslab/pyoslc.git@develop
 ```
 
-** Note: Keep your eyes in the `develop` tag of the installation
+** Note: Keep your eyes in the `develop` tag of the url in the installation command
 
 This command will download the `develop` branch of `PyOSLC SDK` from `GitHub` 
 repository and will build and install it in the current virtual environment
@@ -69,7 +69,7 @@ through the command line.
 ** Note: This is required so far since the `PyOSLC SDK` is not delivered on PyPI
 
 
-#### Creating a PyOSLC Application as Standalone API
+### Creating a PyOSLC Application as Standalone API
 
 Create a file in which the `OSLCAPP` should be instantiated, the file should be named
 `wsgi.py` or `app.py` that will represent the executable that will be used for the 
@@ -124,10 +124,10 @@ You will see a message like this:
 ```
 
 This is fine, this means that the OSLC API is working since the response is in RDF,
-but it does not have yet an Adapter or ServiceProvider to work with, that is because 
+but it does not have yet an `Adapter` or `ServiceProvider` to work with, that is because 
 it just returning the title and description for the Service Provider Catalog.
 
-#### Configuring the Environment variables
+### Configuring the Environment variables
 
 Before the execution of the OSLC API, it is necessary to define some environment variables
 that will specify which application should be executed and some other parameters for the
@@ -162,13 +162,13 @@ PYOSLC_DEBUG=True
 
 Once the parameters have been configured it is time to continue developing the application
 
-#### Adding an Adapter to the PyOSLC Application
+### Adding an Adapter to the PyOSLC Application
 
 PyOSLC deploys the web server and the services for implementing the OSLC API
 components, it is required now to plug the `Adapter` that will operate with the
 `Resource` from the datasource.
 
-##### Defining the Resource Type
+#### Defining the Resource Type
 
 The goal of the `Adapter` is to operate between the OSLC API and the datasource,
 this means that the `Adapter` will operate with `resources` that could be Requirements,
@@ -184,19 +184,22 @@ This module should define the resource type through a class to be used when exch
 information:
 
 ```python
+# -*- coding: utf-8 -*-
+
 class Requirement(object):
 
-    def __init__(self, identifier, title, description):
+    def __init__(self, identifier, title, description, creator):
         self.identifier = identifier
         self.title = title
         self.description = description
+        self.creator = creator
 
 REQSTORE = [
-    Requirement("1", "Provide WSGI implementation", "..."),
-    Requirement("2", "Capability to add resources", "..."),
-    Requirement("3", "Capability to paging", "..."),
-    Requirement("4", "Capability to select page", "..."),
-    Requirement("5", "Capability to specify page size", "..."),
+    Requirement("1", "Provide WSGI implementation", "...", "Yi"),
+    Requirement("2", "Capability to add resources", "...", "Jörg"),
+    Requirement("3", "Capability to manage paging", "...", "Christian"),
+    Requirement("4", "Capability to use select properties", "...", "Arne"),
+    Requirement("5", "Capability to specify page size", "...", "Torben"),
     # and so on ...
 ]
 ```
@@ -204,6 +207,8 @@ REQSTORE = [
 For the purpose of the demo, an in-memory list of requirements have been created
 and will be used in the adapter to demonstrate how to retrieve information from
 a datasource.
+
+#### Defining the Adapter
 
 Once the `Resource` class has been created, it is time to implement the `Adapter`
 by adding a new python module.
@@ -222,16 +227,9 @@ from pyoslc.vocabularies.rm import OSLC_RM
 from rdflib import DCTERMS
 from resource import REQSTORE
 
-REQ_TO_RDF = {
-    "identifier": DCTERMS.identifier,
-    "title": DCTERMS.title,
-    "description": DCTERMS.description,
-}
-
 class RequirementAdapter(ServiceResourceAdapter):
     
     domain = OSLC_RM
-    mapping = REQ_TO_RDF
     items = REQSTORE
     
     def __init__(self, **kwargs):
@@ -241,25 +239,45 @@ class RequirementAdapter(ServiceResourceAdapter):
     def query_capability(self, paging=False, page_size=50, page_no=1,
                          prefix=None, where=None, select=None,
                          *args, **kwargs):
-        return len(self.items), [vars(item) for item in self.items]
+        return len(self.items), [self.convert_data(item) for item in self.items]
+    
+    def convert_data(self, item):
+        return {
+            "http://purl.org/dc/terms/identifier": item.identifier,
+            "http://purl.org/dc/terms/description": item.description,
+            "http://purl.org/dc/terms/title": item.title,
+            "http://purl.org/dc/terms/creator": item.creator,
+        }
 ```
 
 This class it is importing some modules and classes from the RDFLib and
 from the vocabularies defined for the OSLC specification.
 
-For `RequimentAdapter` class a `mapping` was defined as `REQ_TO_RDF` which
-defines the attributes of the `Requirement` resource with the `RDF` attribute,
-this mapping will help in the serialization process.
-
-The OSLC resource type is also assigned in the initialization of the adapter in
-the `self.types` property.
+The OSLC resource type is assigned in the initialization of the adapter in
+the `self.types` property, for the demo purpose it will be `Requirement` from
+the `RM` specification.
 
 A domain also was assigned to the class to be managed in the process of generating the
 ServiceProvider
 
-And finally the `query_capability` method is implemented and defines some parameters
+And finally the `query_capability` method is implemented and defines some parameters,
 these parameters will be sent by the OSLC APP to the adapter to use them for the
 query operation.
+
+##### Attributes Mapping
+
+Keep your eyes in the `convert_data` method within the `RequirementAdapter` class,
+since this method is converting the python object into a dictionary but most important
+the attribute id is an IRI of the OSLC attribute.
+
+On previous version of the SDK a dictionary was used to define the mapping of the 
+OSLC attributes with the python object attribute.
+
+This version delegate the responsability of this to the implementer by using the OSLC IRI
+of the attribute as the name of the attribute.
+
+
+### Attaching an Adapter to the PyOSLC Application
 
 Finally, let's configure the initial OSLC APP on the `wsgi.py` file to attach the
 adapter and to be able to see the Service Provider working.
@@ -272,7 +290,7 @@ Update the module with this content:
 
 ```python
 from pyoslc_server import OSLCAPP
-from adapter import RequirementAdapter, REQ_TO_RDF
+from adapter import RequirementAdapter
 
 app = OSLCAPP()
 
@@ -280,7 +298,6 @@ requirement_adapter = RequirementAdapter(
     identifier='adapter',
     title='Requirement Adapter',
     description='Requirement Adapter for OSLC',
-    mapping=REQ_TO_RDF
 )
 
 app.api.add_adapter(requirement_adapter)
@@ -387,15 +404,13 @@ Response:
   xmlns:dcterms="http://purl.org/dc/terms/"
   xmlns:oslc="http://open-services.net/ns/core#"
   xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
-  <oslc:ResponseInfo rdf:about="http://127.0.0.1:5000/oslc/services/provider/adapter/resources">
+  <oslc:Description rdf:about="http://127.0.0.1:5000/oslc/services/provider/adapter/resources">
     <rdfs:member rdf:resource="http://127.0.0.1:5000/oslc/services/provider/adapter/resources/5"/>
     <rdfs:member rdf:resource="http://127.0.0.1:5000/oslc/services/provider/adapter/resources/4"/>
     <rdfs:member rdf:resource="http://127.0.0.1:5000/oslc/services/provider/adapter/resources/3"/>
     <rdfs:member rdf:resource="http://127.0.0.1:5000/oslc/services/provider/adapter/resources/2"/>
-    <dcterms:title rdf:parseType="Literal">Query Results for Requirements</dcterms:title>
     <rdfs:member rdf:resource="http://127.0.0.1:5000/oslc/services/provider/adapter/resources/1"/>
-    <oslc:totalCount rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">5</oslc:totalCount>
-  </oslc:ResponseInfo>
+  </oslc:Description>
 </rdf:RDF>
 ```
 
@@ -454,6 +469,20 @@ Response:
     <oslc:nextPage rdf:resource="http://127.0.0.1:5000/oslc/services/provider/adapter/resources?oslc.pageNo=3&amp;oslc.pageSize=2&amp;oslc.paging=true"/>
   </oslc:ResponseInfo>
 </rdf:RDF>
+```
+
+#### Requesting resources using where
+
+
+It is also possible to get specific resources by using the `oslc.where`
+in the query.
+
+```bash
+(myenv) $ curl http://127.0.0.1:5000/oslc/services/provider/adapter/resources?oslc.paging=true \
+&oslc.pageSize=2 \
+&oslc.pageNo=2 \
+&oslc.where=dcterms:identifier=5\
+-H accept:"application/rdf+xml"
 ```
 
 ### Creating a PyOSLC Application as a Pluggable API

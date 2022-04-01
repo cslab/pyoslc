@@ -4,12 +4,14 @@ import six
 
 from datetime import date
 
+from pyoslc_server.helpers import camel_to_dash
+
 if six.PY3:
     from urllib.parse import urlparse
 else:
     from urlparse import urlparse
 
-from rdflib import URIRef, Literal, RDF, XSD, BNode
+from rdflib import Graph, URIRef, Literal, RDF, XSD, BNode
 from rdflib.extras.describer import Describer
 from rdflib.namespace import DCTERMS, RDFS, ClosedNamespace
 from rdflib.resource import Resource
@@ -20,7 +22,7 @@ from pyoslc.vocabularies.jfs import JFS
 
 logger = logging.getLogger(__name__)
 
-default_uri = 'http://examples.com/'
+default_uri = "http://examples.com/"
 
 
 class AbstractResource(object):
@@ -72,13 +74,24 @@ class AbstractResource(object):
     def get_absolute_url(base_url, identifier):
         return base_url + "/" + identifier
 
-    def update(self, data, attributes):
-        assert attributes is not None, 'The mapping for attributes is required'
+    def update(self, data, attributes, base_url=None):
+        # logger.debug("<data: {}> <attributes: {}>".format(data, attributes))
+        assert attributes is not None, "The mapping for attributes is required"
         if isinstance(data, object):
-            data = data.__dict__ if hasattr(data, '__dict__') else data
+            data = data.__dict__ if hasattr(data, "__dict__") else data
 
+        try:
+            import builtins
+        except ImportError:
+            import __builtin__ as builtins
+
+        type_custom = list(filter(lambda x: not x.startswith("_"), dir(builtins)))
+
+        g = Graph()
+        bn = BNode()
         for k, v in data.items():
-            if k in attributes:
+            # logger.debug("Updating <{}: {}>".format(k, v))
+            if k in attributes.namespaces:
                 if hasattr(self, k):
                     attribute_value = getattr(self, k)
                     if isinstance(attribute_value, set):
@@ -88,19 +101,64 @@ class AbstractResource(object):
                         setattr(self, k, v)
                 else:
                     setattr(self, k, v)
+            else:
+                url = urlparse(k).path
+                if url.__contains__("#"):
+                    c = "#"
+                else:
+                    c = "/"
+
+                x = camel_to_dash(url.split(c)[-1])
+                attributes.mapping[x] = URIRef(k)
+
+                if hasattr(self, x):
+                    attribute_value = getattr(self, x)
+                    if isinstance(attribute_value, set):
+                        attribute_value.clear()
+                        attribute_value.add(v)
+                    else:
+                        # logger.debug("type<{}>".format(type(v).__name__))
+                        if type(v).__name__ in type_custom:
+                            if isinstance(v, dict):
+                                obj = BaseResource()
+                                obj.update(v, attributes=attributes)
+                                obj.about = obj.get_absolute_url(
+                                    base_url=base_url.replace(attributes.identifier, x),
+                                    identifier=obj.identifier,
+                                )
+                                setattr(self, x, obj)
+                            else:
+                                setattr(self, x, v)
+                        else:
+                            obj = BaseResource()
+                            obj.update(v, attributes=attributes)
+                            obj.about = obj.get_absolute_url(
+                                base_url=base_url.replace(attributes.identifier, x),
+                                identifier=obj.identifier,
+                            )
+                            setattr(self, x, obj)
+                else:
+                    setattr(self, x, v)
+
+                uri = URIRef(k)
+                g.add((bn, uri, Literal(v)))
+
+        for ns in g.namespace_manager.namespaces():
+            # logger.debug("namepace: {} {}".format(ns[1], str(ns[0])))
+            attributes.namespaces[ns[1]] = str(ns[0])
 
     def to_rdf_base(self, graph, base_url=None, oslc_types=None, attributes=None):
-        assert attributes is not None, 'The mapping for attributes is required'
+        assert attributes is not None, "The mapping for attributes is required"
 
         # graph.bind('oslc_rm', OSLC_RM)
-        graph.bind('oslc', OSLC)
-        graph.bind('dcterms', DCTERMS)
+        graph.bind("oslc", OSLC)
+        graph.bind("dcterms", DCTERMS)
 
         d = Describer(graph, base=base_url)
-        identifier = getattr(self, 'identifier')
+        identifier = getattr(self, "identifier")
         if isinstance(identifier, Literal):
             identifier = identifier.value
-        if identifier not in base_url.split('/'):
+        if identifier not in base_url.split("/"):
             base_url = self.get_absolute_url(base_url, identifier)
 
         d.about(base_url)
@@ -109,10 +167,15 @@ class AbstractResource(object):
                 d.rdftype(t)
 
         for attribute_key in self.__dict__.keys():
-            item = {k: v for k, v in six.iteritems(attributes) if attribute_key.split('__')[1] == k}
+            # logger.debug("Attribute: <{}>".format(attribute_key))
+            item = {
+                k: v
+                for k, v in six.iteritems(attributes.mapping)
+                if attribute_key.split("__")[1] == k
+            }
 
-            if item and attribute_key.split('__')[1] in item.keys():
-                predicate = item.get(attribute_key.split('__')[1])
+            if item and attribute_key.split("__")[1] in item.keys():
+                predicate = item.get(attribute_key.split("__")[1])
                 attr = getattr(self, attribute_key)
                 if isinstance(attr, set):
                     if len(attr) > 0:
@@ -135,7 +198,7 @@ class AbstractResource(object):
         return graph
 
     def to_rdf(self, graph):
-        logger.debug('Generating RDF for {}'.format(self.__class__.__name__))
+        logger.debug("Generating RDF for {}".format(self.__class__.__name__))
 
         if not self.about:
             raise Exception("The about property is missing")
@@ -150,14 +213,14 @@ class AbstractResource(object):
         return result
 
     def digestion(self):
-        state = ''   # str(self.__about)
+        state = ""  # str(self.__about)
         for attr in self.__dict__.keys():
             value = getattr(self, attr)
             if value:
                 if isinstance(value, set):
                     if len(value) > 0:
                         for v in value:
-                            if v != '':
+                            if v != "":
                                 state += v
                 elif isinstance(value, dict):
                     for k in value:
@@ -174,36 +237,51 @@ class AbstractResource(object):
         if six.PY2:
             dig.update(state)
         if six.PY3:
-            sb = bytes(state, 'utf-8')
+            sb = bytes(state, "utf-8")
             dig.update(sb)
 
         return str(dig.hexdigest())
 
 
 class BaseResource(AbstractResource):
-
-    def __init__(self, about=None, types=None, properties=None, description=None,
-                 identifier=None, short_title=None, title=None, contributor=None,
-                 creator=None, subject=None, created=None, modified=None,
-                 discussed_by=None, instance_shape=None, service_provider=None,
-                 relation=None):
+    def __init__(
+        self,
+        about=None,
+        types=None,
+        properties=None,
+        description=None,
+        identifier=None,
+        short_title=None,
+        title=None,
+        contributor=None,
+        creator=None,
+        subject=None,
+        created=None,
+        modified=None,
+        discussed_by=None,
+        instance_shape=None,
+        service_provider=None,
+        relation=None,
+    ):
         """
         Initialize the generic resource with the about property
         """
 
         super(BaseResource, self).__init__(about, types, properties)
-        self.__description = description if description is not None else ''
-        self.__identifier = identifier if identifier is not None else ''
-        self.__short_title = short_title if short_title is not None else ''
-        self.__title = title if title is not None else ''
+        self.__description = description if description is not None else ""
+        self.__identifier = identifier if identifier is not None else ""
+        self.__short_title = short_title if short_title is not None else ""
+        self.__title = title if title is not None else ""
         self.__contributor = contributor if contributor is not None else set()
-        self.__creator = creator if creator is not None else set()
+        self.__creator = creator
         self.__subject = subject if subject is not None else set()
         self.__created = created if created is not None else None
         self.__modified = modified if modified is not None else None
         self.__discussed_by = discussed_by if discussed_by is not None else None
         self.__instance_shape = instance_shape if instance_shape is not None else None
-        self.__service_provider = service_provider if service_provider is not None else list()
+        self.__service_provider = (
+            service_provider if service_provider is not None else list()
+        )
         self.__relation = relation if relation is not None else None
 
     @property
@@ -331,68 +409,110 @@ class BaseResource(AbstractResource):
     def from_rdf(self, g, resource_type, attributes):
 
         for r in g.subjects(RDF.type, resource_type):
-            setattr(self, '_AbstractResource__about', str(r))
+            setattr(self, "_AbstractResource__about", str(r))
 
             reviewed = list()
 
-            for k, v in six.iteritems(attributes):
-                reviewed.append(k)
+            # for k, v in six.iteritems(attributes.namespaces):
 
-                for i in g.objects(r, predicate=v):
-                    attribute_name = k
-                    if hasattr(self, attribute_name):
-                        attribute_value = getattr(self, attribute_name)
-                        if isinstance(attribute_value, set):
-                            at = getattr(self, attribute_name)
-                            if isinstance(i, Literal):
-                                i = i.value
-                            at.add(i)
-                        elif isinstance(attribute_value, str):
-                            if isinstance(i, Literal):
-                                i = i.value
-                            setattr(self, attribute_name, i if isinstance(i, str) else i.encode('utf-8'))
+            for p, o in g.predicate_objects(r):
+
+                url = urlparse(p, allow_fragments=True)
+                url = url.fragment if url.fragment else url.path
+                if url.__contains__("#"):
+                    c = "#"
+                else:
+                    c = "/"
+
+                x = url.split(c)[-1]
+                attributes.mapping[x] = URIRef(p)
+                reviewed.append(x)
+                attribute_name = camel_to_dash(x)
+                if hasattr(self, attribute_name):
+                    attribute_value = getattr(self, attribute_name)
+                    if isinstance(attribute_value, set):
+                        at = getattr(self, attribute_name)
+                        if isinstance(o, Literal):
+                            o = o.value
+                        at.add(o)
+                    elif isinstance(attribute_value, str):
+                        if isinstance(o, Literal):
+                            o = o.value
+                        setattr(
+                            self,
+                            attribute_name,
+                            o if isinstance(o, str) else o.encode("utf-8"),
+                        )
+                    else:
+                        if isinstance(o, Literal):
+                            setattr(self, attribute_name, o.value)
                         else:
-                            if isinstance(i, Literal):
-                                setattr(self, attribute_name, i.value)
-                            else:
-                                setattr(self, attribute_name, i)
-
-            no_reviewed = [a.split('__')[1].lower() for a in self.__dict__.keys() if
-                           a.split('__')[1].lower() not in reviewed]
-
-            for attr in no_reviewed:
-                item = {attr: v for k, v in six.iteritems(attributes) if k.lower() == attr.lower()}
-                if item:
-                    for i in g.objects(r, eval(item.get(attr)['oslc_property'])):
-                        attribute_name = item.get(attr)['attribute']
-                        if hasattr(self, attribute_name):
-                            attribute_value = getattr(self, attribute_name)
-                            if isinstance(attribute_value, set):
-                                attribute_value.clear()
-                                # attribute_value.add(data[key])
-                            else:
-                                setattr(self, attribute_name, i)
+                            setattr(self, attribute_name, o)
 
 
 class ServiceProviderCatalog(BaseResource):
+    def __init__(
+        self,
+        about=None,
+        types=None,
+        properties=None,
+        description=None,
+        identifier=None,
+        short_title=None,
+        title=None,
+        contributor=None,
+        creator=None,
+        subject=None,
+        created=None,
+        modified=None,
+        type=None,
+        discussed_by=None,
+        instance_shape=None,
+        service_provider=None,
+        relation=None,
+        uri=None,
+        publisher=None,
+        domain=None,
+        service_provider_catalog=None,
+        oauth_configuration=None,
+    ):
 
-    def __init__(self, about=None, types=None, properties=None, description=None,
-                 identifier=None, short_title=None, title=None, contributor=None,
-                 creator=None, subject=None, created=None, modified=None, type=None,
-                 discussed_by=None, instance_shape=None, service_provider=None,
-                 relation=None, uri=None, publisher=None, domain=None,
-                 service_provider_catalog=None, oauth_configuration=None):
+        super(ServiceProviderCatalog, self).__init__(
+            about,
+            types,
+            properties,
+            description,
+            identifier,
+            short_title,
+            title,
+            contributor,
+            creator,
+            subject,
+            created,
+            modified,
+            discussed_by,
+            instance_shape,
+            service_provider,
+            relation,
+        )
 
-        super(ServiceProviderCatalog, self).__init__(about, types, properties, description,
-                                                     identifier, short_title, title, contributor,
-                                                     creator, subject, created, modified, discussed_by,
-                                                     instance_shape, service_provider, relation)
-
-        self.__uri = uri if uri is not None else build_uri(default_uri, 'serviceProviderCatalog')
+        self.__uri = (
+            uri if uri is not None else build_uri(default_uri, "serviceProviderCatalog")
+        )
         self.__publisher = publisher
         self.__domain = domain if domain is not None else list()
-        self.__service_provider_catalog = service_provider_catalog if service_provider_catalog is not None else set()
+        self.__service_provider_catalog = (
+            service_provider_catalog if service_provider_catalog is not None else set()
+        )
         self.__oauth_configuration = oauth_configuration
+
+    @property
+    def uri(self):
+        return self.__uri
+
+    @uri.setter
+    def uri(self, uri):
+        self.__uri = uri
 
     @property
     def publisher(self):
@@ -453,8 +573,14 @@ class ServiceProviderCatalog(BaseResource):
 
         if self.service_provider:
             for sp in self.service_provider:
-                uri = sp.about if sp.about.__contains__(sp.identifier) \
-                    else self.about.replace('/catalog', '') + '/{}'.format(sp.identifier) if sp.identifier else ''
+                uri = (
+                    sp.about
+                    if sp.about.__contains__(sp.identifier)
+                    else self.about.replace("/catalog", "")
+                    + "/{}".format(sp.identifier)
+                    if sp.identifier
+                    else ""
+                )
 
                 spc.add(OSLC.serviceProvider, URIRef(uri))
 
@@ -471,24 +597,61 @@ class ServiceProviderCatalog(BaseResource):
 
 
 class ServiceProvider(BaseResource):
-
-    def __init__(self, about=None, types=None, properties=None, description=None,
-                 identifier=None, short_title=None, title=None, contributor=None,
-                 creator=None, subject=None, created=None, modified=None, type=None,
-                 discussed_by=None, instance_shape=None, service_provider=None,
-                 relation=None, publisher=None, service=None, details=None,
-                 prefix_definition=None, oauth_configuration=None):
+    def __init__(
+        self,
+        about=None,
+        types=None,
+        properties=None,
+        description=None,
+        identifier=None,
+        short_title=None,
+        title=None,
+        contributor=None,
+        creator=None,
+        subject=None,
+        created=None,
+        modified=None,
+        type=None,
+        discussed_by=None,
+        instance_shape=None,
+        service_provider=None,
+        relation=None,
+        publisher=None,
+        service=None,
+        details=None,
+        prefix_definition=None,
+        oauth_configuration=None,
+    ):
         """
         Initialize ServiceProvider
         """
-        super(ServiceProvider, self).__init__(about, types, properties, description, identifier, short_title, title,
-                                              contributor, creator, subject, created, modified, discussed_by,
-                                              instance_shape, service_provider, relation)
+        super(ServiceProvider, self).__init__(
+            about,
+            types,
+            properties,
+            description,
+            identifier,
+            short_title,
+            title,
+            contributor,
+            creator,
+            subject,
+            created,
+            modified,
+            discussed_by,
+            instance_shape,
+            service_provider,
+            relation,
+        )
         self.__publisher = publisher
         self.__service = service if service is not None else list()
         self.__details = details if details is not None else list()
-        self.__prefix_definition = prefix_definition if prefix_definition is not None else list()
-        self.__oauth_configuration = oauth_configuration if oauth_configuration is not None else None
+        self.__prefix_definition = (
+            prefix_definition if prefix_definition is not None else list()
+        )
+        self.__oauth_configuration = (
+            oauth_configuration if oauth_configuration is not None else None
+        )
 
         self.__created = date.today()
         self.__identifier = identifier if identifier is not None else None
@@ -545,8 +708,13 @@ class ServiceProvider(BaseResource):
     def to_rdf(self, graph):
         super(ServiceProvider, self).to_rdf(graph)
 
-        uri = self.about if self.about.__contains__(self.identifier) \
-            else self.about + '/{}'.format(self.identifier) if self.identifier else ''
+        uri = (
+            self.about
+            if self.about.__contains__(self.identifier)
+            else self.about + "/{}".format(self.identifier)
+            if self.identifier
+            else ""
+        )
 
         sp = Resource(graph, URIRef(uri))
         sp.add(RDF.type, OSLC.ServiceProvider)
@@ -588,27 +756,67 @@ class ServiceProvider(BaseResource):
 
 
 class Service(BaseResource):
-
-    def __init__(self, about=None, types=None, properties=None, description=None,
-                 identifier=None, short_title=None, title=None, contributor=None,
-                 creator=None, subject=None, created=None, modified=None, type=None,
-                 discussed_by=None, instance_shape=None, service_provider=None,
-                 relation=None, domain=None, creation_factory=None, query_capability=None,
-                 selection_dialog=None, creation_dialog=None, usage=None):
+    def __init__(
+        self,
+        about=None,
+        types=None,
+        properties=None,
+        description=None,
+        identifier=None,
+        short_title=None,
+        title=None,
+        contributor=None,
+        creator=None,
+        subject=None,
+        created=None,
+        modified=None,
+        type=None,
+        discussed_by=None,
+        instance_shape=None,
+        service_provider=None,
+        relation=None,
+        domain=None,
+        creation_factory=None,
+        query_capability=None,
+        selection_dialog=None,
+        creation_dialog=None,
+        usage=None,
+    ):
         """
         Initialize Service
         """
-        super(Service, self).__init__(about, types, properties, description,
-                                      identifier, short_title, title, contributor,
-                                      creator, subject, created, modified,
-                                      discussed_by, instance_shape, service_provider,
-                                      relation)
+        super(Service, self).__init__(
+            about,
+            types,
+            properties,
+            description,
+            identifier,
+            short_title,
+            title,
+            contributor,
+            creator,
+            subject,
+            created,
+            modified,
+            discussed_by,
+            instance_shape,
+            service_provider,
+            relation,
+        )
 
         self.__domain = domain if domain is not None else None
-        self.__creation_factory = creation_factory if creation_factory is not None else list()
-        self.__query_capability = query_capability if query_capability is not None else list()
-        self.__selection_dialog = selection_dialog if selection_dialog is not None else list()
-        self.__creation_dialog = creation_dialog if creation_dialog is not None else list()
+        self.__creation_factory = (
+            creation_factory if creation_factory is not None else list()
+        )
+        self.__query_capability = (
+            query_capability if query_capability is not None else list()
+        )
+        self.__selection_dialog = (
+            selection_dialog if selection_dialog is not None else list()
+        )
+        self.__creation_dialog = (
+            creation_dialog if creation_dialog is not None else list()
+        )
         self.__usage = usage if usage is not None else list()
 
     @property
@@ -663,6 +871,14 @@ class Service(BaseResource):
     def add_creation_dialog(self, creation_dialog):
         self.__creation_dialog.append(creation_dialog)
 
+    @property
+    def usage(self):
+        return self.__usage
+
+    @usage.setter
+    def usage(self, usage):
+        self.__usage = usage
+
     def to_rdf(self, graph):
         super(Service, self).to_rdf(graph)
 
@@ -679,7 +895,14 @@ class Service(BaseResource):
             s.add(DCTERMS.description, Literal(self.description, datatype=XSD.Literal))
 
         if self.domain:
-            s.add(OSLC.domain, URIRef(self.domain.uri if isinstance(self.domain, ClosedNamespace) else self.domain))
+            s.add(
+                OSLC.domain,
+                URIRef(
+                    self.domain.uri
+                    if isinstance(self.domain, ClosedNamespace)
+                    else self.domain
+                ),
+            )
 
         if self.creation_factory:
             for cf in self.creation_factory:
@@ -705,19 +928,50 @@ class Service(BaseResource):
 
 
 class QueryCapability(BaseResource):
+    def __init__(
+        self,
+        about=None,
+        types=None,
+        properties=None,
+        description=None,
+        identifier=None,
+        short_title=None,
+        title=None,
+        contributor=None,
+        creator=None,
+        subject=None,
+        created=None,
+        modified=None,
+        type=None,
+        discussed_by=None,
+        instance_shape=None,
+        service_provider=None,
+        relation=None,
+        label=None,
+        query_base=None,
+        usage=None,
+        resource_type=None,
+        resource_shape=None,
+    ):
 
-    def __init__(self, about=None, types=None, properties=None, description=None,
-                 identifier=None, short_title=None, title=None, contributor=None,
-                 creator=None, subject=None, created=None, modified=None, type=None,
-                 discussed_by=None, instance_shape=None, service_provider=None,
-                 relation=None, label=None, query_base=None, usage=None,
-                 resource_type=None, resource_shape=None):
-
-        super(QueryCapability, self).__init__(about, types, properties, description,
-                                              identifier, short_title, title, contributor,
-                                              creator, subject, created, modified,
-                                              discussed_by, instance_shape, service_provider,
-                                              relation)
+        super(QueryCapability, self).__init__(
+            about,
+            types,
+            properties,
+            description,
+            identifier,
+            short_title,
+            title,
+            contributor,
+            creator,
+            subject,
+            created,
+            modified,
+            discussed_by,
+            instance_shape,
+            service_provider,
+            relation,
+        )
 
         self.__label = label if label is not None else None
         self.__query_base = query_base if query_base is not None else None
@@ -806,22 +1060,53 @@ class QueryCapability(BaseResource):
 
 
 class CreationFactory(BaseResource):
-
-    def __init__(self, about=None, types=None, properties=None, description=None,
-                 identifier=None, short_title=None, title=None, contributor=None,
-                 creator=None, subject=None, created=None, modified=None, type=None,
-                 discussed_by=None, instance_shape=None, service_provider=None,
-                 relation=None, label=None, creation=None, usage=None,
-                 resource_type=None, resource_shape=None):
+    def __init__(
+        self,
+        about=None,
+        types=None,
+        properties=None,
+        description=None,
+        identifier=None,
+        short_title=None,
+        title=None,
+        contributor=None,
+        creator=None,
+        subject=None,
+        created=None,
+        modified=None,
+        type=None,
+        discussed_by=None,
+        instance_shape=None,
+        service_provider=None,
+        relation=None,
+        label=None,
+        creation=None,
+        usage=None,
+        resource_type=None,
+        resource_shape=None,
+    ):
 
         """
         Creation Factory
         """
-        super(CreationFactory, self).__init__(about, types, properties, description,
-                                              identifier, short_title, title, contributor,
-                                              creator, subject, created, modified,
-                                              discussed_by, instance_shape, service_provider,
-                                              relation)
+        super(CreationFactory, self).__init__(
+            about,
+            types,
+            properties,
+            description,
+            identifier,
+            short_title,
+            title,
+            contributor,
+            creator,
+            subject,
+            created,
+            modified,
+            discussed_by,
+            instance_shape,
+            service_provider,
+            relation,
+        )
 
         self.__label = label if label is not None else None
         self.__creation = creation if creation is not None else None
@@ -909,19 +1194,51 @@ class CreationFactory(BaseResource):
 
 
 class Dialog(BaseResource):
+    def __init__(
+        self,
+        about=None,
+        types=None,
+        properties=None,
+        description=None,
+        identifier=None,
+        short_title=None,
+        title=None,
+        contributor=None,
+        creator=None,
+        subject=None,
+        created=None,
+        modified=None,
+        type=None,
+        discussed_by=None,
+        instance_shape=None,
+        service_provider=None,
+        relation=None,
+        dialog=None,
+        hint_height=None,
+        hint_width=None,
+        label=None,
+        usage=None,
+        resource_type=None,
+    ):
 
-    def __init__(self, about=None, types=None, properties=None, description=None,
-                 identifier=None, short_title=None, title=None, contributor=None,
-                 creator=None, subject=None, created=None, modified=None, type=None,
-                 discussed_by=None, instance_shape=None, service_provider=None,
-                 relation=None, dialog=None, hint_height=None, hint_width=None,
-                 label=None, usage=None, resource_type=None):
-
-        super(Dialog, self).__init__(about, types, properties, description,
-                                     identifier, short_title, title, contributor,
-                                     creator, subject, created, modified,
-                                     discussed_by, instance_shape, service_provider,
-                                     relation)
+        super(Dialog, self).__init__(
+            about,
+            types,
+            properties,
+            description,
+            identifier,
+            short_title,
+            title,
+            contributor,
+            creator,
+            subject,
+            created,
+            modified,
+            discussed_by,
+            instance_shape,
+            service_provider,
+            relation,
+        )
 
         self.__dialog = dialog if dialog is not None else None
         self.__hint_height = hint_height if hint_height is not None else None
@@ -1017,18 +1334,47 @@ class Dialog(BaseResource):
 
 
 class PrefixDefinition(BaseResource):
+    def __init__(
+        self,
+        about=None,
+        types=None,
+        properties=None,
+        description=None,
+        identifier=None,
+        short_title=None,
+        title=None,
+        contributor=None,
+        creator=None,
+        subject=None,
+        created=None,
+        modified=None,
+        type=None,
+        discussed_by=None,
+        instance_shape=None,
+        service_provider=None,
+        relation=None,
+        prefix=None,
+        prefix_base=None,
+    ):
 
-    def __init__(self, about=None, types=None, properties=None, description=None,
-                 identifier=None, short_title=None, title=None, contributor=None,
-                 creator=None, subject=None, created=None, modified=None, type=None,
-                 discussed_by=None, instance_shape=None, service_provider=None,
-                 relation=None, prefix=None, prefix_base=None):
-
-        super(PrefixDefinition, self).__init__(about, types, properties, description,
-                                               identifier, short_title, title, contributor,
-                                               creator, subject, created, modified,
-                                               discussed_by, instance_shape, service_provider,
-                                               relation)
+        super(PrefixDefinition, self).__init__(
+            about,
+            types,
+            properties,
+            description,
+            identifier,
+            short_title,
+            title,
+            contributor,
+            creator,
+            subject,
+            created,
+            modified,
+            discussed_by,
+            instance_shape,
+            service_provider,
+            relation,
+        )
         self.__prefix = prefix if prefix is not None else None
         self.__prefix_base = prefix_base if prefix_base is not None else None
 
@@ -1064,9 +1410,16 @@ class PrefixDefinition(BaseResource):
 
 
 class Publisher(AbstractResource):
-
-    def __init__(self, about=None, types=None, properties=None,
-                 icon=None, identifier=None, label=None, title=None):
+    def __init__(
+        self,
+        about=None,
+        types=None,
+        properties=None,
+        icon=None,
+        identifier=None,
+        label=None,
+        title=None,
+    ):
         """
         Resource for publisher
         """
@@ -1110,12 +1463,12 @@ class Publisher(AbstractResource):
         if isinstance(title, str):
             self.__title = title
         else:
-            raise ValueError('The title must be an instance of str')
+            raise ValueError("The title must be an instance of str")
 
     def to_rdf(self, graph):
         super(Publisher, self).to_rdf(graph)
 
-        graph.bind('jfs', JFS)
+        graph.bind("jfs", JFS)
 
         p = Resource(graph, URIRef(self.about))
         p.add(RDF.type, DCTERMS.Publisher)
@@ -1132,35 +1485,70 @@ class Publisher(AbstractResource):
         if self.icon:
             p.add(OSLC.icon, URIRef(self.icon))
 
-        p.add(JFS.nonLocalizedTitle, Literal('Configuration'))
-        p.add(JFS.version, Literal('7.0'))
-        p.add(JFS.instanceName, Literal('/pyoslc'))
+        p.add(JFS.nonLocalizedTitle, Literal("Configuration"))
+        p.add(JFS.version, Literal("7.0"))
+        p.add(JFS.instanceName, Literal("/pyoslc"))
 
         return p
 
 
 class OAuthConfiguration(BaseResource):
-
-    def __init__(self, about, types=None, properties=None, description=None,
-                 identifier=None, short_title=None, title=None, contributor=None,
-                 creator=None, subject=None, created=None, modified=None, type=None,
-                 discussed_by=None, instance_shape=None, service_provider=None,
-                 relation=None, authorization_uri=None, oauth_access_token_uri=None,
-                 oauth_request_token_uri=None):
+    def __init__(
+        self,
+        about,
+        types=None,
+        properties=None,
+        description=None,
+        identifier=None,
+        short_title=None,
+        title=None,
+        contributor=None,
+        creator=None,
+        subject=None,
+        created=None,
+        modified=None,
+        type=None,
+        discussed_by=None,
+        instance_shape=None,
+        service_provider=None,
+        relation=None,
+        authorization_uri=None,
+        oauth_access_token_uri=None,
+        oauth_request_token_uri=None,
+    ):
         """
         private URI authorizationURI;
         private URI oauthAccessTokenURI;
         private URI oauthRequestTokenURI;
         """
 
-        super(OAuthConfiguration, self).__init__(about, types, properties, description,
-                                                 identifier, short_title, title, contributor,
-                                                 creator, subject, created, modified,
-                                                 discussed_by, instance_shape, service_provider,
-                                                 relation)
-        self.__authorization_uri = authorization_uri if authorization_uri is not None else None
-        self.__oauth_access_token_uri = oauth_access_token_uri if oauth_access_token_uri is not None else None
-        self.__oauth_request_token_uri = oauth_request_token_uri if oauth_access_token_uri is not None else None
+        super(OAuthConfiguration, self).__init__(
+            about,
+            types,
+            properties,
+            description,
+            identifier,
+            short_title,
+            title,
+            contributor,
+            creator,
+            subject,
+            created,
+            modified,
+            discussed_by,
+            instance_shape,
+            service_provider,
+            relation,
+        )
+        self.__authorization_uri = (
+            authorization_uri if authorization_uri is not None else None
+        )
+        self.__oauth_access_token_uri = (
+            oauth_access_token_uri if oauth_access_token_uri is not None else None
+        )
+        self.__oauth_request_token_uri = (
+            oauth_request_token_uri if oauth_access_token_uri is not None else None
+        )
 
     @property
     def authorization_uri(self):
@@ -1206,28 +1594,34 @@ class OAuthConfiguration(BaseResource):
 
 
 class FilteredResource(AbstractResource):
-
     def __init__(self, about, types, properties, resource):
         super(FilteredResource, self).__init__(about, types, properties)
         self.__resource = resource if resource is not None else None
 
 
 class ResponseInfo(FilteredResource):
-
-    def __init__(self, about=None, title=None, description=None,
-                 types=None, properties=None,
-                 resource=None, total_count=None, next_page=None,
-                 container=None):
+    def __init__(
+        self,
+        about=None,
+        title=None,
+        description=None,
+        types=None,
+        properties=None,
+        resource=None,
+        total_count=None,
+        next_page=None,
+        container=None,
+    ):
         super(ResponseInfo, self).__init__(about, types, properties, resource)
         self.__total_count = total_count if total_count is not None else 0
         self.__next_page = next_page if next_page is not None else None
         self.__container = container if container is not None else None
         self.__members = list()
 
-        self.__title = title if title is not None else ''
-        self.__description = description if description is not None else ''
+        self.__title = title if title is not None else ""
+        self.__description = description if description is not None else ""
 
-        self.__current_page = ''
+        self.__current_page = ""
 
     @property
     def title(self):
@@ -1238,7 +1632,7 @@ class ResponseInfo(FilteredResource):
         if isinstance(title, str):
             self.__title = title
         else:
-            raise ValueError('The title must be an instance of str')
+            raise ValueError("The title must be an instance of str")
 
     @property
     def description(self):
@@ -1257,7 +1651,15 @@ class ResponseInfo(FilteredResource):
         if isinstance(total_count, int):
             self.__total_count = total_count
         else:
-            raise ValueError('The total_count must be an instance of int')
+            raise ValueError("The total_count must be an instance of int")
+
+    @property
+    def container(self):
+        return self.__container
+
+    @container.setter
+    def container(self, container):
+        self.__container = container
 
     @property
     def members(self):
@@ -1283,7 +1685,9 @@ class ResponseInfo(FilteredResource):
     def next_page(self, next_page):
         self.__next_page = next_page
 
-    def to_rdf(self, graph, base_url=None, oslc_types=None, attributes=None):
+    def to_rdf(
+        self, graph, base_url=None, oslc_types=None, attributes=None, criteria=None
+    ):
         super(ResponseInfo, self).to_rdf(graph)
 
         uri = self.about
@@ -1292,18 +1696,42 @@ class ResponseInfo(FilteredResource):
         if self.members:
             member = Resource(graph, URIRef(uri))
             for item in self.members:
-                item_url = urlparse(uri + '/' + item.identifier)
+                item_url = urlparse(uri + "/" + item.identifier)
                 r = Resource(graph, URIRef(item_url.geturl()))
-                for t in item.types:
-                    r.add(RDF.type, t)
 
                 member.add(RDFS.member, r)
 
-                for key in attributes:
-                    attr = attributes.get(key)
-                    val = getattr(item, key)
-                    if val:
-                        r.add(attr, Literal(val))
+                # where and select clauses validation
+                if criteria.properties:
+                    props = [prop.prop for prop in criteria.properties]
+                    props.append("http://purl.org/dc/terms/identifier")
+                    for key in attributes.mapping:
+                        attr = attributes.mapping.get(key)
+                        if str(attr) in props:
+                            val = getattr(item, key)
+                            if val and isinstance(val, BaseResource):
+                                r2 = Resource(graph, URIRef(val.about))
+                                # d = Describer(graph, base=val.about)
+                                for ak in val.__dict__.keys():
+                                    ak = (
+                                        ak.split("__")[1]
+                                        if ak.__contains__("__")
+                                        else ak
+                                    )
+                                    item = {
+                                        k: v
+                                        for k, v in six.iteritems(attributes.mapping)
+                                        if ak == k
+                                    }
+                                    if item and ak in item.keys():
+                                        p = item.get(ak)
+                                        a = getattr(val, ak)
+                                        if a:
+                                            print(p)
+                                            r2.add(p, Literal(a))
+                                r.add(attr, r2)
+                            else:
+                                r.add(attr, Literal(val))
 
         if self.total_count > len(self.members):
             rx = Resource(graph, URIRef(self.current_page))
@@ -1315,17 +1743,23 @@ class ResponseInfo(FilteredResource):
             if self.total_count and self.total_count > 0:
                 rx.add(OSLC.totalCount, Literal(self.total_count))
 
-                if self.__next_page and self.__next_page != '':
+                if self.__next_page and self.__next_page != "":
                     rx.add(OSLC.nextPage, URIRef(self.__next_page))
 
         return ri
 
 
 class Preview(AbstractResource):
-
-    def __init__(self, about=None, types=None, properties=None,
-                 document=None, hint_height=None, hint_width=None,
-                 initial_height=None):
+    def __init__(
+        self,
+        about=None,
+        types=None,
+        properties=None,
+        document=None,
+        hint_height=None,
+        hint_width=None,
+        initial_height=None,
+    ):
         super(Preview, self).__init__(about, types, properties)
 
         self.__document = document if document is not None else None
@@ -1387,15 +1821,30 @@ class Preview(AbstractResource):
 
 
 class Compact(AbstractResource):
-
-    def __init__(self, about=None, types=None, properties=None,
-                 icon=None, large_preview=None, short_title=None,
-                 small_preview=None, title=None):
+    def __init__(
+        self,
+        about=None,
+        types=None,
+        properties=None,
+        icon=None,
+        large_preview=None,
+        short_title=None,
+        small_preview=None,
+        title=None,
+    ):
         super(Compact, self).__init__(about, types, properties)
         self.__icon = icon if icon is not None else None
-        self.__large_preview = large_preview if large_preview is not None else Preview(about, types, properties)
-        self.__short_title = short_title if short_title is not None else ''
-        self.__small_preview = small_preview if small_preview is not None else Preview(about, types, properties)
+        self.__large_preview = (
+            large_preview
+            if large_preview is not None
+            else Preview(about, types, properties)
+        )
+        self.__short_title = short_title if short_title is not None else ""
+        self.__small_preview = (
+            small_preview
+            if small_preview is not None
+            else Preview(about, types, properties)
+        )
         self.__title = title if title is not None else Preview(about, types, properties)
 
     @property
@@ -1441,7 +1890,7 @@ class Compact(AbstractResource):
     def to_rdf(self, graph):
         super(Compact, self).to_rdf(graph)
 
-        uri = self.about if self.about else ''
+        uri = self.about if self.about else ""
 
         d = Resource(graph, URIRef(uri))
         d.add(RDF.type, OSLC.Compact)
@@ -1467,9 +1916,15 @@ class Compact(AbstractResource):
 
 
 class Error(AbstractResource):
-
-    def __init__(self, about=None, types=None, properties=None,
-                 status_code=None, message=None, extended_error=None):
+    def __init__(
+        self,
+        about=None,
+        types=None,
+        properties=None,
+        status_code=None,
+        message=None,
+        extended_error=None,
+    ):
         super(Error, self).__init__(about, types, properties)
         self.__status_code = status_code if status_code is not None else None
         self.__message = message if message is not None else None
@@ -1494,7 +1949,7 @@ class Error(AbstractResource):
     def to_rdf(self, graph):
         super(Error, self).to_rdf(graph)
 
-        uri = self.about if self.about else ''
+        uri = self.about if self.about else ""
 
         error = Resource(graph, URIRef(uri))
         error.add(RDF.type, OSLC.Error)
@@ -1506,48 +1961,3 @@ class Error(AbstractResource):
             error.add(OSLC.message, Literal(self.message, datatype=XSD.string))
 
         return error
-
-
-"""
-class ResourceShape(BaseResource):
-    def __init__(self, about, types, properties,
-                 describes, title):
-        BaseResource.__init__(self, about, types, properties)
-
-        self.__describes = describes if describes is not None else OrderedDict()
-        self.__properties = properties if properties is not None else OrderedDict()
-        self.__title = title if title is not None else None
-
-    @property
-    def describes(self):
-        return self.__describes
-
-    @describes.setter
-    def describes(self, describes):
-        self.__describes = describes
-
-    def add_describe(self, describe):
-        if describe:
-            self.__describes.append(describe)
-
-    @property
-    def properties(self):
-        return self.__properties
-
-    @properties.setter
-    def properties(self, properties):
-        self.__properties = properties
-
-    def add_propertie(self, propertie):
-        if propertie:
-            self.__properties.append(propertie)
-
-    @property
-    def title(self):
-        return self.__title
-
-    @title.setter
-    def title(self, title):
-        self.__title = title
-
-"""

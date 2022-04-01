@@ -67,8 +67,8 @@ def test_service_provider_catalog(pyoslc_enabled):
         assert (spc, RDF.type, OSLC.ServiceProviderCatalog) in g, 'The ServiceProviderCatalog was not generated'
         assert sp in g.objects(), 'The ServiceProvider URI is not in the graph'
         assert (spc, OSLC.serviceProvider, None) in g, 'The response does not contain a ServiceProvider'
-        assert (spc, OSLC.domain, URIRef(OSLC_RM.uri) if isinstance(OSLC_RM.uri,
-                                                                    str) else OSLC_RM.uri) in g, 'The ServiceProvider is not on RM domain'
+        assert (spc, OSLC.domain, URIRef(OSLC_RM.uri) if isinstance(OSLC_RM.uri, str)
+                else OSLC_RM.uri) in g, 'The ServiceProvider is not on RM domain'
 
         assert 'Service Provider Catalog' in [t for t in g.objects(spc, DCTERMS.title)][0]
         assert sp in [t for t in g.objects(spc, OSLC.serviceProvider)]
@@ -289,7 +289,7 @@ def test_query_capability_select(pyoslc_enabled):
     assert (ri, RDFS.member, None) in g, 'The response does not contain a member'
 
     members = [m for m in g.objects(ri, RDFS.member)]
-    assert members is not None, 'The ResponseInfo should have members'
+    assert members, 'The ResponseInfo should have members'
     assert len(members) > 0, 'The members should contain at least one element'
 
     for member in members:
@@ -351,8 +351,7 @@ def test_creation_factory(pyoslc_enabled):
     assert (None, RDF.type, OSLC_RM.Requirement) in g, 'The Requirement should be generated'
     assert (ri, DCTERMS.identifier, Literal('X1C2V3B6')) in g, 'The response does not contain a identifier'
 
-#
-#
+
 # @pytest.mark.skip(reason="GET Resource method has not been implemented with the new PyOSLC OSLCAPP framework")
 # def test_query_resource(pyoslc):
 #     """

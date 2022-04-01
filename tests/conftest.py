@@ -1,30 +1,18 @@
+from __future__ import absolute_import
+
+import logging
 import pytest
 
-# from app import create_app
-# from app.config import Config
 from apposlc.adapter import RequirementAdapter, TestCaseAdapter
 from tests.functional.oslc import PyOSLC
 
 from apposlc import create_oslc_app
 
-
-# @pytest.fixture(scope='session')
-# def client():
-#     """
-#     Getting the test_client instance for the Flask application
-#     for executing and validating the tests
-#
-#     :param app: Flask application
-#     :return: client: Client with test configuration
-#     """
-#     # Create a test client using the Flask application configured for testing
-#     app = create_app(Config)
-#     app.testing = True
-#     with app.test_client() as client:
-#         # Establish an application context
-#         with app.app_context():
-#             yield client  # this is where the testing happens!
 from tests.unit.adapter import RMAdapter, BaseAdapter
+
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope='session')
@@ -36,9 +24,10 @@ def client_oslc():
             yield client  # this is where the testing happens!
 
 
-@pytest.fixture
-def pyoslc(client_oslc):
-    return PyOSLC(client_oslc)
+# @pytest.fixture
+# def pyoslc(client_oslc):
+#     logger.debug("Initializing OSLC Client")
+#     return PyOSLC(client_oslc)
 
 
 @pytest.fixture
@@ -53,9 +42,9 @@ def base_adapter():
 
 @pytest.fixture
 def rm_adapter():
-    return RequirementAdapter(identifier='rmtest', title='RM Test', mapping=None)
+    return RequirementAdapter(identifier='rmtest', title='RM Test')
 
 
 @pytest.fixture
 def tc_adapter():
-    return TestCaseAdapter(identifier='tctest', title='QM Test', mapping=None)
+    return TestCaseAdapter(identifier='tctest', title='QM Test')
