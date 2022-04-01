@@ -173,7 +173,6 @@ class ResourceListOperation(OSLCResource):
 
             result = list()
             for item in data:
-                print(item)
                 br = BaseResource()
                 br.update(item, adapter, base_url)
                 br.about = br.get_absolute_url(
