@@ -171,8 +171,11 @@ if __name__ == "__main__":
     qry = "cm:severity in [\"high\",\"medium\"] and qm:testcase=<http://example.com/tests/31459>"
     slct = "dcterms:created,dcterms:creator{foaf:familyName}"
 
+    prfx = "foaf=<http://xmlns.com/foaf/0.1/>,oslc_rm=<http://open-services.net/ns/rm#>,oslc_cm=<http://open-services.net/ns/cm#>,contact_plm=<https://contact-software.com/ontologies/v1.0/plm#>"
+    qry= "cm:severity in [\"high\",\"medium\"] and oslc_rm:discipline{contact_plm:text=\"General\"} and dcterms:creator{foaf:firstName=\"Esser, Rebekka\"} and qm:testcase=<http://example.com/tests/31459>"
+    qry = "cm:quality_top-level.in in [\"high-top.quality\",\"medium-low_quality\"] and cm:severity in [\"high\",\"medium\"] and cm:polarity=true and cm:weight=-20.22e3 and cm:title=\"machine\" and oslc_rm:discipline{contact_plm:text=\"General\"} and dcterms:creator{foaf:firstName=\"Esser, Rebekka\"} and qm:testcase=<http://example.com/tests/31459> and qm:name=\"cat\"@en-us and qm:age=\"42\"^^xsd:integer"
+
     criteria = Criteria()
     criteria.prefix(prfx)
     criteria.where(qry)
     criteria.select(slct)
-    print(criteria)

@@ -82,6 +82,7 @@ class RequirementAdapter(ServiceResourceAdapter):
             "http://purl.org/dc/terms/identifier": item.identifier,
             "http://purl.org/dc/terms/description": item.description,
             "http://purl.org/dc/terms/title": item.title,
+            "http://purl.org/dc/terms/created": item.created,
             "http://purl.org/dc/terms/creator": self.convert_creator_data(item.creator)
             if isinstance(item.creator, Creator)
             else item.creator,
@@ -108,8 +109,6 @@ class RequirementAdapter(ServiceResourceAdapter):
     def select_attribute(self, item, select):
         result = {}
         for k, v in item.items():
-            print(k, v)
-
             if k in select:
                 result[k] = v
             else:

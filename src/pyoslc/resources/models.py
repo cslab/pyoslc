@@ -1711,7 +1711,6 @@ class ResponseInfo(FilteredResource):
                             val = getattr(item, key)
                             if val and isinstance(val, BaseResource):
                                 r2 = Resource(graph, URIRef(val.about))
-                                # d = Describer(graph, base=val.about)
                                 for ak in val.__dict__.keys():
                                     ak = (
                                         ak.split("__")[1]
