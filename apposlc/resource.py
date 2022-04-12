@@ -34,7 +34,7 @@ class Requirement:
     created = None
     creator = None
 
-    def __init__(self, identifier, title, description, created, creator):
+    def __init__(self, identifier, title, description, created=None, creator=None):
         self.identifier = identifier
         self.title = title
         self.description = description
@@ -42,12 +42,13 @@ class Requirement:
         self.creator = creator
 
 
+dt = "%Y-%m-%d"
 
 REQSTORE = [
-    Requirement("1", "Provide WSGI implementation", "...", datetime(2020, 1, 1).strftime("%Y-%m-%d"), CREATORSTORE[0]),  # how to manage the linkage
-    Requirement("2", "Capability to add resources", "...", datetime(2020, 2, 2).strftime("%Y-%m-%d"), CREATORSTORE[1]),
-    Requirement("3", "Capability to paging", "...", datetime(2020, 3, 3).strftime("%Y-%m-%d"), CREATORSTORE[2]),
-    Requirement("4", "Capability to select page", "...", datetime(2020, 4, 4).strftime("%Y-%m-%d"), CREATORSTORE[3]),
-    Requirement("5", "Capability to specify page size", "...", datetime(2020, 5, 5).strftime("%Y-%m-%d"), CREATORSTORE[4]),
+    Requirement("1", "Provide WSGI implementation", "...", datetime(2020, 1, 1).strftime(dt), CREATORSTORE[0]),
+    Requirement("2", "Capability to add resources", "...", datetime(2020, 2, 2).strftime(dt), CREATORSTORE[1]),
+    Requirement("3", "Capability to paging", "...", datetime(2020, 3, 3).strftime(dt), CREATORSTORE[2]),
+    Requirement("4", "Capability to select page", "...", datetime(2020, 4, 4).strftime(dt), CREATORSTORE[3]),
+    Requirement("5", "Capability to specify page size", "...", datetime(2020, 5, 5).strftime(dt), CREATORSTORE[4]),
     # and so on ...
 ]

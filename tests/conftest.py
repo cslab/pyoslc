@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import logging
+from pyoslc.resources.query import Criteria
 import pytest
 
 from apposlc.adapter import RequirementAdapter, TestCaseAdapter
@@ -48,3 +49,8 @@ def rm_adapter():
 @pytest.fixture
 def tc_adapter():
     return TestCaseAdapter(identifier='tctest', title='QM Test')
+
+
+@pytest.fixture
+def criteria():
+    return Criteria()
