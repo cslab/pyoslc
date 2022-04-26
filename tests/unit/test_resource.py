@@ -8,7 +8,7 @@ def test_service_provider():
     sp = ServiceProvider(title="Service Provider")
 
     assert sp
-    assert isinstance(sp.title, six.text_type)
+    assert isinstance(sp.title, six.string_types)
 
 
 def test_base_resource():
