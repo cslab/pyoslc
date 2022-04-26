@@ -18,7 +18,9 @@ class ServiceProviderCatalogSingleton(object):
 
     def __new__(cls, *args, **kwargs):
         if not cls.instance:
-            cls.instance = super(ServiceProviderCatalogSingleton, cls).__new__(cls, *args, **kwargs)
+            cls.instance = super(ServiceProviderCatalogSingleton, cls).__new__(
+                cls, *args, **kwargs
+            )
             cls.catalog = ServiceProviderCatalog()
 
         return cls.instance
@@ -29,8 +31,12 @@ class ServiceProviderCatalogSingleton(object):
             cls()
 
         cls.catalog.about = catalog_url
-        cls.catalog.title = title if title else 'Service Provider Catalog'
-        cls.catalog.description = description if description else 'Service Provider Catalog for the PyOSLC application.'
+        cls.catalog.title = title if title else "Service Provider Catalog"
+        cls.catalog.description = (
+            description
+            if description
+            else "Service Provider Catalog for the PyOSLC application."
+        )
 
         cls.initialize_providers(catalog_url, adapters)
 
@@ -44,14 +50,14 @@ class ServiceProviderCatalogSingleton(object):
     @classmethod
     def get_provider(cls, service_provider_url, identifier, adapters=None):
         if not cls.instance:
-            sp = 'provider/{}'.format(identifier)
-            if 'resources' in service_provider_url:
-                sp += '/resources'
-                resource_id = urlparse(service_provider_url).path.split('/')[-1]
+            sp = "provider/{}".format(identifier)
+            if "resources" in service_provider_url:
+                sp += "/resources"
+                resource_id = urlparse(service_provider_url).path.split("/")[-1]
                 if resource_id in service_provider_url:
-                    sp += '/{resource_id}'.format(resource_id=resource_id)
+                    sp += "/{resource_id}".format(resource_id=resource_id)
 
-            catalog_url = service_provider_url.replace(sp, 'catalog')
+            catalog_url = service_provider_url.replace(sp, "catalog")
             cls.get_catalog(catalog_url, adapters=adapters)
 
         sp = cls.providers.get(str(identifier))
@@ -66,13 +72,15 @@ class ServiceProviderCatalogSingleton(object):
         for sp in adapters:
             identifier = sp.identifier
             if identifier not in list(cls.providers.keys()):
-                title = sp.title if hasattr(sp, 'title') else 'Service Provider'
-                description = sp.description if hasattr(sp, 'description') else 'Service Provider'
+                title = sp.title if hasattr(sp, "title") else "Service Provider"
+                description = (
+                    sp.description if hasattr(sp, "description") else "Service Provider"
+                )
                 publisher = None
-                parameters = {'id': identifier}
-                sp = ContactServiceProviderFactory.create_service_provider(sp, catalog_url, title, description,
-                                                                           publisher,
-                                                                           parameters)
+                parameters = {"id": identifier}
+                sp = ContactServiceProviderFactory.create_service_provider(
+                    sp, catalog_url, title, description, publisher, parameters
+                )
                 cls.register_service_provider(catalog_url, identifier, sp)
 
         return cls.providers
@@ -101,7 +109,7 @@ class ServiceProviderCatalogSingleton(object):
     @classmethod
     def construct_service_provider_uri(cls, identifier):
         uri = cls.catalog.about
-        uri = uri.replace('catalog', 'provider') + '/' + identifier
+        uri = uri.replace("catalog", "provider") + "/" + identifier
         return uri
 
     @classmethod

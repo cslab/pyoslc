@@ -43,7 +43,7 @@ class OSLCAPP:
         # self.rdf_type = {}
         # self.oslc_domain = {}
         self.url_map = Map()
-        # self.rdf_format = self.DEFAULT_FORMAT
+        self.rdf_format = self.DEFAULT_FORMAT
         self.accept = self.DEFAULT_FORMAT
         self.debug = True
 
@@ -143,26 +143,22 @@ class OSLCAPP:
     def preprocess_request(self):
         request = _request_ctx_stack.top.request
 
-        if request.accept_mimetypes.best and not (
-            request.accept_mimetypes.best in ("*/*", "text/html")
-        ):
+        mime = request.accept_mimetypes.best
+        if mime and (mime not in ("*/*", "text/html")):
             self.accept = request.accept_mimetypes.best
             self.rdf_format = self.accept
 
-        if not (
-            self.accept
-            in (
-                "application/rdf+xml",
-                "application/json",
-                "application/ld+json",
-                "application/json-ld",
-                "application/xml",
-                "application/atom+xml",
-                "text/turtle",
-                "application/xml, application/x-oslc-cm-service-description+xml",
-                "application/x-oslc-compact+xml, application/x-jazz-compact-rendering; q=0.5",
-                "application/rdf+xml,application/x-turtle,application/ntriples,application/json",
-            )
+        if self.accept not in (
+            "application/rdf+xml",
+            "application/json",
+            "application/ld+json",
+            "application/json-ld",
+            "application/xml",
+            "application/atom+xml",
+            "text/turtle",
+            "application/xml, application/x-oslc-cm-service-description+xml",
+            "application/x-oslc-compact+xml, application/x-jazz-compact-rendering; q=0.5",
+            "application/rdf+xml,application/x-turtle,application/ntriples,application/json",
         ):
             self.rdf_format = request.content_type
             self.accept = request.content_type
@@ -284,7 +280,7 @@ class OSLCAPP:
                 response = Response(response, status=status, headers=headers)
                 status = headers = None
 
-        if not ("OSLC-Core-Version" in response.headers.keys()):
+        if "OSLC-Core-Version" not in response.headers.keys():
             headers = Headers([("OSLC-Core-Version", "2.0")])
             response.headers.extend(headers)
 

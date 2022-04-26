@@ -96,7 +96,6 @@ class ServiceProviderFactory(object):
         items = [item for item in inspect.classify_class_attrs(klass.__class__) if item.kind.__contains__(
             'method') and item.name != '__init__' and item.defining_class == klass.__class__]
         for item in items:
-            logger.debug("Configuring: <{}>".format(item.name))
             if item.name == 'query_capability':
                 resource_attributes = {
                     'title': 'Query Capability',

@@ -33,22 +33,70 @@ class Requirement:
     description = ""
     created = None
     creator = None
+    discipline = None
 
-    def __init__(self, identifier, title, description, created=None, creator=None):
+    def __init__(
+        self,
+        identifier,
+        title,
+        description,
+        created=None,
+        creator=None,
+    ):
         self.identifier = identifier
         self.title = title
         self.description = description
         self.created = created
         self.creator = creator
+        self.discipline = [
+            {"http://open-services.net/ns/rm#discipline": [
+                {"https://contact-software.com/ontologies/v1.0/plm#text": "Leistungsbedarf"},
+                {"https://contact-software.com/ontologies/v1.0/plm#language": "de"}
+            ]},
+            {"http://open-services.net/ns/rm#discipline": [
+                {"https://contact-software.com/ontologies/v1.0/plm#text": "Power Requirement"},
+                {"https://contact-software.com/ontologies/v1.0/plm#language": "en"}
+            ]}
+        ]
 
 
 dt = "%Y-%m-%d"
 
 REQSTORE = [
-    Requirement("1", "Provide WSGI implementation", "...", datetime(2020, 1, 1).strftime(dt), CREATORSTORE[0]),
-    Requirement("2", "Capability to add resources", "...", datetime(2020, 2, 2).strftime(dt), CREATORSTORE[1]),
-    Requirement("3", "Capability to paging", "...", datetime(2020, 3, 3).strftime(dt), CREATORSTORE[2]),
-    Requirement("4", "Capability to select page", "...", datetime(2020, 4, 4).strftime(dt), CREATORSTORE[3]),
-    Requirement("5", "Capability to specify page size", "...", datetime(2020, 5, 5).strftime(dt), CREATORSTORE[4]),
+    Requirement(
+        "1",
+        "Provide WSGI implementation",
+        "...",
+        datetime(2020, 1, 1).strftime(dt),
+        CREATORSTORE[0:2],
+    ),
+    Requirement(
+        "2",
+        "Capability to add resources",
+        "...",
+        datetime(2020, 2, 2).strftime(dt),
+        CREATORSTORE[1:3],
+    ),
+    Requirement(
+        "3",
+        "Capability to paging",
+        "...",
+        datetime(2020, 3, 3).strftime(dt),
+        CREATORSTORE[2:4],
+    ),
+    Requirement(
+        "4",
+        "Capability to select page",
+        "...",
+        datetime(2020, 4, 4).strftime(dt),
+        CREATORSTORE[3:5],
+    ),
+    Requirement(
+        "5",
+        "Capability to specify page size",
+        "...",
+        datetime(2020, 5, 5).strftime(dt),
+        CREATORSTORE[4:7],
+    ),
     # and so on ...
 ]

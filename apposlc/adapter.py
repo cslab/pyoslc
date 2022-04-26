@@ -3,7 +3,7 @@ from pyoslc.vocabularies.rm import OSLC_RM
 from pyoslc.vocabularies.qm import OSLC_QM
 
 from pyoslc_server.specification import ServiceResourceAdapter
-from .resource import CREATORSTORE, REQSTORE, Creator, Requirement
+from .resource import CREATORSTORE, REQSTORE, Requirement
 
 
 class RequirementAdapter(ServiceResourceAdapter):
@@ -83,18 +83,19 @@ class RequirementAdapter(ServiceResourceAdapter):
             "http://purl.org/dc/terms/description": item.description,
             "http://purl.org/dc/terms/title": item.title,
             "http://purl.org/dc/terms/created": item.created,
-            "http://purl.org/dc/terms/creator": self.convert_creator_data(item.creator)
-            if isinstance(item.creator, Creator)
-            else item.creator,
+            "http://purl.org/dc/terms/creator": self.convert_creator_data(item.creator),
         }
 
     def convert_creator_data(self, item):
-        return {
-            "http://purl.org/dc/terms/identifier": item.identifier,
-            "http://xmlns.com/foaf/0.1/firstName": item.first_name,
-            "http://xmlns.com/foaf/0.1/lastName": item.last_name,
-            "http://xmlns.com/foaf/0.1/birthday": item.birth_day,
-        }
+        if isinstance(item, list):
+            return [self.convert_creator_data(i) for i in item]
+        else:
+            return {
+                "http://purl.org/dc/terms/identifier": item.identifier,
+                "http://xmlns.com/foaf/0.1/firstName": item.first_name,
+                "http://xmlns.com/foaf/0.1/lastName": item.last_name,
+                "http://xmlns.com/foaf/0.1/birthday": item.birth_day,
+            }
 
     def get_select(self, select):
         result = []

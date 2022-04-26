@@ -115,6 +115,7 @@ class ResourceListOperation(OSLCResource):
         pfx = ["{}=<{}>".format(ns[0], ns[1]) for ns in self.graph.namespaces()]
         pfx = ", ".join(pfx)
         prefix += pfx
+        # prefix += [{prefix, ns.toPython()} for prefix, ns in self.graph.namespace_manager.namespaces()]
 
         criteria = Criteria()
         criteria.prefix(prefix)
@@ -154,7 +155,6 @@ class ResourceListOperation(OSLCResource):
         total_count = 0
         adapter = self.get_adapter(provider_id)
         if adapter:
-            # get mapping - prefix // - some cases prefix,
             adapter.namespaces = criteria.prefixes
             total_count, data = adapter.query_capability(
                 paging=paging,
