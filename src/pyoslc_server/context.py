@@ -11,7 +11,6 @@ _sentinel = object()
 
 
 class AppContext(object):
-
     def __init__(self, app):
         self.app = app
         self.adapter = app.get_adapter(None)
@@ -50,7 +49,6 @@ class AppContext(object):
 
 
 class Context(object):
-
     def __init__(self, app, environ, request=None, session=None):
         self.app = app
         self.request = request if request else Request(environ)

@@ -1,4 +1,3 @@
-
 DIGIT = "0-9"
 LETTER = "A-Za-z"
 ALPHANUMERIC = LETTER + DIGIT
@@ -10,7 +9,19 @@ PREFIXED_NAME = PN_PREFIX + r":[" + ALPHANUMERIC + "_](\\.?[" + ALPHANUMERIC + "
 IDENTIFIER = r"\*|" + PREFIXED_NAME
 OPERATOR = r"(([!<>]?=)|[<>])"
 IRI_REF = r"<(([^<>\"{}\|`\\])+)>"
-VALUE = r"(" + IRI_REF + "|true|false|" + DECIMAL + "|" + STRING_ESC + "(" + LANGTAG + "|\\^\\^" + PREFIXED_NAME + ")?)"
+VALUE = (
+    r"("
+    + IRI_REF
+    + "|true|false|"
+    + DECIMAL
+    + "|"
+    + STRING_ESC
+    + "("
+    + LANGTAG
+    + "|\\^\\^"
+    + PREFIXED_NAME
+    + ")?)"
+)
 COMPARISION = OPERATOR + VALUE
 IN = r" (in) \[((.+?))\]"
 SCOPED_TERM = r"\{((.+?))\}"

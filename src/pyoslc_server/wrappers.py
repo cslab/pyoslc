@@ -2,13 +2,13 @@ from werkzeug import Request as RequestBase, Response as ResponseBase
 
 
 class RDFMixing:
-
     @property
     def is_rdf(self):
         mt = self.mimetype
         return (
-            mt == 'text/turtle'
-            or (mt.startswith('application/')) and mt.endswith('+xml')
+            mt == "text/turtle"
+            or (mt.startswith("application/"))
+            and mt.endswith("+xml")
         )
 
     @property
@@ -23,7 +23,7 @@ class Request(RequestBase, RDFMixing):
     url_rule = None
     view_args = None
     routing_exception = None
-    content_type = 'text/turtle'
+    content_type = "text/turtle"
 
     @property
     def endpoint(self):
@@ -32,4 +32,4 @@ class Request(RequestBase, RDFMixing):
 
 
 class Response(ResponseBase, RDFMixing):
-    default_mimetype = 'text/turtle'
+    default_mimetype = "text/turtle"

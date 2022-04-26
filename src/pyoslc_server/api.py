@@ -7,7 +7,12 @@ from werkzeug.exceptions import NotAcceptable, InternalServerError
 from werkzeug.wrappers import Response
 
 from .namespace import Namespace
-from .endpoints import ServiceProviderCatalog, ServiceProvider, ResourceListOperation, ResourceItemOperation
+from .endpoints import (
+    ServiceProviderCatalog,
+    ServiceProvider,
+    ResourceListOperation,
+    ResourceItemOperation,
+)
 from .helpers import camel_to_dash
 from .views import unpack
 from .globals import request
@@ -18,24 +23,27 @@ DEFAULT_REPRESENTATIONS = [("text/turtle", to_rdf)]
 
 
 class API(object):
-
     def __init__(self, app=None, authorizations=None, prefix="/services", **kwargs):
         self.app = app
         self.namespaces = []
         self.ns_paths = {}
         self.prefix = prefix
         self.endpoints = set()
-        self.default_mediatype = 'text/turtle'
+        self.default_mediatype = "text/turtle"
 
         self.authorizations = authorizations
         self.representations = OrderedDict(DEFAULT_REPRESENTATIONS)
 
         self.app.logger.debug(
-            'Initializing OSLC API: <name: {name}> <prefix: {prefix}>'.format(name=app.name, prefix=self.prefix)
+            "Initializing OSLC API: <name: {name}> <prefix: {prefix}>".format(
+                name=app.name, prefix=self.prefix
+            )
         )
 
-        self.default_namespace = self._namespace(title='catalog', description='Service Provider Catalog')
-        self.default_namespace.add_resource(ServiceProviderCatalog, '/catalog')
+        self.default_namespace = self._namespace(
+            title="catalog", description="Service Provider Catalog"
+        )
+        self.default_namespace.add_resource(ServiceProviderCatalog, "/catalog")
 
     def _complete_url(self, url_part, registration_prefix):
         parts = (registration_prefix, self.prefix, url_part)
@@ -46,8 +54,9 @@ class API(object):
         endpoint = str(endpoint or self.default_endpoint(resource, namespace))
 
         self.app.logger.debug(
-            'Registering endpoint: <{endpoint}> resource: <{resource}> '.format(resource=resource.__name__,
-                                                                                endpoint=endpoint)
+            "Registering endpoint: <{endpoint}> resource: <{resource}> ".format(
+                resource=resource.__name__, endpoint=endpoint
+            )
         )
         kwargs["endpoint"] = endpoint
         self.endpoints.add(endpoint)
@@ -75,7 +84,11 @@ class API(object):
 
         resource_func = self.output(
             resource.as_view(
-                endpoint, self, namespace=namespace, *resource_class_args, **resource_class_kwargs
+                endpoint,
+                self,
+                namespace=namespace,
+                *resource_class_args,
+                **resource_class_kwargs
             )
         )
 
@@ -84,12 +97,12 @@ class API(object):
             # Add the url to the application
             self.app.logger.debug(
                 "Adding <rule: {rule}> <view_func: {resource_func}>".format(
-                    rule=rule, resource_func=resource_func.__name__)
+                    rule=rule, resource_func=resource_func.__name__
+                )
             )
-            app.add_url_rule(rule, view_func=resource_func,  **kwargs)
+            app.add_url_rule(rule, view_func=resource_func, **kwargs)
 
     def output(self, resource):
-
         @wraps(resource)
         def wrapper(*args, **kwargs):
             resp = resource(*args, **kwargs)
@@ -102,10 +115,11 @@ class API(object):
 
     def make_response(self, data, *args, **kwargs):
         default_mediatype = (
-                kwargs.pop("fallback_mediatype", None) or self.default_mediatype
+            kwargs.pop("fallback_mediatype", None) or self.default_mediatype
         )
         mediatype = request.accept_mimetypes.best_match(
-            self.representations, default=default_mediatype,
+            self.representations,
+            default=default_mediatype,
         )
         if mediatype is None:
             raise NotAcceptable()
@@ -143,7 +157,9 @@ class API(object):
 
     def _add_namespace(self, ns, path=None):
         if ns not in self.namespaces:
-            self.app.logger.debug("Adding provider: <{namespace}>".format(namespace=ns.title))
+            self.app.logger.debug(
+                "Adding provider: <{namespace}>".format(namespace=ns.title)
+            )
             self.namespaces.append(ns)
             if path is not None:
                 self.ns_paths[ns] = path
@@ -154,9 +170,17 @@ class API(object):
         return ns
 
     def add_adapter(self, adapter):
-        self.app.logger.debug("Adding adapter: <{adapter}>".format(adapter=adapter.identifier))
-        self.default_namespace.add_resource(ServiceProvider, '/provider/<string:provider_id>')
-        self.default_namespace.add_resource(ResourceListOperation, '/provider/<string:provider_id>/resources')
-        self.default_namespace.add_resource(ResourceItemOperation,
-                                            '/provider/<string:provider_id>/resources/<string:resource_id>')
+        self.app.logger.debug(
+            "Adding adapter: <{adapter}>".format(adapter=adapter.identifier)
+        )
+        self.default_namespace.add_resource(
+            ServiceProvider, "/provider/<string:provider_id>"
+        )
+        self.default_namespace.add_resource(
+            ResourceListOperation, "/provider/<string:provider_id>/resources"
+        )
+        self.default_namespace.add_resource(
+            ResourceItemOperation,
+            "/provider/<string:provider_id>/resources/<string:resource_id>",
+        )
         self.default_namespace.add_adapter(adapter)

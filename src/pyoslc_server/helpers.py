@@ -47,9 +47,7 @@ def url_for(endpoint, **values):
 
     try:
         try:
-            rv = adapter.build(
-                endpoint, values, method=method, force_external=external
-            )
+            rv = adapter.build(endpoint, values, method=method, force_external=external)
         finally:
             if old_scheme is not None:
                 adapter.url_scheme = old_scheme

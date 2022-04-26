@@ -6,5 +6,5 @@ OSLCData = ClosedNamespace(
     terms=[
         # RDFS Classes in this namespace
         # RDF Properties in this namespace
-    ]
+    ],
 )

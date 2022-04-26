@@ -12,11 +12,13 @@ class RootServiceSingleton(object):
 
     def __new__(cls, *args, **kwargs):
         if not cls.instance:
-            cls.instance = super(RootServiceSingleton, cls).__new__(cls, *args, **kwargs)
+            cls.instance = super(RootServiceSingleton, cls).__new__(
+                cls, *args, **kwargs
+            )
 
             cls.root_service = RootService()
-            cls.root_service.title = 'Root services for connecting with Jazz'
-            cls.root_service.description = 'Services available on the PyOSLC.'
+            cls.root_service.title = "Root services for connecting with Jazz"
+            cls.root_service.description = "Services available on the PyOSLC."
 
         return cls.instance
 
@@ -39,8 +41,8 @@ class PublisherSingleton(object):
             cls.instance = super(PublisherSingleton, cls).__new__(cls, *args, **kwargs)
 
             cls.publisher = Publisher()
-            cls.publisher.title = 'PyOSLC'
-            cls.publisher.description = 'Implementer of the PyOSLC adapter.'
+            cls.publisher.title = "PyOSLC"
+            cls.publisher.description = "Implementer of the PyOSLC adapter."
 
         return cls.instance
 
@@ -49,9 +51,9 @@ class PublisherSingleton(object):
         if not cls.instance:
             cls()
 
-        publisher_url = publisher_url.replace('catalog', 'publisher')
+        publisher_url = publisher_url.replace("catalog", "publisher")
         cls.publisher.about = publisher_url
-        cls.publisher.identifier = 'Publisher-1'
+        cls.publisher.identifier = "Publisher-1"
 
         return cls.publisher
 
@@ -63,11 +65,13 @@ class ConfigurationManagementSingleton(object):
 
     def __new__(cls, *args, **kwargs):
         if not cls.instance:
-            cls.instance = super(ConfigurationManagementSingleton, cls).__new__(cls, *args, **kwargs)
+            cls.instance = super(ConfigurationManagementSingleton, cls).__new__(
+                cls, *args, **kwargs
+            )
 
             cls.catalog = ServiceProviderCatalog()
-            cls.catalog.title = 'Configuration Management'
-            cls.catalog.description = 'Configuration Services Provided'
+            cls.catalog.title = "Configuration Management"
+            cls.catalog.description = "Configuration Services Provided"
 
     @classmethod
     def get_catalog(cls, catalog_url):
@@ -85,14 +89,15 @@ class ConfigurationManagementSingleton(object):
         components = []  # CSVImplementation.get_configuration_info()
 
         for component in components:
-            identifier = component.get('id')
+            identifier = component.get("id")
             if identifier not in list(cls.components.keys()):
-                name = component.get('name')
-                description = 'Configuration Service for: {}'.format(name)
+                name = component.get("name")
+                description = "Configuration Service for: {}".format(name)
                 publisher = PublisherSingleton.get_publisher(catalog_url)
-                parameters = {'id': identifier}
-                comp = ContactConfigurationFactory.create_components(catalog_url, name, description, publisher,
-                                                                     parameters)
+                parameters = {"id": identifier}
+                comp = ContactConfigurationFactory.create_components(
+                    catalog_url, name, description, publisher, parameters
+                )
                 cls.register_component(catalog_url, identifier, comp)
 
         return cls.components
@@ -102,7 +107,7 @@ class ConfigurationManagementSingleton(object):
 
         domains = cls.get_domains(component)
 
-        uri = uri.replace('catalog', 'components') + '/' + identifier
+        uri = uri.replace("catalog", "components") + "/" + identifier
         component.about = uri
         component.identifier = identifier
         component.created = datetime.now()
@@ -125,8 +130,8 @@ class ConfigurationManagementSingleton(object):
     @classmethod
     def get_component(cls, component_url, identifier):
         if not cls.instance:
-            comp = 'components/{}'.format(identifier)
-            catalog_url = component_url.replace(comp, 'catalog')
+            comp = "components/{}".format(identifier)
+            catalog_url = component_url.replace(comp, "catalog")
             cls.get_catalog(catalog_url)
 
         component = cls.components.get(identifier)

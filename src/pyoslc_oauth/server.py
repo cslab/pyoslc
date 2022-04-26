@@ -1,6 +1,12 @@
-from authlib.integrations.flask_oauth1 import AuthorizationServer, register_nonce_hooks, \
-    register_temporary_credential_hooks
-from authlib.integrations.sqla_oauth1 import create_query_client_func, register_token_credential_hooks
+from authlib.integrations.flask_oauth1 import (
+    AuthorizationServer,
+    register_nonce_hooks,
+    register_temporary_credential_hooks,
+)
+from authlib.integrations.sqla_oauth1 import (
+    create_query_client_func,
+    register_token_credential_hooks,
+)
 
 from pyoslc_oauth.database import db
 from pyoslc_oauth.models import Client, cache, TokenCredential

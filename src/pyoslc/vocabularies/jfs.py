@@ -5,10 +5,10 @@ JFS = ClosedNamespace(
     uri=URIRef("http://jazz.net/xmlns/prod/jazz/jfs/1.0/"),
     terms=[
         # RDFS Classes in this namespace
-
         # RDF Properties in this namespace
         # for OAuth
-        "oauthRealmName", "oauthDomain",
+        "oauthRealmName",
+        "oauthDomain",
         "oauthRequestConsumerKeyUrl",
         "oauthApprovalModuleUrl",
         "oauthRequestTokenUrl",
@@ -17,5 +17,5 @@ JFS = ClosedNamespace(
         "nonLocalizedTitle",
         "version",
         "instanceName",
-    ]
+    ],
 )

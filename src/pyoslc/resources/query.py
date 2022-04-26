@@ -8,7 +8,6 @@ logger = logging.getLogger(__name__)
 
 
 class Property(object):
-
     def __init__(self, prop, props=None):
         self.__prop = prop
         self.__props = props if props else []
@@ -23,7 +22,6 @@ class Property(object):
 
 
 class Condition(Property):
-
     def __init__(self, prop, nested_terms=None, operator=None, values=None):
         super(Condition, self).__init__(prop, nested_terms)
         self.__operator = operator
@@ -40,7 +38,6 @@ class Condition(Property):
 
 
 class Criteria:
-
     def __init__(self):
         self.__prefixes = dict()
         self.__conditions = list()
@@ -84,10 +81,12 @@ class Criteria:
         return values
 
     def compound_term(self, compound_term):
-        if not compound_term or compound_term == '':
+        if not compound_term or compound_term == "":
             local_conditions = list()
         elif not re.search(TERM + "( and " + TERM + ")*", compound_term):
-            raise ValueError("Bad formed where {where} on compound_term".format(where=compound_term))
+            raise ValueError(
+                "Bad formed where {where} on compound_term".format(where=compound_term)
+            )
         else:
             local_conditions = list()
             pattern = re.compile("( and )?" + TERM)
@@ -98,21 +97,32 @@ class Criteria:
                 prop = self.qualified_name(prop)
                 if matcher.group(23):
                     local_conditions.append(
-                        Condition(prop=prop, nested_terms=self.compound_term(matcher.group(23)))
+                        Condition(
+                            prop=prop,
+                            nested_terms=self.compound_term(matcher.group(23)),
+                        )
                     )
                 elif matcher.group(19):
                     local_conditions.append(
-                        Condition(prop=prop, operator=matcher.group(19), values=self.in_val(matcher.group(20)))
+                        Condition(
+                            prop=prop,
+                            operator=matcher.group(19),
+                            values=self.in_val(matcher.group(20)),
+                        )
                     )
                 else:
                     local_conditions.append(
-                        Condition(prop=prop, operator=matcher.group(7), values=matcher.group(9))
+                        Condition(
+                            prop=prop,
+                            operator=matcher.group(7),
+                            values=matcher.group(9),
+                        )
                     )
 
         return local_conditions
 
     def props(self, parameter):
-        if not parameter or parameter == '':
+        if not parameter or parameter == "":
             local_properties = list()
         elif not re.search(PROPERTY + "(," + PROPERTY + ")*", parameter):
             raise ValueError("Bad formed properties: " + parameter)
@@ -127,12 +137,14 @@ class Criteria:
                 if matcher.group(6) is None:
                     local_properties.append(Property(prop))
                 else:
-                    local_properties.append(Property(prop, self.props(matcher.group(6))))
+                    local_properties.append(
+                        Property(prop, self.props(matcher.group(6)))
+                    )
 
         return local_properties
 
     def prefix(self, parameter):
-        if not parameter or parameter == '':
+        if not parameter or parameter == "":
             prfxs = dict()
         elif not re.search(PREFIX_DEF + "(," + PREFIX_DEF + ")*", parameter):
             raise ValueError("Bad formed oslc.prefix: " + parameter)
@@ -158,9 +170,9 @@ class Criteria:
         self.properties = self.props(parameter)
 
     def qualified_name(self, parameter):
-        prefix = parameter.split(':')[0]
-        ns = self.prefixes.get(prefix, 'http://example.com/')
-        return ns + parameter.split(':')[1]
+        prefix = parameter.split(":")[0]
+        ns = self.prefixes.get(prefix, "http://example.com/")
+        return ns + parameter.split(":")[1]
 
 
 if __name__ == "__main__":
@@ -168,11 +180,11 @@ if __name__ == "__main__":
     prfx += "oslc_rm=<http://open-services.net/ns/rm#>,"
     prfx += "oslc_cm=<http://open-services.net/ns/cm#>,"
     prfx += "contact_plm=<https://contact-software.com/ontologies/v1.0/plm#>"
-    qry = "cm:quality_top-level.in in [\"high-top.quality\",\"medium-low_quality\"] "
-    qry += "and cm:severity in [\"high\",\"medium\"] and cm:polarity=true and "
-    qry += "cm:weight=-20.22e3 and cm:title=\"machine\" and oslc_rm:discipline{contact_plm:text=\"General\"} "
-    qry += "and dcterms:creator{foaf:firstName=\"Esser, Rebekka\"} and qm:testcase=<http://example.com/tests/31459> "
-    qry += "and qm:name=\"cat\"@en-us and qm:age=\"42\"^^xsd:integer"
+    qry = 'cm:quality_top-level.in in ["high-top.quality","medium-low_quality"] '
+    qry += 'and cm:severity in ["high","medium"] and cm:polarity=true and '
+    qry += 'cm:weight=-20.22e3 and cm:title="machine" and oslc_rm:discipline{contact_plm:text="General"} '
+    qry += 'and dcterms:creator{foaf:firstName="Esser, Rebekka"} and qm:testcase=<http://example.com/tests/31459> '
+    qry += 'and qm:name="cat"@en-us and qm:age="42"^^xsd:integer'
     slct = "dcterms:created,dcterms:creator{foaf:familyName}"
 
     criteria = Criteria()

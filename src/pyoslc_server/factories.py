@@ -11,7 +11,13 @@ if PY3:
 else:
     from urlparse import urlparse
 
-from pyoslc.resources.models import ServiceProvider, Service, QueryCapability, CreationFactory, Dialog
+from pyoslc.resources.models import (
+    ServiceProvider,
+    Service,
+    QueryCapability,
+    CreationFactory,
+    Dialog,
+)
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -19,12 +25,14 @@ logger = logging.getLogger(__name__)
 
 
 class ContactServiceProviderFactory(object):
-
     @classmethod
-    def create_service_provider(cls, sp, base_uri, title, description, publisher, parameters):
+    def create_service_provider(
+        cls, sp, base_uri, title, description, publisher, parameters
+    ):
         classes = [sp]
-        sp = ServiceProviderFactory.create_service_provider(base_uri, title, description, publisher, classes,
-                                                            parameters)
+        sp = ServiceProviderFactory.create_service_provider(
+            base_uri, title, description, publisher, classes, parameters
+        )
 
         prefix_definitions = list()
         # prefix_definitions.append(PrefixDefinition(prefix='dcterms', prefix_base=DCTERMS))
@@ -42,40 +50,69 @@ class ContactServiceProviderFactory(object):
 
 
 class ServiceProviderFactory(object):
+    @classmethod
+    def create_service_provider(
+        cls, base_uri, title, description, publisher, resource_classes, parameters
+    ):
+        return cls.initialize(
+            ServiceProvider(),
+            base_uri,
+            title,
+            description,
+            publisher,
+            resource_classes,
+            parameters,
+        )
 
     @classmethod
-    def create_service_provider(cls, base_uri, title, description, publisher, resource_classes, parameters):
-        return cls.initialize(ServiceProvider(), base_uri, title, description, publisher, resource_classes, parameters)
+    def initialize(
+        cls,
+        service_provider,
+        base_uri,
+        title,
+        description,
+        publisher,
+        resource_classes,
+        parameters,
+    ):
 
-    @classmethod
-    def initialize(cls, service_provider, base_uri, title, description, publisher, resource_classes,
-                   parameters):
-
-        service_provider.title = title if title else 'Service Provider'
-        service_provider.description = description if description else 'Service Provider Description'
+        service_provider.title = title if title else "Service Provider"
+        service_provider.description = (
+            description if description else "Service Provider Description"
+        )
         service_provider.publisher = publisher
 
         services = dict()
 
         for class_ in resource_classes:
-            logger.debug("Initializing: <{} - {}>".format(class_.identifier, class_.__class__.__name__))
+            logger.debug(
+                "Initializing: <{} - {}>".format(
+                    class_.identifier, class_.__class__.__name__
+                )
+            )
             if class_.methods:
 
                 service = services.get(class_.__class__.__name__)
                 if not service:
                     if not class_.types or not isinstance(class_.types, list):
                         raise InternalServerError(
-                            'The OSLC Resource Type attribute is required in {}'.format(class_.__class__.__name__)
+                            "The OSLC Resource Type attribute is required in {}".format(
+                                class_.__class__.__name__
+                            )
                         )
 
                     if not class_.domain:
                         raise InternalServerError(
-                            'The OSLC Domain attribute is required in {}'.format(class_.__class__.__name__)
+                            "The OSLC Domain attribute is required in {}".format(
+                                class_.__class__.__name__
+                            )
                         )
 
                     if not class_.service_path:
                         raise InternalServerError(
-                            'The Service Path attribute is required in {}'.format(class_.__class__.__name__)
+                            "The Service Path attribute is required in {}".format(
+                                class_.__class__.__name__
+                            )
                         )
 
                     service = Service(domain=class_.domain)
@@ -93,58 +130,71 @@ class ServiceProviderFactory(object):
     @classmethod
     def handle_resource_class(cls, base_uri, klass, service, parameters, path):
 
-        items = [item for item in inspect.classify_class_attrs(klass.__class__) if item.kind.__contains__(
-            'method') and item.name != '__init__' and item.defining_class == klass.__class__]
+        items = [
+            item
+            for item in inspect.classify_class_attrs(klass.__class__)
+            if item.kind.__contains__("method")
+            and item.name != "__init__"
+            and item.defining_class == klass.__class__
+        ]
         for item in items:
-            if item.name == 'query_capability':
+            if item.name == "query_capability":
                 resource_attributes = {
-                    'title': 'Query Capability',
-                    'label': 'Query Capability',
-                    'resource_shape': 'resourceShapes/requirement',
-                    'resource_type': klass.types,
-                    'usages': []
+                    "title": "Query Capability",
+                    "label": "Query Capability",
+                    "resource_shape": "resourceShapes/requirement",
+                    "resource_type": klass.types,
+                    "usages": [],
                 }
-                query_capability = cls.create_query_capability(base_uri, path, resource_attributes, parameters)
+                query_capability = cls.create_query_capability(
+                    base_uri, path, resource_attributes, parameters
+                )
                 service.add_query_capability(query_capability)
                 # resource_shape = query_capability.resource_shape
 
-            if item.name == 'creation_factory':
+            if item.name == "creation_factory":
                 resource_attributes = {
-                    'title': 'Creation Factory',
-                    'label': 'Creation Factory',
-                    'resource_shape': ['resourceShapes/requirement'],
-                    'resource_type': klass.types,
-                    'usages': []
+                    "title": "Creation Factory",
+                    "label": "Creation Factory",
+                    "resource_shape": ["resourceShapes/requirement"],
+                    "resource_type": klass.types,
+                    "usages": [],
                 }
-                creation_factory = cls.create_creation_factory(base_uri, resource_attributes, parameters)
+                creation_factory = cls.create_creation_factory(
+                    base_uri, resource_attributes, parameters
+                )
                 service.add_creation_factory(creation_factory)
                 # resource_shape = creation_factory.resource_shape
 
-            if item.name == 'selection_dialog':
+            if item.name == "selection_dialog":
                 resource_attributes = {
-                    'title': 'Selection Dialog',
-                    'label': 'Selection Dialog Service',
-                    'uri': '{}/selector'.format(path),
-                    'hint_width': '525px',
-                    'hint_height': '325px',
-                    'resource_type': klass.types,
-                    'usages': ['http://open-services.net/ns/am#PyOSLCSelectionDialog']
+                    "title": "Selection Dialog",
+                    "label": "Selection Dialog Service",
+                    "uri": "{}/selector".format(path),
+                    "hint_width": "525px",
+                    "hint_height": "325px",
+                    "resource_type": klass.types,
+                    "usages": ["http://open-services.net/ns/am#PyOSLCSelectionDialog"],
                 }
-                dialog = cls.create_selection_dialog(base_uri, resource_attributes, parameters)
+                dialog = cls.create_selection_dialog(
+                    base_uri, resource_attributes, parameters
+                )
                 service.add_selection_dialog(dialog)
 
-            if item.name == 'creation_dialog':
+            if item.name == "creation_dialog":
                 resource_attributes = {
-                    'title': 'Creation Dialog',
-                    'label': 'Creation Dialog service',
-                    'uri': 'provider/{id}/resources/creator',
-                    'hint_width': '525px',
-                    'hint_height': '325px',
-                    'resource_shape': 'resourceShapes/eventType',
-                    'resource_type': klass.types,
-                    'usages': ['http://open-services.net/ns/am#PyOSLCCreationDialog']
+                    "title": "Creation Dialog",
+                    "label": "Creation Dialog service",
+                    "uri": "provider/{id}/resources/creator",
+                    "hint_width": "525px",
+                    "hint_height": "325px",
+                    "resource_shape": "resourceShapes/eventType",
+                    "resource_type": klass.types,
+                    "usages": ["http://open-services.net/ns/am#PyOSLCCreationDialog"],
                 }
-                dialog = cls.create_creation_dialog(base_uri, resource_attributes, parameters)
+                dialog = cls.create_creation_dialog(
+                    base_uri, resource_attributes, parameters
+                )
                 service.add_creation_dialog(dialog)
 
         return True
@@ -152,19 +202,21 @@ class ServiceProviderFactory(object):
     @classmethod
     def create_query_capability(cls, base_uri, path, attributes, parameters):
 
-        title = attributes.get('title', 'OSLC Query Capability')
-        label = attributes.get('label', 'Query Capability Service')
-        resource_shape = attributes.get('resource_shape', '')
-        resource_type = attributes.get('resource_type', list())
-        usages = attributes.get('usages', list())
+        title = attributes.get("title", "OSLC Query Capability")
+        label = attributes.get("label", "Query Capability Service")
+        resource_shape = attributes.get("resource_shape", "")
+        resource_type = attributes.get("resource_type", list())
+        usages = attributes.get("usages", list())
 
-        base_path = base_uri + '/'
+        base_path = base_uri + "/"
         class_path = path  # 'provider/{id}/resources'
-        method_path = ''
+        method_path = ""
 
-        base_path = base_path.replace('/catalog', '')
+        base_path = base_path.replace("/catalog", "")
 
-        query = cls.resolve_path_parameter(base_path, class_path, method_path, parameters)
+        query = cls.resolve_path_parameter(
+            base_path, class_path, method_path, parameters
+        )
 
         query_capability = QueryCapability(about=query, title=title, query_base=query)
         if label:
@@ -184,26 +236,34 @@ class ServiceProviderFactory(object):
 
     @classmethod
     def create_creation_factory(cls, base_uri, attributes, parameters):
-        class_path = 'provider/{id}/resources'
-        method_path = ''
-        creation_factory = cls.creation_factory(base_uri, attributes, parameters, class_path, method_path)
+        class_path = "provider/{id}/resources"
+        method_path = ""
+        creation_factory = cls.creation_factory(
+            base_uri, attributes, parameters, class_path, method_path
+        )
         return creation_factory
 
     @classmethod
-    def creation_factory(cls, base_uri, attributes, parameters, class_path, method_path):
+    def creation_factory(
+        cls, base_uri, attributes, parameters, class_path, method_path
+    ):
 
-        title = attributes.get('title', 'OSLC Creation Factory')
-        label = attributes.get('label', 'Creation Factory Service')
-        resource_shape = attributes.get('resource_shape', list())
-        resource_type = attributes.get('resource_type', list())
-        usages = attributes.get('usages', list())
+        title = attributes.get("title", "OSLC Creation Factory")
+        label = attributes.get("label", "Creation Factory Service")
+        resource_shape = attributes.get("resource_shape", list())
+        resource_type = attributes.get("resource_type", list())
+        usages = attributes.get("usages", list())
 
-        base_path = base_uri + '/'
+        base_path = base_uri + "/"
 
-        creation = cls.resolve_path_parameter(base_path, class_path, method_path, parameters)
-        creation = creation.replace('/catalog', '')
+        creation = cls.resolve_path_parameter(
+            base_path, class_path, method_path, parameters
+        )
+        creation = creation.replace("/catalog", "")
 
-        creation_factory = CreationFactory(about=creation, title=title, creation=creation)
+        creation_factory = CreationFactory(
+            about=creation, title=title, creation=creation
+        )
 
         if label:
             creation_factory.label = label
@@ -222,27 +282,27 @@ class ServiceProviderFactory(object):
 
     @classmethod
     def create_selection_dialog(cls, base_uri, attributes, parameters):
-        return cls.create_dialog(base_uri, 'Selection', attributes, parameters)
+        return cls.create_dialog(base_uri, "Selection", attributes, parameters)
 
     @classmethod
     def create_creation_dialog(cls, base_uri, attributes, parameters):
-        return cls.create_dialog(base_uri, 'Creation', attributes, parameters)
+        return cls.create_dialog(base_uri, "Creation", attributes, parameters)
 
     @classmethod
     def create_dialog(cls, base_uri, dialog_type, attributes, parameters):
-        title = attributes.get('title', 'OSLC Dialog Resource Shape')
-        label = attributes.get('label', 'OSLC Dialog for Service')
-        dialog_uri = attributes.get('uri', None)
-        hint_width = attributes.get('hint_width', '100px')
-        hint_height = attributes.get('hint_height', '100px')
-        resource_type = attributes.get('resource_type', list())
-        usages = attributes.get('usages', list())
+        title = attributes.get("title", "OSLC Dialog Resource Shape")
+        label = attributes.get("label", "OSLC Dialog for Service")
+        dialog_uri = attributes.get("uri", None)
+        hint_width = attributes.get("hint_width", "100px")
+        hint_height = attributes.get("hint_height", "100px")
+        resource_type = attributes.get("resource_type", list())
+        usages = attributes.get("usages", list())
 
         if dialog_uri:
             uri = cls.resolve_path_parameter(base_uri, None, dialog_uri, parameters)
-            uri = uri.replace('/catalog', '')
+            uri = uri.replace("/catalog", "")
         else:
-            uri = base_uri + 'generic/generic' + dialog_type + '.html'
+            uri = base_uri + "generic/generic" + dialog_type + ".html"
             # Continue implementing generic dialog selector
 
         dialog = Dialog(title=title, dialog=uri)
@@ -267,13 +327,13 @@ class ServiceProviderFactory(object):
     @classmethod
     def resolve_path_parameter(cls, base_path, class_path, method_path, parameters):
 
-        base_path = base_path.rstrip('/')
+        base_path = base_path.rstrip("/")
 
         if class_path:
-            base_path += '/' + class_path
+            base_path += "/" + class_path
 
         if method_path:
-            base_path += '/' + method_path
+            base_path += "/" + method_path
 
         uri = urlparse(base_path.format(**parameters))
 

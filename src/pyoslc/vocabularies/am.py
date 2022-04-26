@@ -6,8 +6,7 @@ OSLC_AM = ClosedNamespace(
     terms=[
         # RDFS Classes in this namespace
         "LinkType",
-
         # RDF Properties in this namespace
         "amServiceProviders",
-    ]
+    ],
 )

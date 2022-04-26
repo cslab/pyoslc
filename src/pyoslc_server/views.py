@@ -21,7 +21,7 @@ def with_metaclass(meta, *bases):
         def __new__(cls, name, this_bases, d):
             return meta(name, bases, d)
 
-    return type.__new__(metaclass, 'temporary_class', (), {})
+    return type.__new__(metaclass, "temporary_class", (), {})
 
 
 http_method_funcs = frozenset(
@@ -75,9 +75,9 @@ class View(object):
             self = view.view_class(*class_args, **class_kwargs)
             return self.dispatch_request(*args, **kwargs)
 
-        if hasattr(cls, 'adapters'):
-            adapter = class_kwargs.get('adapter', None)
-            if adapter and not(adapter in cls.adapters):
+        if hasattr(cls, "adapters"):
+            adapter = class_kwargs.get("adapter", None)
+            if adapter and not (adapter in cls.adapters):
                 print("Adding {adapter} to {cls}".format(adapter=adapter, cls=cls))
                 cls.adapters.append(adapter)
 
@@ -102,7 +102,7 @@ class MethodViewType(type):
     def __init__(cls, name, bases, d):
         super(MethodViewType, cls).__init__(name, bases, d)
 
-        if 'methods' not in d:
+        if "methods" not in d:
             methods = set()
 
             for key in http_method_funcs:
@@ -138,10 +138,10 @@ class MethodView(with_metaclass(MethodViewType, View)):
 
         # If the request method is HEAD and we don't have a handler for it
         # retry with GET.
-        if meth is None and request.method == 'HEAD':
-            meth = getattr(self, 'get', None)
+        if meth is None and request.method == "HEAD":
+            meth = getattr(self, "get", None)
 
-        assert meth is not None, 'Unimplemented method %r' % request.method
+        assert meth is not None, "Unimplemented method %r" % request.method
         return meth(*args, **kwargs)
 
 

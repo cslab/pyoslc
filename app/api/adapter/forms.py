@@ -4,7 +4,9 @@ from wtforms.validators import DataRequired
 
 
 class SpecificationForm(FlaskForm):
-    specification_id = StringField(validators=[DataRequired()], render_kw={'class_': 'form-control-sm'})
+    specification_id = StringField(
+        validators=[DataRequired()], render_kw={"class_": "form-control-sm"}
+    )
     title = StringField(validators=[DataRequired()])
     description = StringField(validators=[DataRequired()])
     author = StringField(validators=[DataRequired()])

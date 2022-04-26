@@ -10,9 +10,9 @@ def to_rdf(subject, attr_mapping, rdf_type, oslc_domain, rdf_format, *args, **kw
         data = args[0]
 
     graph = Graph()
-    graph.bind('rdf', RDF)
-    graph.bind('dcterms', DCTERMS)
-    graph.bind('oslc_rm', OSLC_RM)
+    graph.bind("rdf", RDF)
+    graph.bind("dcterms", DCTERMS)
+    graph.bind("oslc_rm", OSLC_RM)
 
     r = Resource(graph, URIRef(subject))
     if isinstance(rdf_type, list):

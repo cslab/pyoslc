@@ -8,7 +8,6 @@ class ServiceResourceException(Exception):
 
 
 class ServiceResourceDescription(object):
-
     def __init__(self, name, kind, module_path, class_name):
         self.name = name
         self.kind = kind
@@ -30,8 +29,11 @@ def config_service_resource(name, kind, module_path, class_name):
 
 def get_service_resources(key, kind):
     try:
-        rs = [_service_resources[r] for r in _service_resources if r[1] == kind and r[0] == key]
+        rs = [
+            _service_resources[r]
+            for r in _service_resources
+            if r[1] == kind and r[0] == key
+        ]
     except KeyError:
-        raise ServiceResourceException(
-            "No Service Resource registered for (%s)" % kind)
+        raise ServiceResourceException("No Service Resource registered for (%s)" % kind)
     return [r.get_class() for r in rs]

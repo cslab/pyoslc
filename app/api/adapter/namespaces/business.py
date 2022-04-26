@@ -14,13 +14,13 @@ attributes = specification_map
 
 
 def get_requirement(base_url, specification_id):
-    path = 'examples/specifications.csv'
+    path = "examples/specifications.csv"
     if os.path.isfile(path):
-        with open(path, 'r') as f:
-            reader = csv.DictReader(f, delimiter=';')
+        with open(path, "r") as f:
+            reader = csv.DictReader(f, delimiter=";")
             for row in reader:
-                if row['Specification_id'] == specification_id:
-                    about = base_url.replace('selector', 'requirement')
+                if row["Specification_id"] == specification_id:
+                    about = base_url.replace("selector", "requirement")
                     requirement = Requirement(about=about)
                     requirement.update(row, attributes)
 
@@ -29,10 +29,10 @@ def get_requirement(base_url, specification_id):
 
 def get_requirement_list(base_url, select, where):
     requirements = list()
-    path = 'examples/specifications.csv'
+    path = "examples/specifications.csv"
     if os.path.isfile(path):
-        with open(path, 'r') as f:
-            reader = csv.DictReader(f, delimiter=';')
+        with open(path, "r") as f:
+            reader = csv.DictReader(f, delimiter=";")
             for row in reader:
                 requirement = Requirement()
                 requirement.update(row, attributes=attributes)
@@ -42,13 +42,17 @@ def get_requirement_list(base_url, select, where):
 
 
 def get_requirements(base_url):
-    path = 'examples/specifications.csv'
+    path = "examples/specifications.csv"
     requirements = list()
-    with open(path, 'r') as f:
-        reader = csv.DictReader(f, delimiter=';')
+    with open(path, "r") as f:
+        reader = csv.DictReader(f, delimiter=";")
 
         for row in reader:
-            about = base_url.replace('selector', 'requirement') + '/' + row['Specification_id']
+            about = (
+                base_url.replace("selector", "requirement")
+                + "/"
+                + row["Specification_id"]
+            )
             requirement = Requirement(about=about)
             requirement.update(row, attributes=attributes)
             requirements.append(requirement)
@@ -61,7 +65,9 @@ def create_requirement(data):
         requirement = Requirement()
         if isinstance(data, Graph):
             requirement.from_rdf(data, attributes=attributes)
-            identifier = [(s, o) for s, o in data.subject_objects(DCTERMS.identifier)][0]
+            identifier = [(s, o) for s, o in data.subject_objects(DCTERMS.identifier)][
+                0
+            ]
             if identifier:
                 requirement.identifier = identifier[1]
                 requirement.about = identifier[0]
@@ -71,20 +77,20 @@ def create_requirement(data):
         specification = requirement.to_mapped_object(attributes)
 
         if specification:
-            path = 'examples/specifications.csv'
-            tempfile = NamedTemporaryFile(mode='w', delete=False)
+            path = "examples/specifications.csv"
+            tempfile = NamedTemporaryFile(mode="w", delete=False)
 
-            with open(path, 'r') as f:
-                reader = csv.DictReader(f, delimiter=';')
+            with open(path, "r") as f:
+                reader = csv.DictReader(f, delimiter=";")
                 field_names = reader.fieldnames
 
-            with open(path, 'r') as csvfile, tempfile:
-                reader = csv.DictReader(csvfile, fieldnames=field_names, delimiter=';')
-                writer = csv.DictWriter(tempfile, fieldnames=field_names, delimiter=';')
+            with open(path, "r") as csvfile, tempfile:
+                reader = csv.DictReader(csvfile, fieldnames=field_names, delimiter=";")
+                writer = csv.DictWriter(tempfile, fieldnames=field_names, delimiter=";")
                 exist = False
 
                 for row in reader:
-                    if row['Specification_id'] == specification['Specification_id']:
+                    if row["Specification_id"] == specification["Specification_id"]:
                         exist = True
                     writer.writerow(row)
 
@@ -107,7 +113,9 @@ def update_requirement(requirement_id, data):
         requirement = Requirement()
         if isinstance(data, Graph):
             requirement.from_rdf(data, attributes=attributes)
-            identifier = [(s, o) for s, o in data.subject_objects(DCTERMS.identifier)][0]
+            identifier = [(s, o) for s, o in data.subject_objects(DCTERMS.identifier)][
+                0
+            ]
             if identifier:
                 requirement.identifier = identifier[1]
                 requirement.about = identifier[0]
@@ -117,23 +125,23 @@ def update_requirement(requirement_id, data):
         specification = requirement.to_mapped_object(attributes)
 
         if specification:
-            path = 'examples/specifications.csv'
-            tempfile = NamedTemporaryFile(mode='w', delete=False)
+            path = "examples/specifications.csv"
+            tempfile = NamedTemporaryFile(mode="w", delete=False)
 
-            with open(path, 'r') as f:
-                reader = csv.DictReader(f, delimiter=';')
+            with open(path, "r") as f:
+                reader = csv.DictReader(f, delimiter=";")
                 field_names = reader.fieldnames
 
             modified = False
-            with open(path, 'r') as csvfile, tempfile:
-                reader = csv.DictReader(csvfile, fieldnames=field_names, delimiter=';')
-                writer = csv.DictWriter(tempfile, fieldnames=field_names, delimiter=';')
+            with open(path, "r") as csvfile, tempfile:
+                reader = csv.DictReader(csvfile, fieldnames=field_names, delimiter=";")
+                writer = csv.DictWriter(tempfile, fieldnames=field_names, delimiter=";")
                 for row in reader:
-                    if row['Specification_id'] == str(requirement_id):
+                    if row["Specification_id"] == str(requirement_id):
                         rq = Requirement()
                         rq.from_json(specification, attributes=attributes)
                         row = rq.to_mapped_object(attributes=attributes)
-                        row['Specification_id'] = requirement_id
+                        row["Specification_id"] = requirement_id
                         modified = True
                     writer.writerow(row)
 
@@ -149,19 +157,19 @@ def update_requirement(requirement_id, data):
 
 
 def delete_requirement(requirement_id):
-    path = 'examples/specifications.csv'
-    tempfile = NamedTemporaryFile(mode='w', delete=False)
+    path = "examples/specifications.csv"
+    tempfile = NamedTemporaryFile(mode="w", delete=False)
 
-    with open(path, 'r') as f:
-        reader = csv.DictReader(f, delimiter=';')
+    with open(path, "r") as f:
+        reader = csv.DictReader(f, delimiter=";")
         field_names = reader.fieldnames
 
     modified = False
-    with open(path, 'r') as csvfile, tempfile:
-        reader = csv.DictReader(csvfile, fieldnames=field_names, delimiter=';')
-        writer = csv.DictWriter(tempfile, fieldnames=field_names, delimiter=';')
+    with open(path, "r") as csvfile, tempfile:
+        reader = csv.DictReader(csvfile, fieldnames=field_names, delimiter=";")
+        writer = csv.DictWriter(tempfile, fieldnames=field_names, delimiter=";")
         for row in reader:
-            if row['Specification_id'] != str(requirement_id):
+            if row["Specification_id"] != str(requirement_id):
                 writer.writerow(row)
             else:
                 modified = True
@@ -175,8 +183,8 @@ def delete_requirement(requirement_id):
 
 
 def get_field_names(path):
-    with open(path, 'rb') as f:
-        reader = csv.DictReader(f, delimiter=';')
+    with open(path, "rb") as f:
+        reader = csv.DictReader(f, delimiter=";")
         field_names = reader.fieldnames
     return field_names if field_names else None
 

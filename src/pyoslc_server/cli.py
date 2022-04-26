@@ -146,7 +146,9 @@ def find_app_by_string(script_info, module, app_name):
         expr = ast.parse(app_name.strip(), mode="eval").body
     except SyntaxError:
         raise NoAppException(
-            "Failed to parse {app_name} as an attribute name or function call.".format(app_name=app_name)
+            "Failed to parse {app_name} as an attribute name or function call.".format(
+                app_name=app_name
+            )
         )
 
     if isinstance(expr, ast.Name):
@@ -156,7 +158,9 @@ def find_app_by_string(script_info, module, app_name):
         # Ensure the function name is an attribute name only.
         if not isinstance(expr.func, ast.Name):
             raise NoAppException(
-                "Function reference must be a simple name: {app_name}.".format(app_name=app_name)
+                "Function reference must be a simple name: {app_name}.".format(
+                    app_name=app_name
+                )
             )
 
         name = expr.func.id
@@ -169,18 +173,24 @@ def find_app_by_string(script_info, module, app_name):
             # literal_eval gives cryptic error messages, show a generic
             # message with the full expression instead.
             raise NoAppException(
-                "Failed to parse arguments as literal values: {app_name}.".format(app_name=app_name)
+                "Failed to parse arguments as literal values: {app_name}.".format(
+                    app_name=app_name
+                )
             )
     else:
         raise NoAppException(
-            "Failed to parse {app_name} as an attribute name or function call.".format(app_name=app_name)
+            "Failed to parse {app_name} as an attribute name or function call.".format(
+                app_name=app_name
+            )
         )
 
     try:
         attr = getattr(module, name)
     except AttributeError:
         raise NoAppException(
-            "Failed to find attribute {name} in {module}.".format(name=name, module=module.__name__)
+            "Failed to find attribute {name} in {module}.".format(
+                name=name, module=module.__name__
+            )
         )
 
     # If the attribute is a function, call it with any args and kwargs
@@ -195,7 +205,9 @@ def find_app_by_string(script_info, module, app_name):
             raise NoAppException(
                 "The factory {app_name} in module"
                 " {module} could not be called with the"
-                " specified arguments.".format(app_name=app_name, module=module.__name__)
+                " specified arguments.".format(
+                    app_name=app_name, module=module.__name__
+                )
             )
     else:
         app = attr
@@ -249,10 +261,14 @@ def locate_app(script_info, module_name, app_name, raise_if_not_found=True):
         if sys.exc_info()[2].tb_next:
             raise NoAppException(
                 "While importing {module}, an ImportError was"
-                " raised:\n\n{traceback}".format(module=module_name, traceback=traceback.format_exc())
+                " raised:\n\n{traceback}".format(
+                    module=module_name, traceback=traceback.format_exc()
+                )
             )
         elif raise_if_not_found:
-            raise NoAppException("Could not import {module}.".format(module=module_name))
+            raise NoAppException(
+                "Could not import {module}.".format(module=module_name)
+            )
         else:
             return
 
@@ -277,7 +293,7 @@ def get_version(ctx, param, value):
         "Werkzeug {werkzeug_version}".format(
             platform=platform.python_version(),
             pyoslc_version=__version__,
-            werkzeug_version=werkzeug.__version__
+            werkzeug_version=werkzeug.__version__,
         ),
         color=ctx.color,
     )
@@ -551,7 +567,9 @@ class OSLCGroup(AppGroup):
         try:
             return info.load_app().cli.get_command(ctx, name)
         except NoAppException as e:
-            click.secho("Error: {error}\n".format(error=e.format_message()), err=True, fg="red")
+            click.secho(
+                "Error: {error}\n".format(error=e.format_message()), err=True, fg="red"
+            )
 
     def list_commands(self, ctx):
         # Start with the built-in and plugin commands.
@@ -565,11 +583,17 @@ class OSLCGroup(AppGroup):
         except NoAppException as e:
             # When an app couldn't be loaded, show the error message
             # without the traceback.
-            click.secho("Error: {error}\n".format(error=e.format_message()), err=True, fg="red")
+            click.secho(
+                "Error: {error}\n".format(error=e.format_message()), err=True, fg="red"
+            )
         except Exception:
             # When any other errors occurred during loading, show the
             # full traceback.
-            click.secho("{traceback}\n".format(traceback=traceback.format_exc()), err=True, fg="red")
+            click.secho(
+                "{traceback}\n".format(traceback=traceback.format_exc()),
+                err=True,
+                fg="red",
+            )
 
         return sorted(rv)
 
@@ -677,7 +701,7 @@ def show_server_banner(env, debug, app_import_path, eager_loading):
         click.secho("   Use a production WSGI server instead.", dim=True)
 
     if debug is not None:
-        click.echo(" * Debug mode: {mode}".format(mode='on' if debug else 'off'))
+        click.echo(" * Debug mode: {mode}".format(mode="on" if debug else "off"))
 
 
 @click.command("run", short_help="Run a development server.")
@@ -707,9 +731,7 @@ def show_server_banner(env, debug, app_import_path, eager_loading):
     help="Enable or disable multithreading.",
 )
 @pass_script_info
-def run_command(
-    info, host, port, reload, debugger, eager_loading, with_threads
-):
+def run_command(info, host, port, reload, debugger, eager_loading, with_threads):
     """Run a local development server.
 
     This server is for development purposes only. It does not provide

@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def client_oslc():
     oslc_app = create_oslc_app()
     oslc_app.app.testing = True
@@ -43,12 +43,12 @@ def base_adapter():
 
 @pytest.fixture
 def rm_adapter():
-    return RequirementAdapter(identifier='rmtest', title='RM Test')
+    return RequirementAdapter(identifier="rmtest", title="RM Test")
 
 
 @pytest.fixture
 def tc_adapter():
-    return TestCaseAdapter(identifier='tctest', title='QM Test')
+    return TestCaseAdapter(identifier="tctest", title="QM Test")
 
 
 @pytest.fixture

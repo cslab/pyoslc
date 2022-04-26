@@ -4,7 +4,12 @@ from flask_bootstrap import Bootstrap
 
 from pyoslc_oauth import database, server
 from pyoslc_oauth.login_manager import login
-from pyoslc_oauth.resources import OAuthConfiguration, FileSystemConsumerStore, OAuthApplication, OSLCOAuthConsumer
+from pyoslc_oauth.resources import (
+    OAuthConfiguration,
+    FileSystemConsumerStore,
+    OAuthApplication,
+    OSLCOAuthConsumer,
+)
 from pyoslc_oauth.routes.consumer import consumer_bp
 from pyoslc_oauth.routes.oauth import oauth_bp
 
@@ -12,8 +17,8 @@ base_dir = os.path.abspath(os.path.dirname(__file__))
 
 
 oauth_config = OAuthConfiguration()
-file_consumer = FileSystemConsumerStore(os.path.join(base_dir, 'OAuthStore.rdf'))
-oauth_app = OAuthApplication('PyOLSC')
+file_consumer = FileSystemConsumerStore(os.path.join(base_dir, "OAuthStore.rdf"))
+oauth_app = OAuthApplication("PyOLSC")
 client = OSLCOAuthConsumer()
 
 

@@ -12,11 +12,17 @@ def with_metaclass(meta, *bases):
         def __new__(cls, name, this_bases, d):
             return meta(name, bases, d)
 
-    return type.__new__(metaclass, 'temporary_class', (), {})
+    return type.__new__(metaclass, "temporary_class", (), {})
 
 
 method_funcs = frozenset(
-    ['query_capability', 'creation_factory', 'selection_dialog', 'creation_dialog', 'get_resource']
+    [
+        "query_capability",
+        "creation_factory",
+        "selection_dialog",
+        "creation_dialog",
+        "get_resource",
+    ]
 )
 
 
@@ -28,7 +34,6 @@ class Provider(object):
 
     @classmethod
     def as_provider(cls, name, *class_args, **class_kwargs):
-
         def provider(oslc_method, *args, **kwargs):
             self = provider.provider_class(*class_args, **class_kwargs)
             return self.generate(oslc_method, *args, **kwargs)
@@ -42,11 +47,10 @@ class Provider(object):
 
 
 class ProviderResource(type):
-
     def __init__(cls, name, bases, d):
         super(ProviderResource, cls).__init__(name, bases, d)
 
-        if 'methods' not in d:
+        if "methods" not in d:
             methods = set()
 
             for key in method_funcs:
@@ -58,14 +62,13 @@ class ProviderResource(type):
 
 
 class ServiceResource(with_metaclass(ProviderResource, Provider)):
-
     def generate(self, *args, **kwargs):
         method = getattr(self, request.method.lower(), None)
 
         if method is None:
-            method = getattr(self, 'query_capability', None)
+            method = getattr(self, "query_capability", None)
 
-        assert method is not None, 'Unimplemented method %r' % method
+        assert method is not None, "Unimplemented method %r" % method
         return method(*args, **kwargs)
 
 
@@ -75,14 +78,14 @@ class ServiceResourceAdapter(ServiceResource):
     description = None
     representations = None
     domain = None
-    service_path = 'provider/{id}/resources'
+    service_path = "provider/{id}/resources"
     namespaces = dict()
     mapping = dict()
 
     def __init__(self, identifier, title, **kwargs):
         self.identifier = identifier
         self.title = title
-        self.description = kwargs.get('description', '')
+        self.description = kwargs.get("description", "")
         self.types = None
 
     @property
@@ -99,7 +102,9 @@ class ServiceResourceAdapter(ServiceResource):
 
     def generate(self, oslc_method, *args, **kwargs):
         meth = getattr(self, oslc_method, None)
-        assert meth is not None, "Unimplemented method {} in {}".format(oslc_method.lower(), self.__class__.__name__)
+        assert meth is not None, "Unimplemented method {} in {}".format(
+            oslc_method.lower(), self.__class__.__name__
+        )
 
         resp = meth(**kwargs)
 

@@ -30,7 +30,7 @@ def unpack(response, default_code=HTTPStatus.OK):
 
 def get_url(url, params):
     new_url = urlparse(unquote(url))
-    query = dict(parse_qsl(new_url.query.replace('&amp;', '&')))
+    query = dict(parse_qsl(new_url.query.replace("&amp;", "&")))
     if params:
         query.update(params)
     query_string = urlencode(query)

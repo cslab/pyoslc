@@ -2,7 +2,13 @@ import xml
 
 from rdflib import BNode, URIRef, RDFS, Literal, Namespace
 from rdflib.collection import Collection
-from rdflib.plugins.serializers.rdfxml import PrettyXMLSerializer, XMLBASE, fix, OWL_NS, XMLLANG
+from rdflib.plugins.serializers.rdfxml import (
+    PrettyXMLSerializer,
+    XMLBASE,
+    fix,
+    OWL_NS,
+    XMLLANG,
+)
 from rdflib.plugins.serializers.xmlwriter import XMLWriter
 from rdflib.util import first, more_than
 from six import b
@@ -15,7 +21,6 @@ RDF = Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#")
 
 
 class JazzRootServiceSerializer(PrettyXMLSerializer):
-
     def __init__(self, store, max_depth=3):
         super(JazzRootServiceSerializer, self).__init__(store, max_depth=3)
         self.__root_serialized = {}
@@ -115,6 +120,7 @@ class JazzRootServiceSerializer(PrettyXMLSerializer):
                 writer.push(element)
 
             if isinstance(subject, BNode):
+
                 def subj_as_obj_more_than(ceil):
                     return True
                     # more_than(store.triples((None, None, subject)), ceil)
@@ -146,9 +152,11 @@ class JazzRootServiceSerializer(PrettyXMLSerializer):
             if object.language:
                 writer.attribute(XMLLANG, object.language)
 
-            if object.datatype == RDF.XMLLiteral and isinstance(object.value, xml.dom.minidom.Document):
+            if object.datatype == RDF.XMLLiteral and isinstance(
+                object.value, xml.dom.minidom.Document
+            ):
                 writer.attribute(RDF.parseType, "Literal")
-                writer.text(u"")
+                writer.text("")
                 writer.stream.write(object)
             else:
                 if object.datatype:
@@ -171,9 +179,12 @@ class JazzRootServiceSerializer(PrettyXMLSerializer):
                 # RDF.first and RDF.rest are ignored... including RDF.List
                 import warnings
 
-                warnings.warn("Assertions on %s other than RDF.first " % repr(
-                    object) + "and RDF.rest are ignored ... including RDF.List",
-                              UserWarning, stacklevel=2)
+                warnings.warn(
+                    "Assertions on %s other than RDF.first " % repr(object)
+                    + "and RDF.rest are ignored ... including RDF.List",
+                    UserWarning,
+                    stacklevel=2,
+                )
                 writer.attribute(RDF.parseType, "Collection")
 
                 col = Collection(store, object)
@@ -187,9 +198,11 @@ class JazzRootServiceSerializer(PrettyXMLSerializer):
                     if not isinstance(item, URIRef):
                         self.__serialized[item] = 1
             else:
-                if first(store.triples_choices(
-                    (object, RDF.type, [OWL_NS.Class, RDFS.Class]))) \
-                        and isinstance(object, URIRef):
+                if first(
+                    store.triples_choices(
+                        (object, RDF.type, [OWL_NS.Class, RDFS.Class])
+                    )
+                ) and isinstance(object, URIRef):
                     writer.attribute(RDF.resource, self.relativize(object))
 
                 elif depth <= self.max_depth:
@@ -197,8 +210,11 @@ class JazzRootServiceSerializer(PrettyXMLSerializer):
 
                 elif isinstance(object, BNode):
 
-                    if object not in self.__serialized and (object, None, None) in store and len(
-                            list(store.subjects(object=object))) == 1:
+                    if (
+                        object not in self.__serialized
+                        and (object, None, None) in store
+                        and len(list(store.subjects(object=object))) == 1
+                    ):
                         # inline blank nodes if they haven't been serialized yet
                         # and are only referenced once (regardless of depth)
                         self.subject(object, depth + 1)

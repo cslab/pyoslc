@@ -1,6 +1,10 @@
-from authlib.integrations.sqla_oauth1 import OAuth1ClientMixin, OAuth1TokenCredentialMixin
+from authlib.integrations.sqla_oauth1 import (
+    OAuth1ClientMixin,
+    OAuth1TokenCredentialMixin,
+)
 from flask import current_app, g
 from flask_login import UserMixin
+
 try:
     from werkzeug.contrib.cache import FileSystemCache
 except ImportError:
@@ -14,7 +18,7 @@ from pyoslc_oauth.database import db
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(40), unique=True, nullable=False)
-    _password = db.Column('password', db.String(100))
+    _password = db.Column("password", db.String(100))
 
     def get_user_id(self):
         return self.id
@@ -57,20 +61,18 @@ class Client(db.Model, OAuth1ClientMixin):
 
 class TokenCredential(db.Model, OAuth1TokenCredentialMixin):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(
-        db.Integer, db.ForeignKey('user.id', ondelete='CASCADE')
-    )
-    user = db.relationship('User')
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"))
+    user = db.relationship("User")
 
     def set_user_id(self, user_id):
         self.user_id = user_id
 
 
 def _get_cache():
-    _cache = g.get('_oauth_cache')
+    _cache = g.get("_oauth_cache")
     if _cache:
         return _cache
-    _cache = FileSystemCache(current_app.config['OAUTH_CACHE_DIR'])
+    _cache = FileSystemCache(current_app.config["OAUTH_CACHE_DIR"])
     g._oauth_cache = _cache
     return _cache
 

@@ -12,17 +12,60 @@ logger = logging.getLogger(__name__)
 
 
 class Requirement(BaseResource):
+    def __init__(
+        self,
+        about=None,
+        types=None,
+        properties=None,
+        description=None,
+        identifier=None,
+        short_title=None,
+        title=None,
+        contributor=None,
+        creator=None,
+        subject=None,
+        created=None,
+        modified=None,
+        type=None,
+        discussed_by=None,
+        instance_shape=None,
+        service_provider=None,
+        relation=None,
+        elaborated_by=None,
+        elaborates=None,
+        specified_by=None,
+        specifies=None,
+        affected_by=None,
+        tracked_by=None,
+        implemented_by=None,
+        validated_by=None,
+        satisfied_by=None,
+        satisfies=None,
+        decomposed_by=None,
+        decomposes=None,
+        constrained_by=None,
+        constrains=None,
+    ):
 
-    def __init__(self, about=None, types=None, properties=None, description=None, identifier=None, short_title=None,
-                 title=None, contributor=None, creator=None, subject=None, created=None, modified=None, type=None,
-                 discussed_by=None, instance_shape=None, service_provider=None, relation=None, elaborated_by=None,
-                 elaborates=None, specified_by=None, specifies=None, affected_by=None, tracked_by=None,
-                 implemented_by=None, validated_by=None, satisfied_by=None, satisfies=None, decomposed_by=None,
-                 decomposes=None, constrained_by=None, constrains=None):
-
-        super(Requirement, self).__init__(about, types, properties, description, identifier, short_title, title,
-                                          contributor, creator, subject, created, modified, type, discussed_by,
-                                          instance_shape, service_provider, relation)
+        super(Requirement, self).__init__(
+            about,
+            types,
+            properties,
+            description,
+            identifier,
+            short_title,
+            title,
+            contributor,
+            creator,
+            subject,
+            created,
+            modified,
+            type,
+            discussed_by,
+            instance_shape,
+            service_provider,
+            relation,
+        )
 
         self.__elaborated_by = elaborated_by if elaborated_by is not None else set()
         self.__elaborates = elaborates if elaborates is not None else set()
@@ -40,10 +83,10 @@ class Requirement(BaseResource):
         self.__constrains = constrains if constrains is not None else set()
 
     def update(self, data, attributes):
-        assert attributes is not None, 'The mapping for attributes is required'
+        assert attributes is not None, "The mapping for attributes is required"
         for k, v in data.items():
             if k in attributes:
-                attribute_name = attributes[k]['attribute']
+                attribute_name = attributes[k]["attribute"]
                 if hasattr(self, attribute_name):
                     attribute_value = getattr(self, attribute_name)
                     if isinstance(attribute_value, set):
@@ -53,17 +96,17 @@ class Requirement(BaseResource):
                         setattr(self, attribute_name, data[k])
 
     def to_rdf(self, graph, base_url=None, attributes=None):
-        assert attributes is not None, 'The mapping for attributes is required'
+        assert attributes is not None, "The mapping for attributes is required"
 
-        graph.bind('oslc_rm', OSLC_RM)
-        graph.bind('oslc', OSLC)
-        graph.bind('dcterms', DCTERMS)
+        graph.bind("oslc_rm", OSLC_RM)
+        graph.bind("oslc", OSLC)
+        graph.bind("dcterms", DCTERMS)
 
         d = Describer(graph, base=base_url)
-        identifier = getattr(self, 'identifier')
+        identifier = getattr(self, "identifier")
         if isinstance(identifier, Literal):
             identifier = identifier.value
-        if identifier not in base_url.split('/'):
+        if identifier not in base_url.split("/"):
             base_url = self.get_absolute_url(base_url, identifier)
 
         d.about(base_url)
@@ -97,10 +140,12 @@ class Requirement(BaseResource):
 
     def from_json(self, data, attributes):
         for key in six.iterkeys(data):
-            item = {key: b for a, b in six.iteritems(attributes) if a.lower() == key.lower()}
+            item = {
+                key: b for a, b in six.iteritems(attributes) if a.lower() == key.lower()
+            }
 
             if item:
-                attribute_name = item[key]['attribute']
+                attribute_name = item[key]["attribute"]
                 if hasattr(self, attribute_name):
                     attribute_value = getattr(self, attribute_name)
                     if isinstance(attribute_value, set):
@@ -113,7 +158,7 @@ class Requirement(BaseResource):
 
         for r in g.subjects(RDF.type, OSLC_RM.Requirement):
 
-            setattr(self, '_AbstractResource__about', str(r))
+            setattr(self, "_AbstractResource__about", str(r))
 
             reviewed = list()
 
@@ -132,21 +177,32 @@ class Requirement(BaseResource):
                         elif isinstance(attribute_value, str):
                             if isinstance(i, Literal):
                                 i = i.value
-                            setattr(self, attribute_name, i if isinstance(i, str) else i.encode('utf-8'))
+                            setattr(
+                                self,
+                                attribute_name,
+                                i if isinstance(i, str) else i.encode("utf-8"),
+                            )
                         else:
                             if isinstance(i, Literal):
                                 setattr(self, attribute_name, i.value)
                             else:
                                 setattr(self, attribute_name, i)
 
-            no_reviewed = [a.split('__')[1].lower() for a in self.__dict__.keys() if
-                           a.split('__')[1].lower() not in reviewed]
+            no_reviewed = [
+                a.split("__")[1].lower()
+                for a in self.__dict__.keys()
+                if a.split("__")[1].lower() not in reviewed
+            ]
 
             for attr in no_reviewed:
-                item = {attr: v for k, v in six.iteritems(attributes) if k.lower() == attr.lower()}
+                item = {
+                    attr: v
+                    for k, v in six.iteritems(attributes)
+                    if k.lower() == attr.lower()
+                }
                 if item:
-                    for i in g.objects(r, eval(item.get(attr)['oslc_property'])):
-                        attribute_name = item.get(attr)['attribute']
+                    for i in g.objects(r, eval(item.get(attr)["oslc_property"])):
+                        attribute_name = item.get(attr)["attribute"]
                         if hasattr(self, attribute_name):
                             attribute_value = getattr(self, attribute_name)
                             if isinstance(attribute_value, set):
@@ -159,7 +215,7 @@ class Requirement(BaseResource):
         specification = dict()
 
         for key in attributes:
-            attribute_name = attributes[key]['attribute']
+            attribute_name = attributes[key]["attribute"]
             if hasattr(self, attribute_name):
                 attribute_value = getattr(self, attribute_name)
                 if attribute_value:

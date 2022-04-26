@@ -7,15 +7,12 @@ OSLC_CONFIG = ClosedNamespace(
         # RDFS Classes in this namespace
         "Configuration",
         "Stream",
-
         # RDF Properties in this namespace
         "cmServiceProviders",
-    ]
+    ],
 )
 
 PROV = ClosedNamespace(
     uri=URIRef("http://www.w3.org/ns/prov#"),
-    terms=[
-        "wasDerivedFrom", "wasRevisionOf", "wasGeneratedBy"
-    ]
+    terms=["wasDerivedFrom", "wasRevisionOf", "wasGeneratedBy"],
 )

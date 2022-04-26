@@ -31,7 +31,10 @@ class RequirementList(Resource):
     the list of items or inserting an item.
     """
 
-    @api.response(200, 'The RDF formatted response of the requirements, taken from the specification')
+    @api.response(
+        200,
+        "The RDF formatted response of the requirements, taken from the specification",
+    )
     def get(self):
         """
         Returns the list of Requirements converted from the Specification
@@ -41,25 +44,25 @@ class RequirementList(Resource):
         try:
             # Getting the content-type for checking the
             # response we will use to serialize the RDF response.
-            content_type = request.headers['accept']
-            if content_type in ('application/json-ld', 'application/json'):
+            content_type = request.headers["accept"]
+            if content_type in ("application/json-ld", "application/json"):
                 # If the content-type is any kind of json,
                 # we will use the json-ld format for the response.
-                content_type = 'json-ld'
+                content_type = "json-ld"
 
             # Loading information from the specification.csv file
             # located on the examples folder of the pyoslc project.
-            requirements = get_requirement_list(request.base_url, '', '')
+            requirements = get_requirement_list(request.base_url, "", "")
 
             graph = Graph()
-            graph.bind('oslc', OSLC, override=False)
-            graph.bind('dcterms', DCTERMS, override=False)
-            graph.bind('oslc_rm', OSLC_RM, override=False)
+            graph.bind("oslc", OSLC, override=False)
+            graph.bind("dcterms", DCTERMS, override=False)
+            graph.bind("oslc_rm", OSLC_RM, override=False)
 
             for requirement in requirements:
                 graph += requirement.to_rdf(graph, request.base_url, attributes)
 
-            if 'text/html' in content_type:
+            if "text/html" in content_type:
                 # Validating whether the request comes from
                 # a web browser or a human readeble client
                 # if so, then return the list to the template
@@ -67,36 +70,42 @@ class RequirementList(Resource):
                 for r in graph.subjects(RDF.type, OSLC_RM.Requirement):
                     requirements.append(r)
 
-                response = make_response(render_template('web/requirement_list.html',
-                                                         requirements=requirements), 200)
+                response = make_response(
+                    render_template(
+                        "web/requirement_list.html", requirements=requirements
+                    ),
+                    200,
+                )
             else:
                 # Serializing (converting) each triples of the graph
                 # on the selected type for the response
                 data = graph.serialize(format=content_type)
 
                 # Sending the response to the client
-                response = make_response(data.decode('utf-8') if not isinstance(data, str) else data, 200)
-                response.headers['Content-Type'] = content_type
-                response.headers['Oslc-Core-Version'] = "2.0"
+                response = make_response(
+                    data.decode("utf-8") if not isinstance(data, str) else data, 200
+                )
+                response.headers["Content-Type"] = content_type
+                response.headers["Oslc-Core-Version"] = "2.0"
 
             return response
 
         except PluginException as pe:
             response_object = {
-                'status': 'fail',
-                'message': 'Content-Type Incompatible: {}'.format(pe)
+                "status": "fail",
+                "message": "Content-Type Incompatible: {}".format(pe),
             }
             return response_object, 400
 
         except Exception as e:
             response_object = {
-                'status': 'fail',
-                'message': 'An exception has occurred: {}'.format(e)
+                "status": "fail",
+                "message": "An exception has occurred: {}".format(e),
             }
             return response_object, 500
 
     @api.expect(specification)
-    @api.response(201, 'Specification successfully created.')
+    @api.response(201, "Specification successfully created.")
     def post(self):
         """
         Insert a Specification to the store converted also in a Requirement
@@ -124,32 +133,32 @@ class RequirementList(Resource):
         }
         ```
         """
-        content_type = request.headers['content-type']
-        logger.debug('content-type: {}'.format(content_type))
-        if content_type != 'application/rdf+xml':
+        content_type = request.headers["content-type"]
+        logger.debug("content-type: {}".format(content_type))
+        if content_type != "application/rdf+xml":
             data = specification_parser.parse_args()
         else:
-            print('TODO - transform from rdf')
+            print("TODO - transform from rdf")
 
         req = Requirement()
         req.from_json(data, attributes)
         data = req.to_mapped_object(attributes)
 
         if data:
-            path = 'examples/specifications.csv'
+            path = "examples/specifications.csv"
 
-            tempfile = NamedTemporaryFile(mode='w', delete=False)
+            tempfile = NamedTemporaryFile(mode="w", delete=False)
 
-            with open(path, 'r') as f:
-                reader = csv.DictReader(f, delimiter=';')
+            with open(path, "r") as f:
+                reader = csv.DictReader(f, delimiter=";")
                 field_names = reader.fieldnames
 
-            with open(path, 'r') as csvfile, tempfile:
-                reader = csv.DictReader(csvfile, fieldnames=field_names, delimiter=';')
-                writer = csv.DictWriter(tempfile, fieldnames=field_names, delimiter=';')
+            with open(path, "r") as csvfile, tempfile:
+                reader = csv.DictReader(csvfile, fieldnames=field_names, delimiter=";")
+                writer = csv.DictWriter(tempfile, fieldnames=field_names, delimiter=";")
                 exist = False
                 for row in reader:
-                    if row['Specification_id'] == data['Specification_id']:
+                    if row["Specification_id"] == data["Specification_id"]:
                         exist = True
                     writer.writerow(row)
 
@@ -159,23 +168,17 @@ class RequirementList(Resource):
             shutil.move(tempfile.name, path)
 
             if exist:
-                response_object = {
-                    'status': 'fail',
-                    'message': 'Not Modified'
-                }
+                response_object = {"status": "fail", "message": "Not Modified"}
                 return response_object, 304
 
         else:
-            response_object = {
-                'status': 'fail',
-                'message': 'Not Found'
-            }
+            response_object = {"status": "fail", "message": "Not Found"}
             return response_object, 400
 
-        response = make_response('', 201)
-        response.headers['Location'] = req.about
+        response = make_response("", 201)
+        response.headers["Location"] = req.about
 
-        logger.debug('Adding the resource from the RM endpoint')
+        logger.debug("Adding the resource from the RM endpoint")
 
         return response
 
@@ -198,11 +201,11 @@ class RequirementItem(Resource):
         try:
             # Getting the content-type for checking the
             # response we will use to serialize the RDF response.
-            content_type = request.headers['accept']
-            if content_type in ('application/json-ld', 'application/json'):
+            content_type = request.headers["accept"]
+            if content_type in ("application/json-ld", "application/json"):
                 # If the content-type is any kind of json,
                 # we will use the json-ld format for the response.
-                content_type = 'json-ld'
+                content_type = "json-ld"
 
             # Instantiating the graph where we will store
             # all the requirements from the source (csv file)
@@ -213,33 +216,38 @@ class RequirementItem(Resource):
             r = get_requirement(request.base_url, id)
             graph = r.to_rdf(graph, request.base_url, attributes)
 
-            if 'text/html' in content_type:
+            if "text/html" in content_type:
                 # Passing the graph as a parameter to the template
                 # for going through the data and showing the information
-                response = make_response(render_template('web/requirement.html', id=id, statements=graph), 200)
+                response = make_response(
+                    render_template("web/requirement.html", id=id, statements=graph),
+                    200,
+                )
             else:
                 # Serializing (converting) each triples of the graph
                 # on the selected type for the response
                 data = graph.serialize(format=content_type)
 
                 # Sending the response to the client
-                response = make_response(data.decode('utf-8') if not isinstance(data, str) else data, 200)
-                response.headers['Content-Type'] = content_type
-                response.headers['Oslc-Core-Version'] = "2.0"
+                response = make_response(
+                    data.decode("utf-8") if not isinstance(data, str) else data, 200
+                )
+                response.headers["Content-Type"] = content_type
+                response.headers["Oslc-Core-Version"] = "2.0"
 
             return response
 
         except PluginException as pe:
             response_object = {
-                'status': 'fail',
-                'message': 'Content-Type Incompatible: {}'.format(pe)
+                "status": "fail",
+                "message": "Content-Type Incompatible: {}".format(pe),
             }
             return response_object, 400
 
         except Exception as e:
             response_object = {
-                'status': 'fail',
-                'message': 'An exception has ocurred: {}'.format(e)
+                "status": "fail",
+                "message": "An exception has ocurred: {}".format(e),
             }
             return response_object, 500
 
@@ -253,34 +261,34 @@ class RequirementItem(Resource):
         data = specification_parser.parse_args()
 
         if data:
-            path = 'examples/specifications.csv'
+            path = "examples/specifications.csv"
 
-            tempfile = NamedTemporaryFile(mode='w', delete=False)
+            tempfile = NamedTemporaryFile(mode="w", delete=False)
 
-            with open(path, 'r') as f:
-                reader = csv.DictReader(f, delimiter=';')
+            with open(path, "r") as f:
+                reader = csv.DictReader(f, delimiter=";")
                 field_names = reader.fieldnames
 
-            with open(path, 'r') as csvfile, tempfile:
-                reader = csv.DictReader(csvfile, fieldnames=field_names, delimiter=';')
-                writer = csv.DictWriter(tempfile, fieldnames=field_names, delimiter=';')
+            with open(path, "r") as csvfile, tempfile:
+                reader = csv.DictReader(csvfile, fieldnames=field_names, delimiter=";")
+                writer = csv.DictWriter(tempfile, fieldnames=field_names, delimiter=";")
                 modified = False
 
                 for row in reader:
-                    if row['Specification_id'] == str(id):
+                    if row["Specification_id"] == str(id):
                         rq = Requirement()
                         rq.from_json(data, attributes)
                         row = rq.to_mapped_object(attributes)
-                        row['Specification_id'] = id
+                        row["Specification_id"] = id
                         modified = True
                     writer.writerow(row)
 
             shutil.move(tempfile.name, path)
 
             if not modified:
-                return make_response('{Not Modified}', 304)
+                return make_response("{Not Modified}", 304)
 
-        return make_response('{}', 200)
+        return make_response("{}", 200)
 
     def delete(self, id):
         """
@@ -288,20 +296,20 @@ class RequirementItem(Resource):
         This method will remove a requirement from the store
         """
 
-        path = 'examples/specifications.csv'
+        path = "examples/specifications.csv"
 
-        tempfile = NamedTemporaryFile(mode='w', delete=False)
+        tempfile = NamedTemporaryFile(mode="w", delete=False)
 
-        with open(path, 'r') as f:
-            reader = csv.DictReader(f, delimiter=';')
+        with open(path, "r") as f:
+            reader = csv.DictReader(f, delimiter=";")
             field_names = reader.fieldnames
 
         modified = False
-        with open(path, 'r') as csvfile, tempfile:
-            reader = csv.DictReader(csvfile, fieldnames=field_names, delimiter=';')
-            writer = csv.DictWriter(tempfile, fieldnames=field_names, delimiter=';')
+        with open(path, "r") as csvfile, tempfile:
+            reader = csv.DictReader(csvfile, fieldnames=field_names, delimiter=";")
+            writer = csv.DictWriter(tempfile, fieldnames=field_names, delimiter=";")
             for row in reader:
-                if row['Specification_id'] != str(id):
+                if row["Specification_id"] != str(id):
                     writer.writerow(row)
                 else:
                     modified = True
@@ -311,7 +319,7 @@ class RequirementItem(Resource):
         if not modified:
             raise NotModified  # make_response('{Not Modified}', 304)
 
-        return make_response('{}', 200)
+        return make_response("{}", 200)
 
 
 class UploadCollection(Resource):
@@ -327,15 +335,15 @@ class UploadCollection(Resource):
         Use this method for uploading a collection of specifications
         """
         args = csv_file_upload.parse_args()
-        if args['csv_file'].mimetype in ('application/xls', 'text/csv'):
-            destination = os.path.join(current_app.instance_path, 'medias/')
+        if args["csv_file"].mimetype in ("application/xls", "text/csv"):
+            destination = os.path.join(current_app.instance_path, "medias/")
             if not os.path.exists(destination):
                 os.makedirs(destination)
-            csv_file = '%s%s' % (destination, 'custom_file_name.csv')
-            args['csv_file'].save(csv_file)
+            csv_file = "%s%s" % (destination, "custom_file_name.csv")
+            args["csv_file"].save(csv_file)
 
             # TODO take each line of CSV to process for RDF format
         else:
-            return make_response('{Bad request}', 404)
+            return make_response("{Bad request}", 404)
 
-        return make_response('{\'status\': \'Done\'}', 200)
+        return make_response("{'status': 'Done'}", 200)

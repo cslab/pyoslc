@@ -44,12 +44,12 @@ class LoginConfirmForm(ConfirmForm):
         username = self.username.data.lower()
         user = User.query.filter_by(username=username).first()
         if not user or not user.check_password(field.data):
-            raise StopValidation('Email or password is invalid.')
+            raise StopValidation("Email or password is invalid.")
 
         if self.confirm.data:
             # login(user, False)
             login_user(user)
-            session['sid'] = user.id
+            session["sid"] = user.id
             session.permanent = False
             g.current_user = user
 

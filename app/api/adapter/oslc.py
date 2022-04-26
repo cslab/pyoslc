@@ -6,8 +6,8 @@ from app.api.adapter.namespaces.rm import rm_ns
 
 
 def init_app(app):
-    app.register_blueprint(bp, url_prefix='/oslc')
+    app.register_blueprint(bp, url_prefix="/oslc")
     api.add_namespace(adapter_ns)
     api.add_namespace(rm_ns)
     api.add_namespace(config_ns)
-    app.register_blueprint(dialog_bp, url_prefix='/oslc/services')
+    app.register_blueprint(dialog_bp, url_prefix="/oslc/services")

@@ -23,9 +23,9 @@ class PyOSLCApplication(OAuthApplication):
     def login(self, username, password):
         user = User.query.filter_by(username=username).first()
         if not user or not user.check_password(password):
-            raise OAuthException('Email or password is invalid.')
+            raise OAuthException("Email or password is invalid.")
 
         login_user(user)
 
     def is_admin_session(self):
-        return request.args.get('admin')
+        return request.args.get("admin")

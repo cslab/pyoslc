@@ -103,8 +103,12 @@ class AbstractResource(object):
                 for item in value:
                     obj = BaseResource()
                     obj.update(item, attributes=attributes)
-                    obj.about = obj.get_absolute_url(base_url=base_url.replace(attributes.identifier, attribute_name),
-                                                     identifier=obj.identifier, )
+                    obj.about = obj.get_absolute_url(
+                        base_url=base_url.replace(
+                            attributes.identifier, attribute_name
+                        ),
+                        identifier=obj.identifier,
+                    )
                     result.add(obj)
                 value = result
 
@@ -1783,8 +1787,18 @@ class ResponseInfo(FilteredResource):
                                     # r2 = Resource(graph, URIRef(i.about))
                                     r2 = Resource(graph, BNode())
                                     for attr_key in resource.__dict__.keys():
-                                        attr_key = (attr_key.split("__")[1] if attr_key.__contains__("__") else attr_key)
-                                        item = { k: v for k, v in six.iteritems(attributes.mapping) if attr_key == k }
+                                        attr_key = (
+                                            attr_key.split("__")[1]
+                                            if attr_key.__contains__("__")
+                                            else attr_key
+                                        )
+                                        item = {
+                                            k: v
+                                            for k, v in six.iteritems(
+                                                attributes.mapping
+                                            )
+                                            if attr_key == k
+                                        }
                                         if item and attr_key in item.keys():
                                             predicate = item.get(attr_key)
                                             attribute = getattr(resource, attr_key)

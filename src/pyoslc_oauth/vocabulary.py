@@ -6,10 +6,12 @@ OAUTH = ClosedNamespace(
     terms=[
         # RDFS Classes in this namespace
         "Consumer",
-
         # RDF Properties in this namespace
-        "consumerName", "consumerKey",
-        "consumerSecret", "provisional",
-        "trusted", "callback"
-    ]
+        "consumerName",
+        "consumerKey",
+        "consumerSecret",
+        "provisional",
+        "trusted",
+        "callback",
+    ],
 )

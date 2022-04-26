@@ -4,9 +4,10 @@ from pyoslc_server.factories import ServiceProviderFactory
 
 
 class ConfigurationFactory(object):
-
     @classmethod
-    def create_component(cls, base_uri, title, description, publisher, attributes, parameters):
+    def create_component(
+        cls, base_uri, title, description, publisher, attributes, parameters
+    ):
         component = ServiceProvider()
         component.title = title
         component.description = description
@@ -17,7 +18,9 @@ class ConfigurationFactory(object):
 
         items[OSLC_CONFIG.uri] = item
 
-        dialog = ServiceProviderFactory.create_selection_dialog(base_uri, attributes, parameters)
+        dialog = ServiceProviderFactory.create_selection_dialog(
+            base_uri, attributes, parameters
+        )
         item.add_selection_dialog(dialog)
 
         for s in items.values():
