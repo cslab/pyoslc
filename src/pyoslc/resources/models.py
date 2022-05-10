@@ -91,37 +91,42 @@ class AbstractResource(object):
 
     def update(self, data, attributes, base_url=None):
         assert attributes is not None, "The mapping for attributes is required"
-        if isinstance(data, object):
-            data = data.__dict__ if hasattr(data, "__dict__") else data
+        data = self.to_dict(data)
 
         for key, value in data.items():
             uri_ref = URIRef(key)
-            namespace, attribute_name = split_uri(uri_ref)
+            _, attribute_name = split_uri(uri_ref)
+            attribute_name = camel_to_dash(attribute_name)
             attributes.mapping[attribute_name] = uri_ref
             if isinstance(value, (dict, list, set)):
-                result = set()
-                for item in value:
-                    obj = BaseResource()
-                    obj.update(item, attributes=attributes)
-                    obj.about = obj.get_absolute_url(
-                        base_url=base_url.replace(
-                            attributes.identifier, attribute_name
-                        ),
-                        identifier=obj.identifier,
-                    )
-                    result.add(obj)
-                value = result
+                if type(value) is dict:
+                    if isinstance(value, dict):
+                        obj = BaseResource()
+                        obj.update(value, attributes=attributes)
+                        obj.about = obj.get_absolute_url(
+                            base_url=base_url.replace(
+                                attributes.identifier, attribute_name
+                            ),
+                            identifier=obj.identifier,
+                        )
+                        value = obj
+                else:
+                    result = set()
+                    for item in value:
+                        obj = BaseResource()
+                        obj.update(item, attributes=attributes)
+                        obj.about = obj.get_absolute_url(
+                            base_url=base_url.replace(
+                                attributes.identifier, attribute_name
+                            ),
+                            identifier=obj.identifier,
+                        )
+                        result.add(obj)
+                    value = result
 
             mapped = [str(mv) for mv in attributes.mapping.values()]
             if key in mapped:
-                if hasattr(self, attribute_name):
-                    attribute_value = getattr(self, attribute_name)
-                    if isinstance(attribute_value, set):
-                        setattr(self, attribute_name, value)
-                    else:
-                        setattr(self, attribute_name, value)
-                else:
-                    setattr(self, attribute_name, value)
+                setattr(self, attribute_name, value)
 
     # def update(self, data, attributes, base_url=None):
     #     assert attributes is not None, "The mapping for attributes is required"
@@ -1777,38 +1782,60 @@ class ResponseInfo(FilteredResource):
 
                 # where and select clauses validation
                 if criteria.properties:
-                    props = [prop.prop for prop in criteria.properties]
-                    props.append("http://purl.org/dc/terms/identifier")
-                    for key, attr in attributes.mapping.items():
-                        if attr.toPython() in props:
-                            value = getattr(item, key)
-                            if value and isinstance(value, (list, dict, set)):
-                                for resource in value:
-                                    # r2 = Resource(graph, URIRef(i.about))
-                                    r2 = Resource(graph, BNode())
-                                    for attr_key in resource.__dict__.keys():
-                                        attr_key = (
-                                            attr_key.split("__")[1]
-                                            if attr_key.__contains__("__")
-                                            else attr_key
-                                        )
-                                        item = {
-                                            k: v
-                                            for k, v in six.iteritems(
-                                                attributes.mapping
-                                            )
-                                            if attr_key == k
-                                        }
-                                        if item and attr_key in item.keys():
-                                            predicate = item.get(attr_key)
-                                            attribute = getattr(resource, attr_key)
-                                            if attribute:
-                                                r2.add(predicate, Literal(attribute))
-                                    r.add(attr, r2)
-                            elif value and isinstance(value, BaseResource):
-                                pass
-                            else:
-                                r.add(attr, Literal(value))
+                    result = self.get_selected(
+                        graph, r, item, criteria.properties, attributes
+                    )
+
+                # where and select clauses validation
+                # if criteria.properties:
+                #     props = [prop.prop for prop in criteria.properties]
+                #     props.append("http://purl.org/dc/terms/identifier")
+                #     for key in attributes.mapping:
+                #         attr = attributes.mapping.get(key)
+                #         if attr.toPython() in props:
+                #             value = getattr(item, key)
+                #             if value and isinstance(value, (list, dict, set)):
+                #                 for resource in value:
+                #                     # r2 = Resource(graph, URIRef(i.about))
+                #                     nested = Resource(
+                #                         graph,
+                #                         URIRef(resource.about)
+                #                         if resource.about
+                #                         else BNode(),
+                #                     )
+                #                     for attr_key in resource.__dict__.keys():
+                #                         attr_key = (
+                #                             attr_key.split("__")[1]
+                #                             if attr_key.__contains__("__")
+                #                             else attr_key
+                #                         )
+                #                         item = {
+                #                             k: v
+                #                             for k, v in six.iteritems(
+                #                                 attributes.mapping
+                #                             )
+                #                             if attr_key == k
+                #                         }
+                #                         if item and attr_key in item.keys():
+                #                             print(item)
+                #                             print(attr_key)
+                #                             predicate = item.get(attr_key)
+                #                             print(predicate)
+                #                             attribute = getattr(resource, attr_key)
+                #                             print(attribute)
+                #                             if attribute:
+                #                                 nested.add(
+                #                                     predicate, Literal(attribute)
+                #                                 )
+                #                     r.add(attr, nested)
+                #             elif value and isinstance(value, BaseResource):
+                #                 pass
+                #             else:
+                #                 r.add(attr, Literal(value))
+
+        # rx = Resource(graph, URIRef(self.current_page))
+        # rx.add(RDF.type, OSLC.ResponseInfo)
+        # rx.add(OSLC.totalCount, Literal(self.total_count))
 
         if self.total_count > len(self.members):
             rx = Resource(graph, URIRef(self.current_page))
@@ -1824,6 +1851,81 @@ class ResponseInfo(FilteredResource):
                     rx.add(OSLC.nextPage, URIRef(self.__next_page))
 
         return ri
+
+    def get_selected(
+        self, graph=None, r=None, item=None, properties=None, attributes=None
+    ):
+        refs = {key: value.toPython() for key, value in attributes.mapping.items()}
+        refs["identifier"] = DCTERMS.identifier.toPython()
+        for p in properties:
+            if p.prop in refs.values():
+                key = list(refs.keys())[list(refs.values()).index(p.prop)]
+                value = getattr(item, key, None)
+
+                if value and isinstance(value, (BaseResource)):
+
+                    nested = Resource(
+                        graph,
+                        URIRef(value.about) if value.identifier else BNode(),
+                    )
+
+                    if p.props:
+                        value = self.get_selected(
+                            graph, nested, value, p.props, attributes
+                        )
+                        predicate = attributes.mapping.get(key)
+                        logger.debug(
+                            "({s}, {p}, {o})".format(s=r, p=predicate, o=value)
+                        )
+                        r.add(predicate, value)
+                    else:
+                        raise ErrorHandler
+                elif isinstance(value, (list, set)):
+                    collector = Resource(graph, BNode())
+
+                    for resource in value:
+                        nested = Resource(
+                            graph,
+                            URIRef(resource.about) if resource.identifier else BNode(),
+                        )
+
+                        if p.props:
+                            print("more properties")
+                        else:
+                            print("review other data")
+                            attrs = [
+                                rk if not rk.__contains__("__") else rk.split("__")[1]
+                                for rk in resource.__dict__.keys()
+                            ]
+                            for attribute in attrs:
+                                if attribute in refs:
+                                    predicate = attributes.mapping.get(attribute)
+                                    obj = getattr(resource, attribute)
+                                    if obj and predicate:
+                                        logger.debug(
+                                            "({s}, {p}, {o})".format(
+                                                s=nested, p=predicate, o=obj
+                                            )
+                                        )
+                                        nested.add(predicate, Literal(obj))
+
+                        predicate = attributes.mapping.get(key)
+                        logger.debug(
+                            "({s}, {p}, {o})".format(s=collector, p=predicate, o=nested)
+                        )
+                        collector.add(predicate, nested)
+
+                    predicate = attributes.mapping.get(key)
+                    logger.debug(
+                        "({s}, {p}, {o})".format(s=r, p=predicate, o=collector)
+                    )
+                    r.add(predicate, collector)
+                else:
+                    predicate = attributes.mapping.get(key)
+                    logger.debug("({s}, {p}, {o})".format(s=r, p=predicate, o=value))
+                    r.add(predicate, Literal(value))
+
+        return r
 
 
 class Preview(AbstractResource):

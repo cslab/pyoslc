@@ -76,7 +76,7 @@ REQSTORE = [
         "Provide WSGI implementation",
         "...",
         datetime(2020, 1, 1).strftime(dt),
-        CREATORSTORE[0:2],
+        CREATORSTORE[0],
     ),
     Requirement(
         "2",

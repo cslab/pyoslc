@@ -174,6 +174,15 @@ class Criteria:
         ns = self.prefixes.get(prefix, "http://example.com/")
         return ns + parameter.split(":")[1]
 
+    def get_properties(self, properties=None):
+        result = []
+        properties = properties or self.properties
+        for p in properties:
+            result.append(p.prop)
+            if p.props:
+                result.extend(self.get_properties(p.props))
+        return result
+
 
 if __name__ == "__main__":
     prfx = "foaf=<http://xmlns.com/foaf/0.1/>,"

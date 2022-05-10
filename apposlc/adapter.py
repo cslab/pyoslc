@@ -1,9 +1,18 @@
+from __future__ import absolute_import
+
+import logging
+import six
+
 from rdflib import FOAF
 from pyoslc.vocabularies.rm import OSLC_RM
 from pyoslc.vocabularies.qm import OSLC_QM
 
 from pyoslc_server.specification import ServiceResourceAdapter
 from .resource import CREATORSTORE, REQSTORE, Requirement
+
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 class RequirementAdapter(ServiceResourceAdapter):
@@ -109,13 +118,19 @@ class RequirementAdapter(ServiceResourceAdapter):
 
     def select_attribute(self, item, select):
         result = {}
-        for k, v in item.items():
+        for k, v in six.iteritems(item):
             if k in select:
                 result[k] = v
             else:
                 if type(v) is dict:
                     value = self.select_attribute(v, select)
                     result[k] = value
+                elif type(v) in (list, set):
+                    lst = []
+                    for i in v:
+                        value = self.select_attribute(i, select)
+                        lst.append(value)
+                    result[k] = lst
 
         return result
 
