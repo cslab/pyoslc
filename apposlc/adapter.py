@@ -92,6 +92,7 @@ class RequirementAdapter(ServiceResourceAdapter):
             "http://purl.org/dc/terms/description": item.description,
             "http://purl.org/dc/terms/title": item.title,
             "http://purl.org/dc/terms/created": item.created,
+            "http://open-services.net/ns/rm#discipline": item.discipline,
             "http://purl.org/dc/terms/creator": self.convert_creator_data(item.creator),
         }
 

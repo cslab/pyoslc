@@ -50,20 +50,12 @@ class Requirement:
         self.creator = creator
         self.discipline = [
             {
-                "http://open-services.net/ns/rm#discipline": [
-                    {
-                        "https://contact-software.com/ontologies/v1.0/plm#text": "Leistungsbedarf"
-                    },
-                    {"https://contact-software.com/ontologies/v1.0/plm#language": "de"},
-                ]
+                "https://contact-software.com/ontologies/v1.0/plm#text": "Leistungsbedarf",
+                "https://contact-software.com/ontologies/v1.0/plm#language": "de",
             },
             {
-                "http://open-services.net/ns/rm#discipline": [
-                    {
-                        "https://contact-software.com/ontologies/v1.0/plm#text": "Power Requirement"
-                    },
-                    {"https://contact-software.com/ontologies/v1.0/plm#language": "en"},
-                ]
+                "https://contact-software.com/ontologies/v1.0/plm#text": "Power Requirement",
+                "https://contact-software.com/ontologies/v1.0/plm#language": "en",
             },
         ]
 
