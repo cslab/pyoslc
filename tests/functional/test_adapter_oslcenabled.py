@@ -1,3 +1,4 @@
+from urllib.parse import quote
 import six
 
 if six.PY3:
@@ -442,6 +443,41 @@ def test_query_capability_paging_select(pyoslc_enabled):
         ), "Title should be in the resource description"
 
 
+def test_query_capability_destructured(pyoslc_enabled):
+    response = pyoslc_enabled.get_query_capability(
+        "adapter",
+        prefixes=quote(
+            "oslc_rm=<http://open-services.net/ns/rm#>,contact_plm=<https://contact-software.com/ontologies/v1.0/plm#>".encode(
+                "UTF-8"
+            )
+        ),
+        select="dcterms:title, dcterms:creator{foaf:firstName}, oslc_rm:discipline",
+    )
+
+    assert response is not None
+    assert response.status_code == 200
+
+    g = Graph()
+    g.parse(data=response.data, format="application/rdf+xml")
+
+    assert g is not None
+
+    ri = URIRef("http://localhost/oslc/services/provider/adapter/resources")
+    assert (ri, RDFS.member, None) in g, "The response does not contain a member"
+
+    predicate = URIRef("http://open-services.net/ns/rm#discipline")
+    discipline = g.subject_objects(predicate=predicate)
+
+    assert discipline is not None, "discipline attribute should be in the response"
+
+    predicate = URIRef("http://purl.org/dc/terms/description")
+    description = g.subject_objects(predicate=predicate)
+
+    assert (
+        len([t for t in description]) == 0
+    ), "description attribute should no be in the response"
+
+
 def test_creation_factory(pyoslc_enabled):
     """
     GIVEN the PyOSLC API
@@ -480,99 +516,6 @@ def test_creation_factory(pyoslc_enabled):
     ) in g, "The response does not contain a identifier"
 
 
-# @pytest.mark.skip(reason="GET Resource method has not been implemented with the new PyOSLC OSLCAPP framework")
-# def test_query_resource(pyoslc):
-#     """
-#     GIVEN the PyOSLC API
-#     WHEN requesting the query capability endpoint for getting a
-#          specific Resource given the project and resource id
-#     THEN
-#         validating the status code of the response
-#         parsing the response content into a graph in the application/rdf+xml format
-#         validating whether the Requirement type is within the graph
-#         validating that the identifier is in the response
-#     """
-#
-#     response = pyoslc.get_query_resource('Project-1', 'X1C2V3B1')
-#     assert response is not None
-#     assert response.status_code == 200
-#
-#     assert response.headers.get('etag') is not None
-#
-#     g = Graph()
-#     g.parse(data=response.data, format='application/rdf+xml')
-#
-#     assert g is not None
-#
-#     ri = URIRef('http://localhost/oslc/services/provider/Project-1/resources/requirement/X1C2V3B1')
-#
-#     assert (None, RDF.type, OSLC_RM.Requirement) in g, 'The Requirement should be generated'
-#     assert (ri, DCTERMS.identifier, Literal('X1C2V3B1')) in g, 'The response does not contain a identifier'
-#
-#
-# @pytest.mark.skip(reason="UPDATE method has not been implemented with the new PyOSLC OSLCAPP framework")
-# def test_update_resource(pyoslc):
-#     """
-#     GIVEN the PyOSLC API
-#     WHEN requesting the resource endpoint with put method to update a
-#          resource on the graph within a specific project id
-#     THEN
-#         validating the status code of the response
-#         parsing the response content into a graph in the application/rdf+xml format
-#         validating whether the response contains the Requirement type
-#         validating that the resource has the identifier
-#         validating that the content of the short_title has the updated value
-#     """
-#
-#     response = pyoslc.create('Project-1')
-#     assert response is not None
-#     assert response.status_code == 201
-#
-#     assert response.headers.get('location') is not None
-#     assert response.headers.get('etag') is not None
-#
-#     etag = response.headers.get('etag')
-#
-#     response = pyoslc.update('Project-1', etag)
-#     assert response is not None
-#     assert response.status_code == 200
-#
-#     g = Graph()
-#     g.parse(data=response.data, format='application/rdf+xml')
-#
-#     assert g is not None
-#
-#     ri = URIRef('http://localhost/oslc/services/provider/Project-1/resources/requirement/X1C2V3B6')
-#
-#     assert (None, RDF.type, OSLC_RM.Requirement) in g, 'The Requirement should be generated'
-#     assert (ri, DCTERMS.identifier, Literal('X1C2V3B6')) in g, 'The response does not contain a identifier'
-#
-#     short_title = [st for st in g.objects(ri, OSLC.shortTitle)]
-#     assert short_title is not None, 'The resource should have a title'
-#
-#     assert '[[UPDATED]] - SDK-Dev' == short_title[0].value, 'The response does not contain a identifier'
-#
-#     response = pyoslc.delete('Project-1', 'X1C2V3B6')
-#     assert response is not None
-#     assert response.status_code == 200
-#
-#
-# @pytest.mark.skip(reason="DELETE method has not been implemented with the new PyOSLC OSLCAPP framework")
-# def test_delete_resource(pyoslc):
-#     """
-#     GIVEN the PyOSLC API
-#     WHEN requesting the resource endpoint with delete method to
-#          delete the resource from the graph within a specific project id
-#     THEN
-#         validating the status code of the response
-#         validating the message of the deleted resource
-#     """
-#
-#     response = pyoslc.create('Project-1')
-#     assert response is not None
-#     assert response.status_code == 201
-#
-#     response = pyoslc.delete('Project-1', 'X1C2V3B6')
-#     assert response is not None
-#     assert response.status_code == 200
-#     assert b'Resource deleted' in response.data
+def test_destructured_resources(pyoslc_enabled, mocker, json_data):
+
+    assert json_data is not None, "load data"

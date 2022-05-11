@@ -172,46 +172,6 @@ class ResourceListOperation(OSLCResource):
             )
 
             result = list()
-            # data = """
-            # [
-            #     {
-            #         "http://open-services.net/ns/rm#discipline": [
-            #             {
-            #                 "https://contact-software.com/ontologies/v1.0/plm#language": "de",
-            #                 "https://contact-software.com/ontologies/v1.0/plm#text": "Softwareanforderungen"
-            #             },
-            #             {
-            #                 "https://contact-software.com/ontologies/v1.0/plm#language": "en",
-            #                 "https://contact-software.com/ontologies/v1.0/plm#text": "Software Requirements"
-            #             }
-            #         ],
-            #         "http://purl.org/dc/terms/creator": {
-            #             "http://xmlns.com/foaf/0.1/givenName": "Esser, Rebekka"
-            #         },
-            #         "http://purl.org/dc/terms/description": "Software Engineering",
-            #         "http://purl.org/dc/terms/identifier": "02ba3aea-d7b9-11ea-8e9f-000c296952ed"
-            #     },
-            #     {
-            #         "http://open-services.net/ns/rm#discipline": [
-            #             {
-            #                 "https://contact-software.com/ontologies/v1.0/plm#language": "de",
-            #                 "https://contact-software.com/ontologies/v1.0/plm#text": "Angetriebene Rollenf\u00f6rderer sollen mit einer Nennspannung von 24V betrieben werden k\u00f6nnen."
-            #             },
-            #             {
-            #                 "https://contact-software.com/ontologies/v1.0/plm#language": "en",
-            #                 "https://contact-software.com/ontologies/v1.0/plm#text": "Driven roller conveyors should be able to operate with a nominal voltage of 24V."
-            #             }
-            #         ],
-            #         "http://purl.org/dc/terms/creator": {
-            #             "http://xmlns.com/foaf/0.1/givenName": "Esser, Rebekka"
-            #         },
-            #         "http://purl.org/dc/terms/description": "Electrical Engineering",
-            #         "http://purl.org/dc/terms/identifier": "51f8edac-d720-11ea-8e9f-000c296952ed"
-            #     }
-            # ]"""
-
-            # import json
-            # data = json.loads(data)
             for item in data:
                 br = BaseResource()
                 br.update(item, adapter, base_url)

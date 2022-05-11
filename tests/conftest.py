@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+import json
 
 import logging
 from pyoslc.resources.query import Criteria
@@ -54,3 +55,10 @@ def tc_adapter():
 @pytest.fixture
 def criteria():
     return Criteria()
+
+
+@pytest.fixture
+def json_data():
+    f = open("tests/functional/test_data.json")
+    data = json.load(f)
+    return data

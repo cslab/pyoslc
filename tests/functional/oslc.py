@@ -50,6 +50,9 @@ class PyOSLC:
         if select:
             query += "oslc.select={attr}".format(attr=select)
 
+        if prefixes:
+            query += "&oslc.prefix={prfx}".format(prfx=prefixes)
+
         return self._client.get(query, headers=self.headers)
 
     def post_creation_factory(self, service_provider, payload):

@@ -1684,9 +1684,7 @@ class ResponseInfo(FilteredResource):
 
                 # where and select clauses validation
                 if criteria.properties:
-                    result = self.get_selected(
-                        graph, r, item, criteria.properties, attributes
-                    )
+                    self.get_selected(graph, r, item, criteria.properties, attributes)
 
         if self.total_count > len(self.members):
             rx = Resource(graph, URIRef(self.current_page))
@@ -1730,9 +1728,8 @@ class ResponseInfo(FilteredResource):
                         )
                         r.add(predicate, value)
                     else:
-                        raise ErrorHandler
+                        raise ValueError
                 elif isinstance(value, (list, set)):
-                    collector = Resource(graph, BNode())
 
                     for resource in value:
                         nested = Resource(
@@ -1763,15 +1760,9 @@ class ResponseInfo(FilteredResource):
 
                         predicate = attributes.mapping.get(key)
                         logger.debug(
-                            "({s}, {p}, {o})".format(s=collector, p=predicate, o=nested)
+                            "({s}, {p}, {o})".format(s=r, p=predicate, o=nested)
                         )
-                        collector.add(predicate, nested)
-
-                    predicate = attributes.mapping.get(key)
-                    logger.debug(
-                        "({s}, {p}, {o})".format(s=r, p=predicate, o=collector)
-                    )
-                    r.add(predicate, collector)
+                        r.add(predicate, nested)
                 else:
                     predicate = attributes.mapping.get(key)
                     logger.debug("({s}, {p}, {o})".format(s=r, p=predicate, o=value))

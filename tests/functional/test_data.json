@@ -1,0 +1,172 @@
+[
+    {
+        "http://open-services.net/ns/rm#discipline": [
+            {
+                "https://contact-software.com/ontologies/v1.0/plm#language": "de", 
+                "https://contact-software.com/ontologies/v1.0/plm#text": "Softwareanforderungen"
+            }, 
+            {
+                "https://contact-software.com/ontologies/v1.0/plm#language": "en", 
+                "https://contact-software.com/ontologies/v1.0/plm#text": "Software Requirements"
+            }
+        ], 
+        "http://purl.org/dc/terms/creator": {
+            "http://xmlns.com/foaf/0.1/givenName": "Esser, Rebekka"
+        }, 
+        "http://purl.org/dc/terms/description": "Software Engineering", 
+        "http://purl.org/dc/terms/identifier": "02ba3aea-d7b9-11ea-8e9f-000c296952ed"
+    }, 
+    {
+        "http://open-services.net/ns/rm#discipline": [
+            {
+                "https://contact-software.com/ontologies/v1.0/plm#language": "de", 
+                "https://contact-software.com/ontologies/v1.0/plm#text": "Angetriebene Rollenf\u00f6rderer sollen mit einer Nennspannung von 24V betrieben werden k\u00f6nnen."
+            }, 
+            {
+                "https://contact-software.com/ontologies/v1.0/plm#language": "en", 
+                "https://contact-software.com/ontologies/v1.0/plm#text": "Driven roller conveyors should be able to operate with a nominal voltage of 24V."
+            }
+        ], 
+        "http://purl.org/dc/terms/creator": {
+            "http://xmlns.com/foaf/0.1/givenName": "Esser, Rebekka"
+        }, 
+        "http://purl.org/dc/terms/description": "Electrical Engineering", 
+        "http://purl.org/dc/terms/identifier": "51f8edac-d720-11ea-8e9f-000c296952ed"
+    }, 
+    {
+        "http://open-services.net/ns/rm#discipline": [
+            {
+                "https://contact-software.com/ontologies/v1.0/plm#language": "de", 
+                "https://contact-software.com/ontologies/v1.0/plm#text": " Angetriebene Rollenf\u00f6rderer sollen mit einer Nennspannung von 48V betrieben werden k\u00f6nnen."
+            }, 
+            {
+                "https://contact-software.com/ontologies/v1.0/plm#language": "en", 
+                "https://contact-software.com/ontologies/v1.0/plm#text": "Driven roller conveyors should be able to operate with a nominal voltage of 48V."
+            }
+        ], 
+        "http://purl.org/dc/terms/creator": {
+            "http://xmlns.com/foaf/0.1/givenName": "Esser, Rebekka"
+        }, 
+        "http://purl.org/dc/terms/description": "Electrical Engineering", 
+        "http://purl.org/dc/terms/identifier": "cba2c816-d720-11ea-8e9f-000c296952ed"
+    }, 
+    {
+        "http://open-services.net/ns/rm#discipline": [
+            {
+                "https://contact-software.com/ontologies/v1.0/plm#language": "de", 
+                "https://contact-software.com/ontologies/v1.0/plm#text": "Netzwerkl\u00f6sungen"
+            }, 
+            {
+                "https://contact-software.com/ontologies/v1.0/plm#language": "en", 
+                "https://contact-software.com/ontologies/v1.0/plm#text": "Network Solutions"
+            }
+        ], 
+        "http://purl.org/dc/terms/creator": {
+            "http://xmlns.com/foaf/0.1/givenName": "Esser, Rebekka"
+        }, 
+        "http://purl.org/dc/terms/description": "Software Engineering", 
+        "http://purl.org/dc/terms/identifier": "63d82327-d7b9-11ea-8e9f-000c296952ed"
+    }, 
+    {
+        "http://open-services.net/ns/rm#discipline": [
+            {
+                "https://contact-software.com/ontologies/v1.0/plm#language": "de", 
+                "https://contact-software.com/ontologies/v1.0/plm#text": "I/O"
+            }, 
+            {
+                "https://contact-software.com/ontologies/v1.0/plm#language": "en", 
+                "https://contact-software.com/ontologies/v1.0/plm#text": "I/O"
+            }
+        ], 
+        "http://purl.org/dc/terms/creator": {
+            "http://xmlns.com/foaf/0.1/givenName": "Esser, Rebekka"
+        }, 
+        "http://purl.org/dc/terms/description": "Software Engineering", 
+        "http://purl.org/dc/terms/identifier": "72d73e5d-d7b9-11ea-8e9f-000c296952ed"
+    }, 
+    {
+        "http://open-services.net/ns/rm#discipline": [
+            {
+                "https://contact-software.com/ontologies/v1.0/plm#language": "de", 
+                "https://contact-software.com/ontologies/v1.0/plm#text": "RS-485 / Modbus (RTU)"
+            }, 
+            {
+                "https://contact-software.com/ontologies/v1.0/plm#language": "en", 
+                "https://contact-software.com/ontologies/v1.0/plm#text": "RS-485 / Modbus (RTU)"
+            }
+        ], 
+        "http://purl.org/dc/terms/creator": {
+            "http://xmlns.com/foaf/0.1/givenName": "Esser, Rebekka"
+        }, 
+        "http://purl.org/dc/terms/description": "Software Engineering", 
+        "http://purl.org/dc/terms/identifier": "98c0d8ce-d7b9-11ea-8e9f-000c296952ed"
+    }, 
+    {
+        "http://open-services.net/ns/rm#discipline": [
+            {
+                "https://contact-software.com/ontologies/v1.0/plm#language": "de", 
+                "https://contact-software.com/ontologies/v1.0/plm#text": "Fabrikautomatisierungsnetzwerk"
+            }, 
+            {
+                "https://contact-software.com/ontologies/v1.0/plm#language": "en", 
+                "https://contact-software.com/ontologies/v1.0/plm#text": "Factory Automation Network"
+            }
+        ], 
+        "http://purl.org/dc/terms/creator": {
+            "http://xmlns.com/foaf/0.1/givenName": "Esser, Rebekka"
+        }, 
+        "http://purl.org/dc/terms/description": "Software Engineering", 
+        "http://purl.org/dc/terms/identifier": "207eb627-d7ba-11ea-8e9f-000c296952ed"
+    }, 
+    {
+        "http://open-services.net/ns/rm#discipline": [
+            {
+                "https://contact-software.com/ontologies/v1.0/plm#language": "de", 
+                "https://contact-software.com/ontologies/v1.0/plm#text": "Controller Software"
+            }, 
+            {
+                "https://contact-software.com/ontologies/v1.0/plm#language": "en", 
+                "https://contact-software.com/ontologies/v1.0/plm#text": "Controller Software"
+            }
+        ], 
+        "http://purl.org/dc/terms/creator": {
+            "http://xmlns.com/foaf/0.1/givenName": "Esser, Rebekka"
+        }, 
+        "http://purl.org/dc/terms/description": "Software Engineering", 
+        "http://purl.org/dc/terms/identifier": "a7f44295-d7ba-11ea-8e9f-000c296952ed"
+    }, 
+    {
+        "http://open-services.net/ns/rm#discipline": [
+            {
+                "https://contact-software.com/ontologies/v1.0/plm#language": "de", 
+                "https://contact-software.com/ontologies/v1.0/plm#text": "Systeme zur Drehzahlregelung"
+            }, 
+            {
+                "https://contact-software.com/ontologies/v1.0/plm#language": "en", 
+                "https://contact-software.com/ontologies/v1.0/plm#text": "Speed Control Systems"
+            }
+        ], 
+        "http://purl.org/dc/terms/creator": {
+            "http://xmlns.com/foaf/0.1/givenName": "Esser, Rebekka"
+        }, 
+        "http://purl.org/dc/terms/description": "Software Engineering", 
+        "http://purl.org/dc/terms/identifier": "e390a36c-d7ba-11ea-8e9f-000c296952ed"
+    }, 
+    {
+        "http://open-services.net/ns/rm#discipline": [
+            {
+                "https://contact-software.com/ontologies/v1.0/plm#language": "de", 
+                "https://contact-software.com/ontologies/v1.0/plm#text": "Lageregelungssysteme"
+            }, 
+            {
+                "https://contact-software.com/ontologies/v1.0/plm#language": "en", 
+                "https://contact-software.com/ontologies/v1.0/plm#text": "Position Control Systems"
+            }
+        ], 
+        "http://purl.org/dc/terms/creator": {
+            "http://xmlns.com/foaf/0.1/givenName": "Esser, Rebekka"
+        }, 
+        "http://purl.org/dc/terms/description": "Software Engineering", 
+        "http://purl.org/dc/terms/identifier": "445ee83d-d7bb-11ea-8e9f-000c296952ed"
+    }
+]
