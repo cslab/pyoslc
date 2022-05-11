@@ -514,8 +514,3 @@ def test_creation_factory(pyoslc_enabled):
         DCTERMS.identifier,
         Literal("X1C2V3B6"),
     ) in g, "The response does not contain a identifier"
-
-
-def test_destructured_resources(pyoslc_enabled, mocker, json_data):
-
-    assert json_data is not None, "load data"
