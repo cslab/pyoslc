@@ -1753,10 +1753,10 @@ class ResponseInfo(FilteredResource):
                                     if obj and predicate:
                                         logger.debug(
                                             "({s}, {p}, {o})".format(
-                                                s=nested, p=predicate, o=obj
+                                                s=nested, p=predicate, o=obj.encode("utf-8")
                                             )
                                         )
-                                        nested.add(predicate, Literal(obj))
+                                        nested.add(predicate, Literal(obj.encode("utf-8")))
 
                         predicate = attributes.mapping.get(key)
                         logger.debug(
@@ -1765,8 +1765,8 @@ class ResponseInfo(FilteredResource):
                         r.add(predicate, nested)
                 else:
                     predicate = attributes.mapping.get(key)
-                    logger.debug("({s}, {p}, {o})".format(s=r, p=predicate, o=value))
-                    r.add(predicate, Literal(value))
+                    logger.debug("({s}, {p}, {o})".format(s=r, p=predicate, o=value.encode('utf-8')))
+                    r.add(predicate, Literal(value.encode('utf-8')))
 
         return r
 
