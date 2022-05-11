@@ -1,9 +1,9 @@
-from urllib.parse import quote
 import six
 
 if six.PY3:
-    from urllib.parse import urlparse, parse_qsl, unquote
+    from urllib.parse import urlparse, parse_qsl, unquote,  quote
 else:
+    from urllib import quote
     from urlparse import urlparse, parse_qsl, unquote
 
 from rdflib import Graph, RDF, URIRef, DCTERMS, Literal, RDFS
