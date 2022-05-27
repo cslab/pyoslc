@@ -23,12 +23,6 @@ from pyoslc.helpers import build_uri
 from pyoslc.vocabularies.core import OSLC
 from pyoslc.vocabularies.jfs import JFS
 
-try:
-    import builtins
-except ImportError:
-    import __builtin__ as builtins
-
-type_custom = list(filter(lambda x: not x.startswith("_"), dir(builtins)))
 
 logger = logging.getLogger(__name__)
 
@@ -1674,13 +1668,15 @@ class ResponseInfo(FilteredResource):
         uri = self.about
         ri = Resource(graph, URIRef(uri))
 
+        for prefix, ns in attributes.namespaces.items():
+            graph.bind(prefix, ns)
+
         if self.members:
-            member = Resource(graph, URIRef(uri))
+            # member = Resource(graph, URIRef(uri))
             for item in self.members:
                 item_url = urlparse(uri + "/" + item.identifier)
                 r = Resource(graph, URIRef(item_url.geturl()))
-
-                member.add(RDFS.member, r)
+                ri.add(RDFS.member, r)
 
                 # where and select clauses validation
                 if criteria.properties:
@@ -1725,9 +1721,24 @@ class ResponseInfo(FilteredResource):
                         predicate = attributes.mapping.get(key)
                         r.add(predicate, value)
                     else:
-                        raise ValueError
-                elif isinstance(value, (list, set)):
+                        attrs = [
+                            rk if not rk.__contains__("__") else rk.split("__")[1]
+                            for rk in value.__dict__.keys()
+                        ]
+                        for attribute in attrs:
+                            predicate = attributes.mapping.get(attribute)
+                            obj = getattr(value, attribute)
+                            if obj and predicate:
+                                nested.add(predicate, Literal(obj.encode("utf-8")))
 
+                    predicate = attributes.mapping.get(key)
+                    r.add(predicate, nested)
+
+                    # nested.add(RDF.type, predicate)
+                    # r.add(predicate, nested)
+                elif isinstance(value, (list, set)):
+                    bag = Resource(graph, BNode())
+                    bag.add(RDF.type, RDF.List)
                     for resource in value:
                         nested = Resource(
                             graph,
@@ -1751,7 +1762,10 @@ class ResponseInfo(FilteredResource):
                                         nested.add(predicate, Literal(obj.encode("utf-8")))
 
                         predicate = attributes.mapping.get(key)
-                        r.add(predicate, nested)
+                        bag.add(predicate, nested)
+
+                    predicate = attributes.mapping.get(key)
+                    r.add(predicate, bag)
                 else:
                     predicate = attributes.mapping.get(key)
                     r.add(predicate, Literal(value.encode('utf-8')))

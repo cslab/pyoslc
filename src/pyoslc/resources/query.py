@@ -155,7 +155,7 @@ class Criteria:
 
             for matcher in matchers:
                 prfxs.update({matcher.group(1): matcher.group(3)})
-                # logger.debug("[+] PREFIX {}=<{}>".format(matcher.group(1), matcher.group(3)))
+                logger.debug("[+] PREFIX {}=<{}>".format(matcher.group(1), matcher.group(3)))
 
         self.__prefixes = prfxs
 

@@ -114,7 +114,7 @@ class ResourceListOperation(OSLCResource):
 
         pfx = ["{}=<{}>".format(ns[0], ns[1]) for ns in self.graph.namespaces()]
         pfx = ", ".join(pfx)
-        prefix += pfx
+        prefix += ", " + pfx
         # prefix += [{prefix, ns.toPython()} for prefix, ns in self.graph.namespace_manager.namespaces()]
 
         criteria = Criteria()
@@ -172,6 +172,15 @@ class ResourceListOperation(OSLCResource):
             )
 
             result = list()
+
+            # with open(os.path.join(os.path.dirname(__file__),
+            #     '..',
+            #     '..',
+            #     'tests',
+            #     'functional',
+            #     'test_data.json')) as dataset:
+            #     data = json.load(dataset)
+
             for item in data:
                 br = BaseResource()
                 br.update(item, adapter, base_url)
