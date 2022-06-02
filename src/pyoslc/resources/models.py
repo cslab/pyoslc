@@ -7,6 +7,8 @@ import six
 
 from datetime import date
 
+from rdflib.collection import Collection
+
 from pyoslc_server.helpers import camel_to_dash
 
 if six.PY2:
@@ -1707,8 +1709,7 @@ class ResponseInfo(FilteredResource):
                 key = list(refs.keys())[list(refs.values()).index(p.prop)]
                 value = getattr(item, key, None)
 
-                if value and isinstance(value, (BaseResource)):
-
+                if value and isinstance(value, BaseResource):
                     nested = Resource(
                         graph,
                         URIRef(value.about) if value.identifier else BNode(),
@@ -1733,12 +1734,9 @@ class ResponseInfo(FilteredResource):
 
                     predicate = attributes.mapping.get(key)
                     r.add(predicate, nested)
-
-                    # nested.add(RDF.type, predicate)
-                    # r.add(predicate, nested)
                 elif isinstance(value, (list, set)):
                     bag = Resource(graph, BNode())
-                    bag.add(RDF.type, RDF.List)
+                    content = Collection(graph, bag.identifier, [])
                     for resource in value:
                         nested = Resource(
                             graph,
@@ -1763,12 +1761,14 @@ class ResponseInfo(FilteredResource):
 
                         predicate = attributes.mapping.get(key)
                         bag.add(predicate, nested)
+                        content.append(nested.identifier)
 
                     predicate = attributes.mapping.get(key)
                     r.add(predicate, bag)
                 else:
                     predicate = attributes.mapping.get(key)
-                    r.add(predicate, Literal(value.encode('utf-8')))
+                    if value and predicate:
+                        r.add(predicate, Literal(value.encode('utf-8')))
 
         return r
 

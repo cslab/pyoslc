@@ -1,7 +1,9 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import json
 import logging
+import os
 
 import six
 
@@ -172,15 +174,6 @@ class ResourceListOperation(OSLCResource):
             )
 
             result = list()
-
-            # with open(os.path.join(os.path.dirname(__file__),
-            #     '..',
-            #     '..',
-            #     'tests',
-            #     'functional',
-            #     'test_data.json')) as dataset:
-            #     data = json.load(dataset)
-
             for item in data:
                 br = BaseResource()
                 br.update(item, adapter, base_url)
