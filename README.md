@@ -1,34 +1,121 @@
 # PyOSLC SDK
 
-The `PyOSLC` project was developed as a set of classes and libraries 
-packaged as an SDK which is aimed to build REST-based API’s that allows us 
-to implement `OSLC (Open Services for Lifecycle Collaboration) projects`
+The `PyOSLC` project is developed as a set of classes and libraries 
+packaged as an SDK which is aimed to build REST-based API’s that allows 
+the implementation of `OSLC (Open Services for Lifecycle Collaboration) projects`
 that meet the specifications for creating REST services to enable 
 the interoperability of heterogeneous products and services.
 
-## Getting Started
+The new version of `PyOSLC SDK`, it comes with two ways to deploy an OSLC API:
 
-The new version of `PyOSLC SDK` which is under development, has two ways to deploy
-an OSLC API:
+### *Pluggable API*
+This means that a REST API already exist and requires to 
+be extended for supporting the OSLC specification to manage the resources,
+an instance of PyOSLC is created and added to the existent Web API.
+(i.e. A CE Application or whichever REST API).
 
-- *Pluggable API*: The OSLC API will be added to an existent Web API such as a CE Application or whichever REST API.
-- *Standalone API*: The OSLC API will be implemented and should be executed isolated, this means that a web app or REST API will be created and deployed independently using the PyOSLC library to manage the OSLC resources.
+### *Standalone API*
+This means that there is no REST API for managing resources
+using OSLC, the usage of PyOSLC will create the web application and perform the 
+routing to manage the REST + OSLC API, this service should be executed isolated,
+this means that all the components will be created and deployed independently 
+using the PyOSLC library to manage the OSLC resources.
+
+## Introduction to PyOSLC
+
+As mentioned before, PyOSLC is aimed to build REST-based APIs, 
+thus it is prepared with a `server` package that contain the 
+necessary classes to create a web server to manage the requests 
+from the clients.
+
+
+#### OSLC Web Application
+
+The PyOSLC SDK has a class that will be used to create an OSLC Web Application. 
+This class implements the required features to fit the [PEP 3333](https://peps.python.org/pep-3333/) 
+for creating a web server and to manage the requests.
+
+The `OSLCAPP` should be instantiated to create the web server and will
+enable the endpoints for the discoverability of the resources based on
+the OSLC specifications.
+
+Once the `OSLCAPP` is instantiated the providers of resources could be added
+to it for the exposure of the data. The providers will be called `Adpaters` for
+the purpose of the implementation.
+
+#### Service Providers
+
+As part of the [OSLC specification](https://archive.open-services.net/bin/view/Main/OslcCoreSpecification.html)
+there is a set of endpoints that should be available to discover and manage the 
+resources exposed by an OSLC API.
+
+In the image below there are three main components that it is important to keep
+in mind when developing an OSLC API using PyOSLC: `Service Provider Catalog`,
+`Service Provider` and `Service`.
+
+
+##### Diagram of OSLC v2.0
+
+[![OSCL v2.0](https://archive.open-services.net/pub/Main/OSLCCoreSpecDRAFT/oslc-core-overview.png)](https://archive.open-services.net/pub/Main/OSLCCoreSpecDRAFT/oslc-core-overview.png)
+
+
+The `Service Provider Catalog` endpoint is created by default when the `OSLCAPP` is
+instantiated from PyOSLC.
+
+The `Service Provider` and its `Services` are an important component that should
+be implemented by the developer, since this are the endpoints that will be interacting
+with the data store (which the PyOSLC is agnostic of). 
+
+The implementation of the `Services` for a `ServiceProvider` will be a task
+that could be achieved by overwriting some methods of a class that comes in the `server`
+package of PyOSLC.
+
+#### Adapter
+
+As mentioned in the above paragraph, the Service Provider component of OSLC
+defines the services available for finding and creating resources in the data store
+using OSLC.
+
+This means that it requires to implement the main methods of the REST API
+defined as GET, POST, PUT and so on, these methods have their corresponding
+service name in the OSLC specification such as Query Capability or Creation Factory.
+
+PyOSLC facilitates the implementation of these methods by implementing an `Adapter` class
+which should overwrite a set of predefined methods to enable the features for
+interact with the data store through the Query Capability (GET) or Creation Factory (POST)
+services.
+
+To implement an `Adapter` the developer should extend the class `ServiceResourceAdapter`
+which comes in the `pyolsc-server` package. This class will be the one that will
+implement most of the methods required for the discoverability and the management
+of the data.
+
+All these methods will be explained in the next section by using PyOSLC to implement
+an OSLC API as an example.
 
 ## Working with PyOSLC
 
-There are two ways to install the `PyOSLC SDK` to use it in your projects, the first one
-is to download the code and install it in your local project, or the second one, to use
-`pip` for installing it from the `GitHub` repository.
+Since the project is still under development, it is not packaged and published yet in
+[PyPI](https://pypi.org). To install and use the `PyOSLC SDK`, it should be necessary 
+to install it from the `GitHub` repository using `pip`.
 
-Let's create an example using the second approach.
+Let's create an example.
 
-### Creating a virtual environment
+### Preparing the environment
 
-To start using the `PyOSLC SDK` framework it should be installed, and it is
-recommended to use a virtual environment for working with it.
+It is highly recommended to use virtual environments when working with python projects,
+so this is not an exception, let's create a virtual environment to start using 
+the `PyOSLC SDK` framework.
 
-Let's create the virtual environment using 
-[`virtualenvwrapper`](https://virtualenvwrapper.readthedocs.io/en/latest/)
+There are different tools to create virtual environment, for this example
+[virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/) and
+[virtualenv](https://virtualenv.pypa.io/en/latest/) will be used.
+
+> *Note 1*: The project will be created using Python 2.7 just for an illustrative 
+> way for using PyOSLC with this version of Python.
+
+> *Note 2*: For macOS users, since Python 2.7 is no longer available for newer version
+> of macOS, Pyenv could be used to install this version of Python.
 
 ```bash
 $ mkdir myproject
@@ -59,20 +146,21 @@ to start working in the development of the API
 (myenv) $ pip install git+https://github.com/cslab/pyoslc.git@develop
 ```
 
-** Note: Keep your eyes in the `develop` tag of the url in the installation command
-
+Keep your eyes in the `develop` tag of the url in the installation command. 
 This command will download the `develop` branch of `PyOSLC SDK` from `GitHub` 
 repository and will build and install it in the current virtual environment
-to enable the usage of the library including the CLI to execute the application
+to enable the usage of the library including the `CLI` to execute the application
 through the command line.
 
-** Note: This is required so far since the `PyOSLC SDK` is not delivered on PyPI
+This is required so far since the `PyOSLC SDK` is not delivered on PyPI, 
+once the project is released and published in PyPI the installation will be just 
+by using the name of the library as usual.
 
 
 ### Creating a PyOSLC Application as Standalone API
 
-Create a file in which the `OSLCAPP` should be instantiated, the file should be named
-`wsgi.py` or `app.py` that will represent the executable that will be used for the 
+Create a file in which the `OSLCAPP` should be instantiated, give it the name
+`wsgi.py` or `app.py`, this file represents the executable to be used for the 
 command line to run the OSLC Application
 
 ```bash
@@ -87,8 +175,12 @@ from pyoslc_server import OSLCAPP
 app = OSLCAPP(name='oslc-app', prefix='/oslc')
 ```
 
-The code above will create an `OSLCAPP` instance which is an OSLC API that will be 
-processing the requests and will return RDF representation.
+The above code will create an `OSLCAPP` instance which is an OSLC API. This application
+could be used either to run a standalone web server or to be plugged into an existent
+REST API.
+
+The OSLC application will manage the requests for the endpoints established in the OSLC spec
+and the serialization of the date to return the responses in their RDF representation.
 
 Now you can run the application by executing the following command:
 
@@ -102,10 +194,10 @@ Now you can run the application by executing the following command:
  * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
 ```
 
-If you run a request against this server or navigate to the URL on your browser:
+If you send a request against this server or navigate to the URL in your web browser:
 
 ```shell
-(myenv) $ curl -X GET http http://127.0.0.1:5000/oslc/services/catalog -H accept:"application/rdf+xml"
+(myenv) $ curl -X GET http://127.0.0.1:5000/oslc/services/catalog -H accept:"application/rdf+xml"
 ```
 
 You will see a message like this:
@@ -123,15 +215,17 @@ You will see a message like this:
 </rdf:RDF>
 ```
 
-This is fine, this means that the OSLC API is working since the response is in RDF,
-but it does not have yet an `Adapter` or `ServiceProvider` to work with, that is because 
-it just returning the title and description for the Service Provider Catalog.
+The response contains the RDF representation of the Service Provider Catalog, that means that
+the OSLC API is working, but it does not have yet an `Adapter` or `ServiceProvider` to work with, 
+that is because it is just returning the title and description for the Service Provider Catalog.
+
+Let's add an Adapter to the application
 
 ### Configuring the Environment variables
 
-Before the execution of the OSLC API, it is necessary to define some environment variables
-that will specify which application should be executed and some other parameters for the
-execution of the web application.
+Since the example will use the command line interface (CLI) for the execution of the OSLC API,
+it is necessary to define some environment variables that will specify which application
+should be executed and some other parameters for the execution of the web application.
 
 There are two ways for doing this:
 
@@ -162,11 +256,17 @@ PYOSLC_DEBUG=True
 
 Once the parameters have been configured it is time to continue developing the application
 
-### Adding an Adapter to the PyOSLC Application
+### Adding the Adapter
 
-PyOSLC deploys the web server and the services for implementing the OSLC API
-components, it is required now to plug the `Adapter` that will operate with the
-`Resource` from the datasource.
+As mentioned before, the `OSLCAPP` instance only creates the API to have the 
+capability to create the endpoints for the discoverability and the serialization
+of the responses.
+
+Now it is required to create a new class to extend the required methods for the
+exposure of the data, this will be by extending the `ServiceResourceAdapter` class
+and add the `Adapter` to the OSLC application to manage the resources from the datasource.
+
+There are some steps required to complete the `Adapter` implementation.
 
 #### Defining the Resource Type
 
@@ -174,7 +274,7 @@ The goal of the `Adapter` is to operate between the OSLC API and the datasource,
 this means that the `Adapter` will operate with `resources` that could be Requirements,
 Test Cases, Products, Documents, and so on.
 
-So it is necessary to define the `Resource` class.
+So it is necessary to create a module in which the `Resource` classes will be defined.
 
 ```shell
 (myenv) $ vim resource.py
@@ -186,6 +286,23 @@ information:
 ```python
 # -*- coding: utf-8 -*-
 
+class Creator:
+
+    def __init__(self, identifier, first_name, last_name):
+        self.identifier = identifier
+        self.first_name = first_name
+        self.last_name = last_name
+
+CREATORSTORE = [
+    Creator("1", "Yi", "Chen"),
+    Creator("2", "Jörg", "Kollman"),
+    Creator("3", "Christian", "Muggeo"),
+    Creator("4", "Arne", "Kiel"),
+    Creator("5", "Torben", "Hansing"),
+    Creator("6", "Ian", "Altman"),
+    Creator("7", "Frank", "Patz-Brockmann"),
+]
+        
 class Requirement(object):
 
     def __init__(self, identifier, title, description, creator):
@@ -193,65 +310,141 @@ class Requirement(object):
         self.title = title
         self.description = description
         self.creator = creator
+        self.discipline = [
+            {
+                "https://contact-software.com/ontologies/v1.0/plm#text": "Leistungsbedarf",
+                "https://contact-software.com/ontologies/v1.0/plm#language": "de",
+            },
+            {
+                "https://contact-software.com/ontologies/v1.0/plm#text": "Power Requirement",
+                "https://contact-software.com/ontologies/v1.0/plm#language": "en",
+            },
+        ]
 
 REQSTORE = [
-    Requirement("1", "Provide WSGI implementation", "...", "Yi"),
-    Requirement("2", "Capability to add resources", "...", "Jörg"),
-    Requirement("3", "Capability to manage paging", "...", "Christian"),
-    Requirement("4", "Capability to use select properties", "...", "Arne"),
-    Requirement("5", "Capability to specify page size", "...", "Torben"),
+    Requirement("1", "Provide WSGI implementation", "...", CREATORSTORE[0]),
+    Requirement("2", "Capability to add resources", "...", CREATORSTORE[1]),
+    Requirement("3", "Capability to manage paging", "...", CREATORSTORE[2]),
+    Requirement("4", "Capability to use select properties", "...", CREATORSTORE[3]),
+    Requirement("5", "Capability to specify page size", "...", CREATORSTORE[4]),
     # and so on ...
 ]
 ```
 
-For the purpose of the demo, an in-memory list of requirements have been created
-and will be used in the adapter to demonstrate how to retrieve information from
-a datasource.
+For the purpose of the demo, an in-memory list of requirements and creators 
+have been created and will be used in the adapter to demonstrate how to retrieve 
+information from the datasource.
+
+> The resource module could be a package if needed and have different modules
+> that would define the data clases for the resources.
 
 #### Defining the Adapter
 
-Once the `Resource` class has been created, it is time to implement the `Adapter`
-by adding a new python module.
+Once the `Resource` classes have been created, it is time to implement the `Adapter`
+class by adding a new python module.
 
 ```shell
 (myenv) $ vim adapter.py
 ```
 
 Within this file it is required to create a class that should extend from
-`ServiceResourceAdapter` of `pyoslc_server.specification` package.
+`ServiceResourceAdapter` of the `pyoslc_server.specification` package.
 
 ```python
+import six
 from pyoslc_server.specification import ServiceResourceAdapter
 
 from pyoslc.vocabularies.rm import OSLC_RM
-from rdflib import DCTERMS
 from resource import REQSTORE
 
+
 class RequirementAdapter(ServiceResourceAdapter):
-    
     domain = OSLC_RM
     items = REQSTORE
-    
+
     def __init__(self, **kwargs):
         super(RequirementAdapter, self).__init__(**kwargs)
         self.types = [OSLC_RM.Requirement]
-    
+
     def query_capability(self, paging=False, page_size=50, page_no=1,
                          prefix=None, where=None, select=None,
                          *args, **kwargs):
-        return len(self.items), [self.convert_data(item) for item in self.items]
-    
+
+        if paging:
+            offset = (page_no - 1) * page_size
+            end = offset + page_size
+            result = self.get_data(where)[offset:end]
+        else:
+            result = self.get_data(where)
+
+        # This is just an example, the code could be improved
+        if select:
+            final_result = []
+            sel = self.get_select(select)
+            sel.append("http://purl.org/dc/terms/identifier")
+            for r in result:
+                final_result.append(self.select_attribute(r, sel))
+        else:
+            final_result = result
+
+        return (
+            len(self.items),
+            final_result,
+        )
+
+    def get_select(self, select):
+        result = []
+        for p in select:
+            if p.props:
+                result += self.get_select(p.props)
+            else:
+                result.append(p.prop)
+
+        return result
+
+    def select_attribute(self, item, select):
+        result = {}
+        for k, v in six.iteritems(item):
+            if k in select:
+                result[k] = v
+            else:
+                if type(v) is dict:
+                    value = self.select_attribute(v, select)
+                    result[k] = value
+                elif type(v) in (list, set):
+                    lst = []
+                    for i in v:
+                        value = self.select_attribute(i, select)
+                        lst.append(value)
+                    result[k] = lst
+
+        return result
+
+    def get_data(self, where=None):
+        result = list()
+        for item in self.items:
+            data = self.convert_data(item)
+            result.append(data)
+
+        return result
+
     def convert_data(self, item):
         return {
             "http://purl.org/dc/terms/identifier": item.identifier,
             "http://purl.org/dc/terms/description": item.description,
             "http://purl.org/dc/terms/title": item.title,
-            "http://purl.org/dc/terms/creator": item.creator,
+            "http://open-services.net/ns/rm#discipline": item.discipline,
+            "http://purl.org/dc/terms/creator": {
+                "http://purl.org/dc/terms/identifier": item.creator.identifier,
+                "http://xmlns.com/foaf/0.1/firstName": item.creator.first_name,
+                "http://xmlns.com/foaf/0.1/lastName": item.creator.last_name,
+            },
         }
 ```
 
 This class it is importing some modules and classes from the RDFLib and
-from the vocabularies defined for the OSLC specification.
+from the vocabularies defined for the OSLC specification and that are defined
+in the `pyoslc` package.
 
 The OSLC resource type is assigned in the initialization of the adapter in
 the `self.types` property, for the demo purpose it will be `Requirement` from
@@ -264,20 +457,29 @@ And finally the `query_capability` method is implemented and defines some parame
 these parameters will be sent by the OSLC APP to the adapter to use them for the
 query operation.
 
+Keep in mind that the `Adapter` will be implemented by the developer who is 
+creating or implementing the OSLC API, the `Adapter` will interact with the
+data source, this means that the OSLC API is agnostic from the data store and 
+the resources.
+
+> Since this is an example, some methods of the Adapter are implemented
+> just to fit the behavior required for the example, the implementation
+> should be adjusted to fit the requirements of the datasource.
+
 ##### Attributes Mapping
 
-Keep your eyes in the `convert_data` method within the `RequirementAdapter` class,
-since this method is converting the python object into a dictionary but most important
-the attribute id is an IRI of the OSLC attribute.
+Keep your eyes in the `convert_data` method within the `RequirementAdapter` class, 
+this method is converting the python object into a dictionary but most important
+the IDs of the attributes the IRI of the OSLC attribute.
 
 On previous version of the SDK a dictionary was used to define the mapping of the 
 OSLC attributes with the python object attribute.
 
-This version delegate the responsability of this to the implementer by using the OSLC IRI
+This version delegate the responsibility of this to the implementer by using the OSLC IRI
 of the attribute as the name of the attribute.
 
 
-### Attaching an Adapter to the PyOSLC Application
+### Attaching the Adapter
 
 Finally, let's configure the initial OSLC APP on the `wsgi.py` file to attach the
 adapter and to be able to see the Service Provider working.
@@ -328,7 +530,7 @@ with the `OSLC API` to retrieve information from it.
 For instance:
 
 ```bash
-(myenv) $ curl http://127.0.0.1:5000/oslc/services/catalog -H accept:"application/rdf+xml"
+(myenv) $ curl -X GET http://127.0.0.1:5000/oslc/services/catalog -H accept:"application/rdf+xml"
 ```
 
 Response:
@@ -347,11 +549,11 @@ Response:
 </rdf:RDF>
 ```
 
-Now the ServiceProvider is listed for the `RequirementAdapter`, let's see what is the
-content of this endpoint.
+Now the ServiceProvider is listing the `RequirementAdapter`, let's see what is the
+content of this endpoint by sending a request against its URL.
 
 ```bash
-(myenv) $ curl http://127.0.0.1:5000/oslc/services/provider/adapter -H accept:"application/rdf+xml"
+(myenv) $ curl -X GET http://127.0.0.1:5000/oslc/services/provider/adapter -H accept:"application/rdf+xml"
 ```
 
 Response:
@@ -384,16 +586,22 @@ Response:
 </rdf:RDF>
 ```
 
-In the response of the ServiceProvider endpoint, there is `Service` that contains the
-definition of a `QueryCapability`, this service is available here since the `query_capability`
-method was defined in the `RequirementAdapter` class, for each of these methods: `['query_capability', 
-'creation_factory', 'selection_dialog', 'creation_dialog', 'get_resource']`, one service 
-will be created.
+In the response of the ServiceProvider endpoint, there is `Service` tag that contains the
+definition of a `QueryCapability` endpoint, this service is available here since the 
+`query_capability` method was implemented in the `RequirementAdapter` class.
+
+By overwriting the methods: `['query_capability', 'creation_factory', 'selection_dialog', 
+'creation_dialog', 'get_resource']` from the `ServiceResourceAdapter` in any adapter class,
+an endpoint will be added to the ServiceProvider.
+
+The methods should be implemented (overwritten) by the developer as required, if 
+the method is implemented, the OSL API will show the RDF representation for the
+endpoint in the response.
 
 Now, let's check what is the content of the `queryBase` endpoint of the OSLC API.
 
 ```bash
-(myenv) $ curl http://127.0.0.1:5000/oslc/services/provider/adapter/resources -H accept:"application/rdf+xml"
+(myenv) $ curl -X GET http://127.0.0.1:5000/oslc/services/provider/adapter/resources -H accept:"application/rdf+xml"
 ```
 
 Response:
@@ -419,12 +627,15 @@ Here is the list of resources defined on the in-memory list of requirements.
 #### Requesting resources using paging and select
 
 Since the Query Capability endpoint retrieves the list of resources within the 
-datasource it is possible to use the pagination for getting specific number of 
-resources, to do this, just add the `oslc.paging=true` query string parameters 
-as defined in the specification.
+datasource it is possible to use pagination for getting a specific number of 
+resources. To use pagination, just add the `oslc.paging=true` to the query string 
+to pass the parameter as defined in the specification.
 
 By default, the pagination will return 50 resources per page, but it could be changed
 by sending the `oslc.pageSize` parameter.
+
+When the response uses pagination, it is possible to have different pages to complete
+the response, thus the page number could be specified in the request.  
 
 It is also possible to get specific attributes of the resources by using the `oslc.select`
 in the query.
@@ -434,7 +645,7 @@ For more details you can see the [Query Syntax](https://archive.open-services.ne
 For instance:
 
 ```bash
-(myenv) $ curl http://127.0.0.1:5000/oslc/services/provider/adapter/resources?oslc.paging=true \
+(myenv) $ curl -X GET http://127.0.0.1:5000/oslc/services/provider/adapter/resources?oslc.paging=true \
 &oslc.pageSize=2 \
 &oslc.pageNo=2 \
 &oslc.select=dcterms:title \
@@ -453,13 +664,11 @@ Response:
     <rdfs:member>
       <rdf:Description rdf:about="http://127.0.0.1:5000/oslc/services/provider/adapter/resources/4">
         <dcterms:title>Capability to select page</dcterms:title>
-        <dcterms:identifier>4</dcterms:identifier>
       </rdf:Description>
     </rdfs:member>
     <rdfs:member>
       <rdf:Description rdf:about="http://127.0.0.1:5000/oslc/services/provider/adapter/resources/3">
         <dcterms:title>Capability to paging</dcterms:title>
-        <dcterms:identifier>3</dcterms:identifier>
       </rdf:Description>
     </rdfs:member>
   </rdf:Description>
@@ -471,14 +680,107 @@ Response:
 </rdf:RDF>
 ```
 
-#### Requesting resources using where
+There are some other options described in the [Query Syntax](https://archive.open-services.net/bin/view/Main/OSLCCoreSpecQuery)
+specification, in which the `oslc.select` parameter could specify some other formats to
+request some attributes from the resources even when this attributes come from nested
+resources.
 
+Here is an example:
+
+```bash
+(myenv) $ curl -G http://127.0.0.1:5000/oslc/services/provider/adapter/resources \
+-d "oslc.paging=true" \
+-d "oslc.pageSize=2" \
+-d "oslc.pageNo=2" \
+-d "oslc.prefix=foaf=<http://xmlns.com/foaf/0.1/>,oslc_rm=<http://open-services.net/ns/rm%23>,contact_plm=<https://contact-software.com/ontologies/v1.0/plm%23>" \
+-d "oslc.select=dcterms:title,dcterms:creator{foaf:firstName},oslc_rm:discipline" \
+-H accept:"application/rdf+xml"
+```
+
+Response:
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<rdf:RDF
+  xmlns:foaf="http://xmlns.com/foaf/0.1/"
+  xmlns:oslc="http://open-services.net/ns/core#"
+  xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+  xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  xmlns:oslc_rm="http://open-services.net/ns/rm#"
+  xmlns:contact_plm="https://contact-software.com/ontologies/v1.0/plm#"
+  xmlns:dcterms="http://purl.org/dc/terms/"
+>
+  <oslc:ResponseInfo rdf:about="http://127.0.0.1:5000/oslc/services/provider/adapter/resources?oslc.pageSize=2&amp;oslc.pageNo=2&amp;oslc.paging=true">
+    <dcterms:title rdf:parseType="Literal">Query Results for Requirements</dcterms:title>
+    <oslc:nextPage rdf:resource="http://127.0.0.1:5000/oslc/services/provider/adapter/resources?oslc.pageNo=3&amp;oslc.pageSize=2&amp;oslc.paging=true"/>
+    <oslc:totalCount rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">5</oslc:totalCount>
+  </oslc:ResponseInfo>
+  <rdf:Description rdf:about="http://127.0.0.1:5000/oslc/services/provider/adapter/resources">
+    <rdfs:member>
+      <rdf:Description rdf:about="http://127.0.0.1:5000/oslc/services/provider/adapter/resources/4">
+        <oslc_rm:discipline rdf:parseType="Collection">
+          <rdf:Description rdf:nodeID="Neb98cbf2a39541d383c9a283262a5768">
+            <contact_plm:language>de</contact_plm:language>
+            <contact_plm:text>Leistungsbedarf</contact_plm:text>
+          </rdf:Description>
+          <rdf:Description rdf:nodeID="Nf35ebf46fc0544f5ab1d028067b2aa1d">
+            <contact_plm:text>Power Requirement</contact_plm:text>
+            <contact_plm:language>en</contact_plm:language>
+          </rdf:Description>
+        </oslc_rm:discipline>
+        <dcterms:creator rdf:resource="http://127.0.0.1:5000/oslc/services/provider/creator/resources/4"/>
+        <dcterms:title>Capability to use select properties</dcterms:title>
+      </rdf:Description>
+    </rdfs:member>
+    <rdfs:member>
+      <rdf:Description rdf:about="http://127.0.0.1:5000/oslc/services/provider/adapter/resources/3">
+        <dcterms:title>Capability to manage paging</dcterms:title>
+        <dcterms:creator rdf:resource="http://127.0.0.1:5000/oslc/services/provider/creator/resources/3"/>
+        <oslc_rm:discipline rdf:parseType="Collection">
+          <rdf:Description rdf:nodeID="N59b8da4c291440e1aa33793555091acf">
+            <contact_plm:text>Leistungsbedarf</contact_plm:text>
+            <contact_plm:language>de</contact_plm:language>
+          </rdf:Description>
+          <rdf:Description rdf:nodeID="Nc00b504b85ab41dd8759ddb836656c07">
+            <contact_plm:text>Power Requirement</contact_plm:text>
+            <contact_plm:language>en</contact_plm:language>
+          </rdf:Description>
+        </oslc_rm:discipline>
+      </rdf:Description>
+    </rdfs:member>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://127.0.0.1:5000/oslc/services/provider/creator/resources/4">
+    <foaf:firstName>Arne</foaf:firstName>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://127.0.0.1:5000/oslc/services/provider/creator/resources/3">
+    <foaf:firstName>Christian</foaf:firstName>
+  </rdf:Description>
+</rdf:RDF>
+```
+
+In the above example, it is possible to see that the selection of the attributes 
+could be specifying an attribute from the resource like `dcterms:title` or 
+an attribute that comes inside a nested attribute like `dcterms:creator{foaf:firstName}`,
+the different options that could be used for the selection are described in the 
+[Query Syntax](https://archive.open-services.net/bin/view/Main/OSLCCoreSpecQuery)
+specification
+
+There is another section that could be mentioned in the response, it is the way 
+that the attribute `oslc_rm:discipline` is described in the RDF representation.
+The value for this attribute contains a list of resources and these are described
+in a collection.
+
+
+#### Requesting resources using where
 
 It is also possible to get specific resources by using the `oslc.where`
 in the query.
 
+The next request shows how to use the `oslc.where` clause, but this is not
+implemented in the `Adapter` example class, the idea is to implement the validation
+and return the list of resources that fit the condition.
+
 ```bash
-(myenv) $ curl http://127.0.0.1:5000/oslc/services/provider/adapter/resources?oslc.paging=true \
+(myenv) $ curl -X GET http://127.0.0.1:5000/oslc/services/provider/adapter/resources?oslc.paging=true \
 &oslc.pageSize=2 \
 &oslc.pageNo=2 \
 &oslc.where=dcterms:identifier=5\

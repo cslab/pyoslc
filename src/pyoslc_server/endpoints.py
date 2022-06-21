@@ -261,7 +261,7 @@ class ResourceListOperation(OSLCResource):
                     req = BaseResource()
                     req.from_rdf(data, adapter.types[0], attributes=adapter)
 
-                    adapter.creation_factory(req.get_dict(attributes=adapter.mapping))
+                    adapter.creation_factory(req.get_dict())
                     if isinstance(req, BaseResource):
                         req.to_rdf_base(
                             self.graph,
@@ -318,11 +318,10 @@ class ResourceItemOperation(OSLCResource):
                 if adapter:
                     data = adapter.get_resource(**request.view_args)
 
-                # data = self.api.app.adapter_functions[rule.endpoint]('get_resource', **request.view_args)
                 resource = BaseResource()
                 if data:
                     resource.about = base_url
-                    resource.update(data, adapter)
+                    resource.update(data, adapter, base_url)
                     resource.to_rdf_base(self.graph, base_url, adapter.types, adapter)
 
                 if (

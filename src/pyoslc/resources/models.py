@@ -17,7 +17,6 @@ else:
     from urllib.parse import urlparse
 
 from rdflib import URIRef, Literal, RDF, XSD, BNode
-from rdflib.extras.describer import Describer
 from rdflib.namespace import DCTERMS, RDFS, ClosedNamespace, split_uri
 from rdflib.resource import Resource
 
@@ -104,7 +103,7 @@ class AbstractResource(object):
                                 attributes.identifier, attribute_name
                             ),
                             identifier=obj.identifier,
-                        )
+                        ) if obj.identifier else ''
                         value = obj
                 else:
                     result = set()
@@ -116,7 +115,7 @@ class AbstractResource(object):
                                 attributes.identifier, attribute_name
                             ),
                             identifier=obj.identifier,
-                        )
+                        ) if obj.identifier else ''
                         result.add(obj)
                     value = result
 
@@ -127,52 +126,42 @@ class AbstractResource(object):
     def to_rdf_base(self, graph, base_url=None, oslc_types=None, attributes=None):
         assert attributes is not None, "The mapping for attributes is required"
 
-        # graph.bind('oslc_rm', OSLC_RM)
-        graph.bind("oslc", OSLC)
-        graph.bind("dcterms", DCTERMS)
+        for prefix, ns in attributes.namespaces.items():
+            graph.bind(prefix, ns)
 
-        d = Describer(graph, base=base_url)
         identifier = getattr(self, "identifier")
         if isinstance(identifier, Literal):
             identifier = identifier.value
         if identifier not in base_url.split("/"):
             base_url = self.get_absolute_url(base_url, identifier)
 
-        d.about(base_url)
+        r = Resource(graph, URIRef(base_url) if base_url else BNode())
         if oslc_types:
             for t in oslc_types:
-                d.rdftype(t)
+                r.add(RDF.type, t)
 
-        for attribute_key in self.__dict__.keys():
-            # logger.debug("Attribute: <{}>".format(attribute_key))
-            item = {
-                k: v
-                for k, v in six.iteritems(attributes.mapping)
-                if attribute_key.split("__")[1] == k
-            }
+        for key, value in self.__dict__.items():
+            key = (key.split("__")[1] if key.__contains__("__") else key)
+            if value and isinstance(value, BaseResource):
+                nested = value.to_rdf_base(graph, value.about, attributes=attributes)
+                predicate = attributes.mapping.get(key)
+                r.add(predicate, nested)
+            elif value and isinstance(value, (list, set)):
+                bag = Resource(graph, BNode())
+                content = Collection(graph, bag.identifier, [])
+                for resource in value:
+                    nested = resource.to_rdf_base(graph, resource.about, attributes=attributes)
+                    predicate = attributes.mapping.get(key)
+                    bag.add(predicate, nested)
+                    content.append(nested.identifier)
+                predicate = attributes.mapping.get(key)
+                r.add(predicate, bag)
+            else:
+                predicate = attributes.mapping.get(key)
+                if value and predicate:
+                    r.add(predicate, Literal(value))
 
-            if item and attribute_key.split("__")[1] in item.keys():
-                predicate = item.get(attribute_key.split("__")[1])
-                attr = getattr(self, attribute_key)
-                if isinstance(attr, set):
-                    if len(attr) > 0:
-                        val = attr.pop()
-                        if isinstance(val, Literal):
-                            d.value(predicate, val.value)
-                        else:
-                            d.value(predicate, val)
-                        attr.add(val)
-                    else:
-                        attr = getattr(self, attribute_key)
-                        val = attr.pop()
-                        d.value(predicate, val)
-                elif isinstance(attr, Literal):
-                    data = getattr(self, attribute_key)
-                    d.value(predicate, data.value)
-                else:
-                    d.value(predicate, getattr(self, attribute_key))
-
-        return graph
+        return r
 
     def to_rdf(self, graph):
         logger.debug("Generating RDF for {}".format(self.__class__.__name__))
@@ -180,12 +169,8 @@ class AbstractResource(object):
         if not self.about:
             raise Exception("The about property is missing")
 
-    def get_dict(self, attributes):
-        result = dict()
-        for k, v in six.iteritems(attributes):
-            if hasattr(self, k):
-                attribute_value = getattr(self, k)
-                result[k] = attribute_value
+    def get_dict(self):
+        result = {key.split("__")[1] if key.__contains__("__") else key: value for key, value in self.__dict__.items()}
 
         return result
 
@@ -207,6 +192,8 @@ class AbstractResource(object):
                         state += k
                 elif isinstance(value, URIRef):
                     state += value.toPython()
+                elif isinstance(value, BaseResource):
+                    state += value.digestion()
                 else:
                     state += value
 
@@ -387,44 +374,31 @@ class BaseResource(AbstractResource):
 
         for r in g.subjects(RDF.type, resource_type):
             setattr(self, "_AbstractResource__about", str(r))
-
             reviewed = list()
+            self.get_attributes_from_rdf(g, r, attributes, reviewed)
 
-            # for k, v in six.iteritems(attributes.namespaces):
-
-            for p, o in g.predicate_objects(r):
-
-                url = urlparse(p, allow_fragments=True)
-                url = url.fragment if url.fragment else url.path
-                if url.__contains__("#"):
-                    c = "#"
+    def get_attributes_from_rdf(self, g, r, attributes, reviewed):
+        for p, o in g.predicate_objects(r):
+            _, attribute_name = split_uri(p)
+            attributes.mapping[attribute_name] = URIRef(p)
+            reviewed.append(attribute_name)
+            attribute_name = camel_to_dash(attribute_name)
+            if isinstance(o, Literal):
+                setattr(self, attribute_name, o.value)
+            elif isinstance(o, URIRef):
+                ss = list(g.predicate_objects(o))
+                if ss:
+                    res = BaseResource()
+                    res.about = o.toPython()
+                    res.get_attributes_from_rdf(g, o, attributes=attributes, reviewed=reviewed)
+                    setattr(self, attribute_name, res)
                 else:
-                    c = "/"
-
-                x = url.split(c)[-1]
-                attributes.mapping[x] = URIRef(p)
-                reviewed.append(x)
-                attribute_name = camel_to_dash(x)
-                if hasattr(self, attribute_name):
-                    attribute_value = getattr(self, attribute_name)
-                    if isinstance(attribute_value, set):
-                        at = getattr(self, attribute_name)
-                        if isinstance(o, Literal):
-                            o = o.value
-                        at.add(o)
-                    elif isinstance(attribute_value, str):
-                        if isinstance(o, Literal):
-                            o = o.value
-                        setattr(
-                            self,
-                            attribute_name,
-                            o if isinstance(o, str) else o.encode("utf-8"),
-                        )
-                    else:
-                        if isinstance(o, Literal):
-                            setattr(self, attribute_name, o.value)
-                        else:
-                            setattr(self, attribute_name, o)
+                    setattr(self, attribute_name, o)
+            else:
+                res = BaseResource()
+                res.about = o.toPython()
+                res.from_rdf(g, p, attributes=attributes)
+                setattr(self, attribute_name, o.value)
 
 
 class ServiceProviderCatalog(BaseResource):
