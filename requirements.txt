@@ -2,7 +2,7 @@ python-dotenv
 
 Flask==1.0.2
 Flask-CORS
-Flask-RESTx
+Flask-RESTx==0.5.1
 Flask-WTF
 Flask-Bootstrap
 Flask-SQLAlchemy
