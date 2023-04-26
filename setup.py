@@ -26,7 +26,7 @@ setup(
     install_requires=[
         'python-dotenv',
         'RDFLib>=5.0.0',
-        'RDFLib-JSONLD',
+        'RDFLib-JSONLD==0.5.0',
         'Flask==1.0.2',
         'Flask-RESTx==0.5.1',
         'authlib~=0.14.3',
