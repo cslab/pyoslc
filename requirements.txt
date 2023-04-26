@@ -1,20 +1,27 @@
-python-dotenv
+python-dotenv==0.18.0 ; python_version <= '2.7'
+python-dotenv > 0.18.0 ; python_version > '2.7'
 
-Flask==1.0.2
+Flask == 1.0.2 ; python_version <= '2.7'
+Flask > 1.0.2 ; python_version > '2.7'
+
+Flask-RESTx == 0.5.1 ; python_version <= '2.7'
+Flask-RESTx > 0.5.1 ; python_version > '2.7'
+
 Flask-CORS
-Flask-RESTx==0.5.1
 Flask-WTF
 Flask-Bootstrap
 Flask-SQLAlchemy
 Flask-Login
 cachelib~=0.1.1
 
-RDFLib==5.0.0
-RDFLib-jsonld==0.5.0
+RDFLib==5.0.0 ; python_version <= '2.7'
+RDFLib-jsonld==0.6.1 ; python_version <= '2.7'
+RDFLib>=6.0.0 ; python_version > '2.7'
 
 Authlib~=0.14.3
 
-Werkzeug==0.16.1
+Werkzeug == 1.0.1 ; python_version <= '2.7'
+Werkzeug > 1.0.1 ; python_version > '2.7'
 requests
 pytest
 
